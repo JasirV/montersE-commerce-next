@@ -18,9 +18,8 @@ const Footer = () => {
             <Image
               src={montreslogo}
               alt="Montres Logo"
-              className="h-12 sm:h-12 md:h-14 filter brightness-0 invert"
-              width={140}
-              height={56}
+              className="h-[100%] w-[100%] sm:h-12 md:h-14 filter brightness-0 invert"
+             
             />
           </div>
 

@@ -159,7 +159,7 @@ const Navbar = ({ onSignUpClick }) => {
 
               <Link
                 href="/cart"
-                className="flex items-center justify-center rounded-full bg-gradient-to-br from-[#2d5582] to-[#2d5587] text-white p-2.5 hover:shadow-md transition-all hover:scale-105"
+                className="flex items-center justify-center rounded-full bg-gradient-to-br  text-gray-700 hover:text-[#1e518e] p-2.5 hover:shadow-md transition-all hover:scale-105"
                 aria-label="Shopping cart"
               >
                 <FaShoppingCart className="text-lg md:text-xl" />
@@ -167,7 +167,7 @@ const Navbar = ({ onSignUpClick }) => {
 
               <button
                 onClick={onSignUpClick}
-                className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 md:px-5 py-2 md:py-2.5 rounded-full flex items-center gap-2 text-sm md:text-base hover:shadow-lg transition-all hover:scale-105"
+                className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 md:px-4 py-2 md:py-1.5 rounded-full flex items-center gap-2 text-sm md:text-base hover:shadow-lg transition-all hover:scale-105"
                 aria-label="Sign in or register"
               >
                 <FaUser />
@@ -247,7 +247,7 @@ const Navbar = ({ onSignUpClick }) => {
                   ))}
                 </div>
               )}
-            </div>
+            </div>   
           )}
         </div>
       </header>

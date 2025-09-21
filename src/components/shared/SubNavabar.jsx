@@ -71,24 +71,10 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       ],
     },
     {
-      name: "BY BRAND",
+      name: "BRAND NEW",
       path: "/brand-new",
-        subMenu: [
-        { name: "Rolex", path: "/jewelry/rings" },
-        { name: "Submariner", path: "/jewelry/ear-rings" },
-        { name: "Datejust", path: "/jewelry/ear-rings" },
-        { name: "	Omega", path: "/jewelry/ear-rings" },
-        { name: "	Speedmaster", path: "/jewelry/ear-rings" },
-        { name: "	Seamaster", path: "/jewelry/ear-rings" },
-        { name: "Cartier", path: "/jewelry/ear-rings" },
-        { name: "Tank", path: "/jewelry/ear-rings" },
-        { name: "Santos", path: "/jewelry/ear-rings" },
-      ],
     },
-    {
-      name: "PRE-LOVED",
-      path: "/pre-loved"
-    },
+   
   ];
 
   const toggleDropdown = useCallback(

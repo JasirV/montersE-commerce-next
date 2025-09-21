@@ -1,8 +1,8 @@
 import React, { useState, useCallback, lazy, Suspense } from "react";
 import Modal from "react-modal";
-import { FaTimes } from "react-icons/fa";
 import Image from "next/image";
 import Authentication from "../../assets/52_MjExMC53MDEyLm4wMDEuMTHQoS5wNi4xMQ.jpg";
+
 
 // Lazy load form components
 const LoginForm = lazy(() => import("./LoginForm"));
@@ -11,12 +11,12 @@ const ForgotPasswordForm = lazy(() => import("./Forgotyourpassword"));
 
 // Loader for lazy components
 const FormLoading = () => (
-  <div className="flex justify-center items-center h-64">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  <div className="flex justify-center items-center h-48">
+    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
   </div>
 );
 
-// Responsive Modal Styles
+// Modal Styles
 const customStyles = {
   content: {
     top: "50%",
@@ -48,25 +48,22 @@ if (typeof window !== "undefined") {
   Modal.setAppElement("body");
 }
 
-// Left Banner (Hidden on mobile)
-const ImageBanner = ({ onRequestClose }) => (
-  <div className="hidden md:flex md:w-2/5 relative overflow-hidden rounded-l-lg">
-    <button
-      onClick={onRequestClose}
-      className="absolute top-4 right-4 text-white hover:text-gray-200 z-10 transition-colors bg-black bg-opacity-40 rounded-full p-2"
-      aria-label="Close modal"
-    >
-      <FaTimes size={18} />
-    </button>
-
+// Left Banner
+const ImageBanner = () => (
+  <div className="hidden md:flex md:w-2/5 relative">
     <Image
       src={Authentication}
       alt="Luxury Watch Banner"
-      width={1100}
-      height={400}
-      className="object-cover h-full w-full"
+      fill
+      className="object-cover"
       loading="lazy"
     />
+    <div className="absolute inset-0 bg-gradient-to-r flex items-end p-6">
+      <div className="text-white">
+        <h2 className="text-2xl font-bold mb-2">Welcome Back</h2>
+        <p className="text-sm opacity-90">Discover our exclusive collection</p>
+      </div>
+    </div>
   </div>
 );
 
@@ -78,7 +75,7 @@ const TabNavigation = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <div className="flex border-b border-gray-200 mb-6">
+    <div className="flex border-b border-gray-200 mb-4 md:mb-6">
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -95,6 +92,30 @@ const TabNavigation = ({ activeTab, setActiveTab }) => {
     </div>
   );
 };
+
+// Close Button
+const CloseButton = ({ onClose }) => (
+  <button
+    onClick={onClose}
+    className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors z-10"
+    aria-label="Close modal"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-6 w-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M6 18L18 6M6 6l12 12"
+      />
+    </svg>
+  </button>
+);
 
 // Main Auth Modal
 const AuthModal = ({ isOpen, onRequestClose }) => {
@@ -118,9 +139,9 @@ const AuthModal = ({ isOpen, onRequestClose }) => {
       closeTimeoutMS={200}
       ariaHideApp={false}
     >
-      <div className="flex flex-col md:flex-row h-full min-h-[400px] max-h-[90vh]">
+      <div className="flex flex-col md:flex-row h-full min-h-[450px] max-h-[90vh]">
         {/* Left Banner */}
-        <ImageBanner onRequestClose={handleClose} />
+        <ImageBanner />
 
         {/* Right Content */}
         <div
@@ -136,6 +157,7 @@ const AuthModal = ({ isOpen, onRequestClose }) => {
           >
             <FaTimes size={18} />
           </button>
+
 
           {/* Tabs */}
           <TabNavigation activeTab={activeTab} setActiveTab={handleTabChange} />

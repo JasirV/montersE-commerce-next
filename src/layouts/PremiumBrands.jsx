@@ -18,27 +18,50 @@ const PremiumBrands = () => {
   ];
 
   return (
-    <section className="bg-white py-10">
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12">
-        {/* Section Title */}
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-8 text-center">
-          Explore Products From Premium Brands
-        </h2>
+    <section className="bg-gradient-to-b from-gray-50 to-white py-12 sm:py-16 lg:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="text-center mb-10 sm:mb-14">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
+            Premium Watch Brands
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
+            Discover our curated collection of the world's most prestigious watchmakers
+          </p>
+        </div>
 
-        {/* Logos Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 sm:gap-8">
+        {/* Brands Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
           {premiumBrands.map((brand) => (
             <div
               key={brand.id}
-              className="flex items-center justify-center border rounded-xl bg-white hover:shadow-lg transition-all duration-300 p-6 sm:p-8"
+              className="group relative bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 flex items-center justify-center transform hover:-translate-y-1"
             >
-              <Image
-                src={brand.logo}
-                alt={brand.alt}
-                className="w-full max-w-[120px] sm:max-w-[140px] md:max-w-[160px] lg:max-w-[180px] max-h-20 sm:max-h-24 md:max-h-28 lg:max-h-32 object-contain"
-              />
+              <div className="relative w-full h-16 sm:h-20 md:h-24">
+                <Image
+                  src={brand.logo}
+                  alt={brand.alt}
+                  fill
+                  className="object-contain p-2 transition-all duration-300 group-hover:scale-105"
+                  sizes="(max-width: 640px) 100px, (max-width: 768px) 120px, 150px"
+                />
+              </div>
+              
+              {/* Brand name overlay on hover */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 rounded-xl flex items-end justify-center p-3 transition-opacity duration-300">
+                <span className="text-white text-xs sm:text-sm font-medium text-center">
+                  {brand.alt}
+                </span>
+              </div>
             </div>
           ))}
+        </div>
+
+        {/* Call to Action */}
+        <div className="text-center mt-10 sm:mt-14">
+          <button className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#1a4680] hover:to-[#00559dee] text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-sm sm:text-base">
+            Explore All Brands
+          </button>
         </div>
       </div>
     </section>
