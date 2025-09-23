@@ -17,8 +17,6 @@ import Footer from "@/components/shared/Footer";
 import "../Mobile/responsive.css";
 import { LandingPageProduct } from "@/service/productService";
 
-
-
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [authAction, setAuthAction] = useState("login");
@@ -62,7 +60,7 @@ LandingPageProduct()
         defaultAction={authAction}
       />
 
-      {/* Home Page Sections */}
+
       <Landing />
       <Home />
       <AddSection />
@@ -73,7 +71,7 @@ LandingPageProduct()
       <PremiumBrands />
       <BrandNewAdded  products={products?.lastBrandNew} loading={loading}/>
       <Services />
-    
+
       <Footer />
     </div>
   );

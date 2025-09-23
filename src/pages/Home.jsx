@@ -15,7 +15,7 @@ const ProductGrid = () => {
     const fetchProducts = async () => {
       try {
         const response = await fetch(
-          "https://montres-ecommerce-backend-1.onrender.com/api/products"
+          "http://localhost:7000/api/products"
         );
 
         if (!response.ok) {
