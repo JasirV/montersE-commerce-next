@@ -37,7 +37,7 @@ export default function IndexPage() {
         defaultAction={authAction}
       />
 
-      {/* Home Page Sections */}
+
       <Landing />
       <Home />
       <AddSection />
