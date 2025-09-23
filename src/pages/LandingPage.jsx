@@ -16,8 +16,6 @@ import Services from "@/components/ui/Services";
 import Footer from "@/components/shared/Footer";
 import "../Mobile/responsive.css";
 
-
-
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [authAction, setAuthAction] = useState("login");
@@ -50,7 +48,7 @@ export default function IndexPage() {
       <PremiumBrands />
       <BrandNewAdded />
       <Services />
-    
+
       <Footer />
     </div>
   );

@@ -1,1 +1,29 @@
 @import "tailwindcss";
+
+/* Add to your globals.css */
+:root {
+  --primary-blue: #2d5582;
+  --primary-blue-hover: #2d5587;
+  --primary-blue-light: #3b6da0;
+  --primary-blue-lighter: #e8edf3;
+}
+
+.bg-primary-blue {
+  background-color: var(--primary-blue);
+}
+
+.hover\:bg-primary-blue:hover {
+  background-color: var(--primary-blue-hover);
+}
+
+.text-primary-blue {
+  color: var(--primary-blue);
+}
+
+.border-primary-blue {
+  border-color: var(--primary-blue);
+}
+
+.focus\:ring-primary-blue:focus {
+  ring-color: var(--primary-blue);
+}
