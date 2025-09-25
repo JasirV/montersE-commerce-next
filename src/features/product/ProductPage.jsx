@@ -1,91 +1,111 @@
 "use client";
-      
+
 import React, { useState, useMemo, memo, Suspense, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import FilterSidebar from "./ProductFilterSidebar";
 import { fetchProduct } from "../../service/productService";
-import {
-  FiFilter,
-  FiX,
-} from "react-icons/fi";
+import { FiFilter, FiX } from "react-icons/fi";
 
+const Pagination = memo(
+  ({ currentPage, totalPages,  setCurrentPage }) => {
+    const itemsPerPage = 15;
 
-// Pagination component for better reusability
-const Pagination = memo(({ currentPage, totalPages, setCurrentPage }) => {
-  const maxVisiblePages = 5;
-  
-  // Calculate which page numbers to show
-  const pageNumbers = useMemo(() => {
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
-    // Adjust if we're near the end
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-    
-    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
-  }, [currentPage, totalPages]);
+    const pageNumbers = useMemo(() => {
+      const maxVisiblePages = 5;
+      let startPage = Math.max(
+        1,
+        currentPage - Math.floor(maxVisiblePages / 2)
+      );
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
-  if (totalPages <= 1) return null;
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
 
-  return (
-    <div className="mt-6 flex flex-wrap justify-center gap-1 xs:gap-2">
-      <button
-        onClick={() => setCurrentPage(1)}
-        disabled={currentPage === 1}
-        className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-        aria-label="First page"
-      >
-        &laquo;
-      </button>
-      <button
-        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-        disabled={currentPage === 1}
-        className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-        aria-label="Previous page"
-      >
-        &lsaquo;
-      </button>
-      
-      {pageNumbers?.map((page) => (
-        <button
-          key={page}
-          onClick={() => setCurrentPage(page)}
-          className={`px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md min-w-[2rem] ${
-            currentPage === page
-              ? "bg-[#8b6b4a] text-white"
-              : "hover:bg-gray-100"
-          }`}
-          aria-label={`Page ${page}`}
-          aria-current={currentPage === page ? 'page' : undefined}
-        >
-          {page}
-        </button>
-      ))}
-      
-      <button
-        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-        disabled={currentPage === totalPages}
-        className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-        aria-label="Next page"
-      >
-        &rsaquo;
-      </button>
-      <button
-        onClick={() => setCurrentPage(totalPages)}
-        disabled={currentPage === totalPages}
-        className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-        aria-label="Last page"
-      >
-        &raquo;
-      </button>
-    </div>
-  );
-});
+      return Array.from(
+        { length: endPage - startPage + 1 },
+        (_, i) => startPage + i
+      );
+    }, [currentPage, totalPages]);
 
-Pagination.displayName = 'Pagination';
+    if (totalPages <= 1) return null;
+
+    const isFirstPage = currentPage === 1;
+    const isLastPage = currentPage === totalPages;
+
+    // Calculate range display
+    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    console.log(totalPages, "totalPages");
+    return (
+      <div className="mt-6 flex flex-col items-center gap-2">
+        {/* Pagination Buttons */}
+        <div className="flex flex-wrap justify-center gap-1 xs:gap-2">
+          <button
+            onClick={() => setCurrentPage(1)}
+            disabled={isFirstPage}
+            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
+            aria-label="First page"
+          >
+            &laquo;
+          </button>
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={isFirstPage}
+            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
+            aria-label="Previous page"
+          >
+            &lsaquo;
+          </button>
+
+          {pageNumbers.map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md min-w-[2rem] ${
+                currentPage === page
+                  ? "bg-[#8b6b4a] text-white"
+                  : "hover:bg-gray-100"
+              }`}
+              aria-label={`Page ${page}`}
+              aria-current={currentPage === page ? "page" : undefined}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={isLastPage}
+            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
+            aria-label="Next page"
+          >
+            &rsaquo;
+          </button>
+          <button
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={isLastPage}
+            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
+            aria-label="Last page"
+          >
+            &raquo;
+          </button>
+        </div>
+
+        {/* Info summary below pagination */}
+        <div className="text-xs text-gray-600 mt-1">
+          Showing <strong>{startItem}</strong>–
+          <strong>{totalPages}</strong> of <strong>{}</strong>{" "}
+         Page <strong>{currentPage}</strong> of{" "}
+          <strong>{totalPages}</strong>
+        </div>
+      </div>
+    );
+  }
+);
+
+Pagination.displayName = "Pagination";
+
 const ProductPage = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortOption, setSortOption] = useState("featured");
@@ -100,7 +120,7 @@ const ProductPage = () => {
       try {
         setLoading(true);
         setError(null); // reset error
-        const { data } = await fetchProduct();
+        const { data } = await fetchProduct({ page: currentPage, limit: 15 });
         setProducts(data || []);
       } catch (err) {
         console.error("Error fetching products:", err);
@@ -111,9 +131,9 @@ const ProductPage = () => {
     };
 
     loadProducts();
-  }, []);
+  }, [currentPage]);
 
-  console.log(products,"products");
+  console.log(products, "products");
   const { category, subcategory } = useParams();
   const productsPerPage = 12;
 
@@ -136,7 +156,7 @@ const ProductPage = () => {
   //       );
   //       setProducts(response.data); // Store API products in state
   //       console.log(response.data,"response.data");
-        
+
   //     } catch (error) {
   //       console.error("Error fetching products:", error);
   //     } finally {
@@ -150,20 +170,25 @@ const ProductPage = () => {
   // Fixed category filtering logic - now uses API products
   const categoryFilteredProducts = useMemo(() => {
     if (loading) return [];
-    
-    return products.filter((p) => {
+    return products.products.filter((p) => {
       // First check if the main category matches
-      const isCategoryMatch = p.categories && p.categories.some(cat => 
-        cat?.toLowerCase()?.includes(category?.toLowerCase())
-      );
-      
+      const isCategoryMatch =
+        p.categories &&
+        p.categories.some((cat) =>
+          cat?.toLowerCase()?.includes(category?.toLowerCase())
+        );
+
       // If there's a subcategory in URL, check if it matches
       if (subcategory) {
-        return isCategoryMatch && p.categories && p.categories.some(cat => 
-          cat.toLowerCase().includes(subcategory.toLowerCase())
+        return (
+          isCategoryMatch &&
+          p.categories &&
+          p.categories.some((cat) =>
+            cat.toLowerCase().includes(subcategory.toLowerCase())
+          )
         );
       }
-      
+
       // If no subcategory in URL, only check main category
       return isCategoryMatch;
     });
@@ -195,12 +220,30 @@ const ProductPage = () => {
   // Filter products based on active filters
   const filteredProducts = useMemo(() => {
     return categoryFilteredProducts.filter((p) => {
-      if (activeFilters.category.length && !activeFilters.category.includes(p.category)) return false;
-      if (activeFilters.brand.length && !activeFilters.brand.includes(p.brand)) return false;
-      if (activeFilters.availability.includes("inStock") && !p.inStock) return false;
-      if (activeFilters.availability.includes("fastDelivery") && !p.fastDelivery) return false;
-      if (activeFilters.rating.length && p.rating < Math.min(...activeFilters.rating)) return false;
-      if (activeFilters.badges.length && (!p.badge || !activeFilters.badges.includes(p.badge))) return false;
+      if (
+        activeFilters.category.length &&
+        !activeFilters.category.includes(p.category)
+      )
+        return false;
+      if (activeFilters.brand.length && !activeFilters.brand.includes(p.brand))
+        return false;
+      if (activeFilters.availability.includes("inStock") && !p.inStock)
+        return false;
+      if (
+        activeFilters.availability.includes("fastDelivery") &&
+        !p.fastDelivery
+      )
+        return false;
+      if (
+        activeFilters.rating.length &&
+        p.rating < Math.min(...activeFilters.rating)
+      )
+        return false;
+      if (
+        activeFilters.badges.length &&
+        (!p.badge || !activeFilters.badges.includes(p.badge))
+      )
+        return false;
       return true;
     });
   }, [categoryFilteredProducts, activeFilters]);
@@ -223,7 +266,10 @@ const ProductPage = () => {
     });
   }, [filteredProducts, sortOption]);
 
-  const brands = useMemo(() => [...new Set(categoryFilteredProducts.map((p) => p.brand))], [categoryFilteredProducts]);
+  const brands = useMemo(
+    () => [...new Set(categoryFilteredProducts.map((p) => p.brand))],
+    [categoryFilteredProducts]
+  );
   const totalPages = Math.ceil(sortedProducts.length / productsPerPage);
 
   // Current page products
@@ -249,7 +295,10 @@ const ProductPage = () => {
         <nav className="flex mb-4 xs:mb-5 sm:mb-6" aria-label="Breadcrumb">
           <ol className="inline-flex items-center space-x-1 text-xs xs:text-sm">
             <li>
-              <a href="#" className="flex items-center text-gray-700 hover:text-[#8b6b4a]">
+              <a
+                href="#"
+                className="flex items-center text-gray-700 hover:text-[#8b6b4a]"
+              >
                 Home
               </a>
             </li>
@@ -288,7 +337,10 @@ const ProductPage = () => {
             {loading && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 xs:gap-4">
                 {[...Array(productsPerPage)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-lg p-3 animate-pulse">
+                  <div
+                    key={i}
+                    className="bg-white rounded-lg p-3 animate-pulse"
+                  >
                     <div className="h-40 xs:h-44 bg-gray-200 rounded mb-3"></div>
                     <div className="h-4 bg-gray-200 rounded mb-2"></div>
                     <div className="h-4 bg-gray-200 rounded w-2/3"></div>
@@ -298,34 +350,38 @@ const ProductPage = () => {
             )}
             {/* Header */}
             {!loading && (
-            <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between mb-4 xs:mb-5 sm:mb-6 gap-2 xs:gap-0">
-              <div>
-                <h2 className="text-xl xs:text-lg sm:text-lg font-bold text-[#1a1a1a] mb-1 xs:mb-2">
-                  {/* {breadcrumbText} */}
-                </h2>
-                <p className="text-xs xs:text-sm text-gray-500">
-                  {sortedProducts.length} {sortedProducts.length === 1 ? "product" : "products"}
-                </p>
+              <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between mb-4 xs:mb-5 sm:mb-6 gap-2 xs:gap-0">
+                <div>
+                  <h2 className="text-xl xs:text-lg sm:text-lg font-bold text-[#1a1a1a] mb-1 xs:mb-2">
+                    {/* {breadcrumbText} */}
+                  </h2>
+                  <p className="text-xs xs:text-sm text-gray-500">
+                    {sortedProducts.length}{" "}
+                    {sortedProducts.length === 1 ? "product" : "products"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="sort"
+                    className="text-xs xs:text-sm font-medium text-gray-700 whitespace-nowrap"
+                  >
+                    Sort by:
+                  </label>
+                  <select
+                    id="sort"
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value)}
+                    className="rounded-md border border-gray-300 py-1.5 pl-2 pr-7 text-xs xs:text-sm focus:border-[#8b6b4a] focus:ring-[#8b6b4a]"
+                    aria-label="Sort products"
+                  >
+                    <option value="featured">Featured</option>
+                    <option value="priceLowHigh">Price: Low to High</option>
+                    <option value="priceHighLow">Price: High to Low</option>
+                    <option value="rating">Rating</option>
+                    <option value="discount">Discount</option>
+                  </select>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <label htmlFor="sort" className="text-xs xs:text-sm font-medium text-gray-700 whitespace-nowrap">
-                  Sort by:
-                </label>
-                <select
-                  id="sort"
-                  value={sortOption}
-                  onChange={(e) => setSortOption(e.target.value)}
-                  className="rounded-md border border-gray-300 py-1.5 pl-2 pr-7 text-xs xs:text-sm focus:border-[#8b6b4a] focus:ring-[#8b6b4a]"
-                  aria-label="Sort products"
-                >
-                  <option value="featured">Featured</option>
-                  <option value="priceLowHigh">Price: Low to High</option>
-                  <option value="priceHighLow">Price: High to Low</option>
-                  <option value="rating">Rating</option>
-                  <option value="discount">Discount</option>
-                </select>
-              </div>
-            </div>
             )}
             {Object.values(activeFilters).some((arr) => arr.length > 0) && (
               <div className="mb-3 xs:mb-4 flex flex-wrap gap-1 xs:gap-2">
@@ -357,36 +413,45 @@ const ProductPage = () => {
               </div>
             )}
             {/* Products Grid */}
-            {products.length||error > 0 ? (
+            {products.products?.length || error > 0 ? (
               <>
                 <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 xs:gap-4">
-                  <Suspense fallback={
-                    <div className="col-span-full grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 xs:gap-4">
-                      {[...Array(productsPerPage)].map((_, i) => (
-                        <div key={i} className="bg-white rounded-lg p-3 animate-pulse">
-                          <div className="h-40 xs:h-44 bg-gray-200 rounded mb-3"></div>
-                          <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                        </div>
-                      ))}
-                    </div>
-                  }>
-                    {products?.map((product) => (
+                  <Suspense
+                    fallback={
+                      <div className="col-span-full grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 xs:gap-4">
+                        {[...Array(productsPerPage)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="bg-white rounded-lg p-3 animate-pulse"
+                          >
+                            <div className="h-40 xs:h-44 bg-gray-200 rounded mb-3"></div>
+                            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                          </div>
+                        ))}
+                      </div>
+                    }
+                  >
+                    {console.log(products.products, "products.products")}
+                    {products?.products?.map((product) => (
                       <ProductCard key={product._id} product={product} />
                     ))}
                   </Suspense>
                 </div>
 
                 {/* Pagination */}
-                <Pagination 
-                  currentPage={currentPage} 
-                  totalPages={totalPages} 
-                  setCurrentPage={setCurrentPage} 
+                <Pagination
+                  currentPage={products.currentPage}
+                  totalPages={products.totalPages}
+                  setCurrentPage={setCurrentPage}
+                  
                 />
               </>
             ) : (
               <div className="text-center py-8 xs:py-10 sm:py-12">
-                <h3 className="text-base xs:text-lg font-medium text-gray-900">No products found</h3>
+                <h3 className="text-base xs:text-lg font-medium text-gray-900">
+                  No products found
+                </h3>
                 <p className="mt-1 xs:mt-2 text-xs xs:text-sm text-gray-500">
                   Try adjusting your search or filters.
                 </p>

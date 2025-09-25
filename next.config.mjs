@@ -3,6 +3,9 @@ const nextConfig = {
       images: {
     domains: ['montres.ae', 'via.placeholder.com',"encrypted-tbn0.gstatic.com"], // add all external domains you use
   },
+  env: {
+    NEXT_PUBLIC_BASEURL: process.env.NEXT_PUBLIC_BASEURL,
+  },
 };
 
 export default nextConfig;
