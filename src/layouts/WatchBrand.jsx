@@ -1,26 +1,58 @@
 import React from "react";
 import { FaArrowRight } from "react-icons/fa";
-import bagsOne from "../assets/beautiful-elegance-luxury-fashion-green-handbag.jpg";
 import Image from "next/image";
+import Bag from '../assets/beautiful-elegance-luxury-fashion-green-handbag.jpg'
 
-const BrandNewAdded = ({ products,loading }) => {
-  // const products = [
-  //   { id: 1, name: "Coach Mini Hand Bag", image: bagsOne },
-  //   { id: 2, name: "Breitling Airwolf", image: bagsOne },
-  //   { id: 3, name: "Bally Black Leather", image: bagsOne },
-  //   { id: 4, name: "Breitling Callisto 200M", image: bagsOne },
-  //   { id: 5, name: "Alfred Dunhill Business", image: bagsOne },
-  //   { id: 6, name: "Alfred Dunhill RPM 8042", image: bagsOne },
-  // ];
-  // console.log(products, "products");
+const BrandNewAdded = ({ products, loading }) => {
+  // Dummy products with correct structure
+  const dummyProducts = [
+    {
+      _id: "1",
+      name: "Luxury Leather Handbag",
+      images:Bag,
+      price: 299.99
+    },
+    {
+      _id: "2",
+      name: "Designer Crossbody Bag",
+      images: Bag,
+      price: 199.99
+    },
+    {
+      _id: "3",
+      name: "Elegant Evening Clutch",
+      images:Bag,
+      price: 149.99
+    },
+    {
+      _id: "4",
+      name: "Premium Tote Bag",
+      images: Bag,
+      price: 249.99
+    },
+    {
+      _id: "5",
+      name: "Vintage Shoulder Bag",
+      images: Bag,
+      price: 179.99
+    },
+    {
+      _id: "6",
+      name: "Modern Backpack Purse",
+      images: Bag,
+      price: 219.99
+    }
+  ];
+
   const skeletonArray = Array(6).fill(null);
+  const displayProducts = products && products.length > 0 ? products : dummyProducts;
 
   return (
     <section className="w-full bg-white">
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-12 py-12">
-        {/* Title */}
-        <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center tracking-tight">
-          Brand New Added
+        {/* Title - Updated */}
+        <h2 className="text-2xl font-bold text-gray-700 mb-8 text-center tracking-tight">
+          BRAND NEW
         </h2>
 
         {/* Products Grid */}
@@ -46,43 +78,44 @@ const BrandNewAdded = ({ products,loading }) => {
                     <div className="h-4 w-1/2 mx-auto bg-gray-200 rounded" />
                   </div>
                 </div>
-              )):
-          products?.map((product) => (
-            <div
-              key={product._id}
-              className="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition duration-300 flex flex-col"
-            >
-              {/* Image */}
-              <div className="flex justify-center items-center p-4 bg-gray-50">
-                {console.log(product.images[0], "image")}
-                <Image
-                  src={product.images[0].url}
-                  alt={product.name}
-                  width={160}
-                  height={160}
-                  loading="lazy"
-                  className="w-[140px] h-[140px] sm:w-[160px] sm:h-[160px] object-contain"
-                />
-              </div>
-
-              {/* Product Info */}
-              <div className="px-4 flex-1 flex items-center justify-center text-center py-3">
-                <h3 className="text-sm font-medium text-gray-800 leading-tight">
-                  {product.name}
-                </h3>
-              </div>
-
-              {/* Bottom strip */}
-              <div className="border-t bg-gray-50 px-4 py-2">
-                <a
-                  href="#"
-                  className="flex items-center justify-center text-sm font-medium text-[#1e518e] hover:text-[#0061b0] transition"
+              ))
+            : displayProducts?.map((product) => (
+                <div
+                  key={product._id}
+                  className="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition duration-300 flex flex-col group"
                 >
-                  Get Price <FaArrowRight className="ml-1 text-xs" />
-                </a>
-              </div>
-            </div>
-          ))}
+                  {/* Image with Hover Effects */}
+                  <div className="flex justify-center items-center p-4 bg-gray-50 relative overflow-hidden">
+                    <div className="relative">
+                      <Image
+                        src={product.images}
+                        alt="emty"
+                        width={160}
+                        height={160}
+                        loading="lazy"
+                        className="w-[140px] h-[140px] sm:w-[160px] sm:h-[160px] object-contain transition duration-300 group-hover:scale-110"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="px-4 flex-1 flex items-center justify-center text-center py-3">
+                    <h3 className="text-sm font-medium text-gray-800 leading-tight group-hover:text-[#1e518e] transition duration-300">
+                      {product.name}
+                    </h3>
+                  </div>
+
+                  {/* Bottom strip */}
+                  <div className="border-t bg-gray-50 px-4 py-2 group-hover:bg-gray-100 transition duration-300">
+                    <a
+                      href="#"
+                      className="flex items-center justify-center text-sm font-medium text-[#1e518e] hover:text-[#0061b0] transition"
+                    >
+                      Get Price <FaArrowRight className="ml-1 text-xs group-hover:translate-x-1 transition-transform duration-300" />
+                    </a>
+                  </div>
+                </div>
+              ))}
         </div>
       </div>
     </section>

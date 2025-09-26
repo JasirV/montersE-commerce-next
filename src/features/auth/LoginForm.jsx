@@ -31,6 +31,16 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
         }
       );
       if (response.status === 201 || response.status === 200) {
+
+         // ✅ Store user data consistently
+      const userData = {
+        id: response.data.userId,
+        name: response.data.name || email.split('@')[0], // Fallback to username from email
+        email: email
+      };
+      
+      localStorage.setItem("user", JSON.stringify(userData));
+      
         toast.success(" Login successful!");
         onRequestClose()
       }
