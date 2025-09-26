@@ -7,11 +7,14 @@ import {
   FaTimes,
   FaSearch,
   FaHeart,
+  FaChevronDown,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import Link from "next/link";
 import logo from "../../assets/montreslogo.png";
 import SubNavbar from "./SubNavabar";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const Navbar = ({ onSignUpClick }) => {
   const [scrolled, setScrolled] = useState(false);
@@ -20,6 +23,11 @@ const Navbar = ({ onSignUpClick }) => {
   const [isClient, setIsClient] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  console.log(user,"hehhh");
+  
+  const router = useRouter();
 
   const popularSearches = [
     { term: "Rolex Daytona", path: "/search?q=rolex+daytona" },
@@ -29,13 +37,56 @@ const Navbar = ({ onSignUpClick }) => {
     { term: "Luxury Watches for Men", path: "/search?q=luxury+watches+men" },
   ];
 
-  // Scroll effect
+  // Check authentication status - CORRECTED
   useEffect(() => {
     setIsClient(true);
+    const checkAuth = () => {
+      // Check if user data exists in localStorage with key "user"
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+          // Clear corrupted data
+          localStorage.removeItem('user');
+          localStorage.removeItem('userName');
+          localStorage.removeItem('userEmail');
+        }
+      }
+    };
+
+    checkAuth();
+
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    
+    // Listen for storage changes (for logout from other tabs)
+    window.addEventListener('storage', checkAuth);
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener('storage', checkAuth);
+    };
   }, []);
+
+  // Logout function - CORRECTED
+  const handleLogout = useCallback(() => {
+    setUser(null);
+    // Clear all user-related data from localStorage
+    localStorage.removeItem('user');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    setUserDropdownOpen(false);
+    router.push('/');
+  }, [router]);
+
+  // Handle user dashboard navigation
+  const handleUserDashboard = useCallback(() => {
+    router.push('/UserProfile');
+    setUserDropdownOpen(false);
+  }, [router]);
 
   const handleSearchFocus = useCallback(() => setIsSearchFocused(true), []);
   const handleSearchBlur = useCallback(
@@ -51,20 +102,34 @@ const Navbar = ({ onSignUpClick }) => {
     []
   );
 
-  // Close mobile search when clicking outside
+  const toggleUserDropdown = useCallback(() => {
+    setUserDropdownOpen((prev) => !prev);
+  }, []);
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        isMobileSearchOpen &&
-        !event.target.closest(".mobile-search-container")
-      ) {
+      if (isMobileSearchOpen && !event.target.closest(".mobile-search-container")) {
         setIsMobileSearchOpen(false);
+      }
+      if (userDropdownOpen && !event.target.closest(".user-dropdown-container")) {
+        setUserDropdownOpen(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMobileSearchOpen]);
+  }, [isMobileSearchOpen, userDropdownOpen]);
+
+  // Handle search submission
+  const handleSearchSubmit = useCallback((e) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchFocused(false);
+      setIsMobileSearchOpen(false);
+    }
+  }, [searchQuery, router]);
 
   return (
     <>
@@ -99,16 +164,15 @@ const Navbar = ({ onSignUpClick }) => {
                   src={logo}
                   alt="Montres - Luxury Watches Dubai"
                   className="h-8 md:h-10 lg:h-12 w-auto object-contain"
+                  priority
                 />
-                {isClient && (
-                  <meta itemProp="url" content={window.location.origin} />
-                )}
               </Link>
             </div>
 
             {/* Search Bar - Desktop */}
             <div className="hidden md:flex flex-1 max-w-xl mx-4 relative">
-              <div
+              <form 
+                onSubmit={handleSearchSubmit}
                 className={`flex w-full border border-gray-300 rounded-full overflow-hidden bg-white shadow-sm transition-all duration-300 ring-1 ${
                   isSearchFocused ? "ring-[#1e518e]" : "ring-transparent"
                 }`}
@@ -123,10 +187,13 @@ const Navbar = ({ onSignUpClick }) => {
                   onFocus={handleSearchFocus}
                   onBlur={handleSearchBlur}
                 />
-                <button type="submit" className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 md:px-5 flex items-center justify-center">
+                <button 
+                  type="submit" 
+                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 md:px-5 flex items-center justify-center hover:opacity-90 transition-opacity"
+                >
                   <FaSearch className="text-sm md:text-base" />
                 </button>
-              </div>
+              </form>
 
               {searchQuery && isSearchFocused && (
                 <div className="absolute top-full mt-1 w-full bg-white shadow-lg rounded-md py-2 z-30 border border-gray-200">
@@ -159,20 +226,71 @@ const Navbar = ({ onSignUpClick }) => {
 
               <Link
                 href="/cart"
-                className="flex items-center justify-center rounded-full bg-gradient-to-br  text-gray-700 hover:text-[#1e518e] p-2.5 hover:shadow-md transition-all hover:scale-105"
+                className="flex items-center justify-center rounded-full bg-gradient-to-br text-gray-700 hover:text-[#1e518e] p-2.5 hover:shadow-md transition-all hover:scale-105"
                 aria-label="Shopping cart"
               >
                 <FaShoppingCart className="text-lg md:text-xl" />
               </Link>
 
-              <button
-                onClick={onSignUpClick}
-                className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 md:px-4 py-2 md:py-1.5 rounded-full flex items-center gap-2 text-sm md:text-base hover:shadow-lg transition-all hover:scale-105"
-                aria-label="Sign in or register"
-              >
-                <FaUser />
-                <span>Sign In</span>
-              </button>
+              {/* User Account Section - CORRECTED */}
+              {user ? (
+                <div className="relative user-dropdown-container">
+                  <button
+                    onClick={toggleUserDropdown}
+                    className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-full transition-all duration-200"
+                    aria-label="User account menu"
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                      {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <span className="text-sm font-medium max-w-[100px] truncate">
+                      {user.name ? user.name.split(' ')[0] : 'User'}
+                    </span>
+                    <FaChevronDown 
+                      size={12} 
+                      className={`transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+
+                  {userDropdownOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {user.name || 'User'}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {user.email || ''}
+                        </p>
+                      </div>
+                      
+                      <button
+                        onClick={handleUserDashboard}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                      >
+                        <FaUser size={14} />
+                        My Dashboard
+                      </button>
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                      >
+                        <FaSignOutAlt size={14} />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={onSignUpClick}
+                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 md:px-4 py-2 md:py-1.5 rounded-full flex items-center gap-2 text-sm md:text-base hover:shadow-lg transition-all hover:scale-105"
+                  aria-label="Sign in or register"
+                >
+                  <FaUser />
+                  <span>Sign In</span>
+                </button>
+              )}
             </nav>
 
             {/* Mobile Icons */}
@@ -201,20 +319,67 @@ const Navbar = ({ onSignUpClick }) => {
                 <FaShoppingCart size={18} className="text-gray-700" />
               </Link>
 
-              <button
-                onClick={onSignUpClick}
-                className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center shadow hover:shadow-md transition-all"
-                aria-label="Sign in"
-              >
-                <FaUser className="text-sm" />
-              </button>
+              {/* Mobile User Account - CORRECTED */}
+              {user ? (
+                <div className="relative user-dropdown-container">
+                  <button
+                    onClick={toggleUserDropdown}
+                    className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center shadow hover:shadow-md transition-all"
+                    aria-label="User account menu"
+                  >
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                      {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  </button>
+
+                  {userDropdownOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {user.name || 'User'}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {user.email || ''}
+                        </p>
+                      </div>
+                      
+                      <button
+                        onClick={handleUserDashboard}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-b border-gray-100"
+                      >
+                        <FaUser size={14} />
+                        My Dashboard
+                      </button>
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                      >
+                        <FaSignOutAlt size={14} />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={onSignUpClick}
+                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center shadow hover:shadow-md transition-all"
+                  aria-label="Sign in"
+                >
+                  <FaUser className="text-sm" />
+                </button>
+              )}
             </div>
           </div>
 
           {/* Mobile Search - Full Width */}
           {isMobileSearchOpen && (
             <div className="md:hidden mb-2 relative mobile-search-container">
-              <div className="flex w-full border border-gray-300 rounded-full overflow-hidden bg-white shadow-sm mb-1">
+              <form 
+                onSubmit={handleSearchSubmit}
+                className="flex w-full border border-gray-300 rounded-full overflow-hidden bg-white shadow-sm mb-1"
+              >
                 <input
                   type="search"
                   placeholder="Search luxury watches..."
@@ -224,12 +389,12 @@ const Navbar = ({ onSignUpClick }) => {
                   autoFocus
                 />
                 <button
-                  className="bg-[#1e518e] text-white px-4 flex items-center justify-center"
-                  onClick={() => setIsMobileSearchOpen(false)}
+                  type="submit"
+                  className="bg-[#1e518e] text-white px-4 flex items-center justify-center hover:opacity-90 transition-opacity"
                 >
                   <FaSearch size={16} />
                 </button>
-              </div>
+              </form>
               {searchQuery && (
                 <div className="absolute w-full bg-white shadow-lg rounded-xl py-2 z-20 border border-gray-200 mt-1">
                   <div className="px-4 py-2 text-xs text-gray-500 font-medium border-b">

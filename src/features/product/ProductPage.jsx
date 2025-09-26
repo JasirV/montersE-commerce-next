@@ -151,7 +151,7 @@ const ProductPage = () => {
   const categoryFilteredProducts = useMemo(() => {
     if (loading) return [];
     
-    return products.filter((p) => {
+    return products?.filter((p) => {
       // First check if the main category matches
       const isCategoryMatch = p.categories && p.categories.some(cat => 
         cat?.toLowerCase()?.includes(category?.toLowerCase())
@@ -357,7 +357,7 @@ const ProductPage = () => {
               </div>
             )}
             {/* Products Grid */}
-            {products.length||error > 0 ? (
+            {products.length||error > 0 ? ( 
               <>
                 <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 xs:gap-4">
                   <Suspense fallback={

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import React, { useState } from "react";
 import { FaUser, FaCamera } from "react-icons/fa";
 
@@ -37,7 +36,7 @@ const ProfileUpdate = ({ userData, setUserData, onCancel }) => {
       <div className="flex items-center space-x-4 mb-6">
         <div className="relative w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
           {previewImage ? (
-            <Image src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+            <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
           ) : (
             <FaUser className="text-3xl text-gray-400" />
           )}

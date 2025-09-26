@@ -1,365 +1,435 @@
-import React, { useState } from "react";
-import { useRouter } from "next/router";
-import Item1 from '../../assets/HandBags/close-up-kitted-bag-nature.jpg';
-import Item2 from '../../assets/Watche/rendering-smart-home-device (1).jpg';
-import Item3 from '../../assets/Cufflinks/high-angle-thimble-silk-arrangement.jpg';
-import Item4 from '../../assets/Jewelry/view-luxurious-golden-ring-felt-jewelry-display (1).jpg';
-
-import { 
-  FiTruck, 
-  FiPhone, 
-  FiMessageSquare, 
-  FiGift 
-} from 'react-icons/fi';
+"use client";
+import React, { useState, useEffect } from "react";
+import { FiLock, FiShare2, FiMoreHorizontal, FiPlus, FiTrash2, FiChevronLeft, FiGrid, FiList } from "react-icons/fi";
 import Image from "next/image";
+import watch from '../../assets/bag-hanging-from-furniture-item-indoors.jpg'
+import SupportSection from "./SupportSection";
+import CreateWishlistModal from "../ui/createWishilist";
+import SeWishilistModal from '../ui/seeWishilist'
 
-// Replace the icon components in the JSX accordingly
+// Sample data
+const wishlists = [
+  {
+    id: 1,
+    name: "farhan",
+    items: [
+      {
+        id: 101,
+        name: "Apple Watch Ultra 3 GPS + Cellular 49mm Black Titanium Case",
+        price: "3,199",
+        rating: 5.0,
+        reviews: 2,
+        image: watch,
+      },
+      {
+        id: 102,
+        name: "Apple iPhone 17 Pro 256 GB Cosmic Orange 5G",
+        price: "5,049",
+        rating: 4.4,
+        reviews: 49,
+        image: watch,
+      },
+      {
+        id: 103,
+        name: "MacBook Pro 16-inch M3 Max",
+        price: "7,299",
+        rating: 4.8,
+        reviews: 32,
+        image: watch,
+      },
+      {
+        id: 104,
+        name: "AirPods Pro 3rd Generation",
+        price: "1,299",
+        rating: 4.7,
+        reviews: 128,
+        image: watch,
+      },
+      {
+        id: 105,
+        name: "iPad Pro 12.9-inch M2",
+        price: "4,299",
+        rating: 4.9,
+        reviews: 67,
+        image: watch,
+      },
+      {
+        id: 106,
+        name: "Samsung Galaxy S24 Ultra",
+        price: "4,899",
+        rating: 4.6,
+        reviews: 89,
+        image: watch,
+      },
+    ],
+    isDefault: true,
+  },
+  { 
+    id: 2, 
+    name: "Muhammad", 
+    items: [], 
+    isDefault: false 
+  },
+  { 
+    id: 3, 
+    name: "Birthday", 
+    items: [], 
+    isDefault: false 
+  },
+];
+
 const ShoppingWishlist = () => {
-   const router = useRouter();
-  const [wishlistItems, setWishlistItems] = useState([
-    {
-      id: 1,
-      name: "Floral Print Wrap Dress",
-      category: "Women",
-      color: "Blue",
-      size: "42",
-      price: 20.50,
-      image: Item2,
-      inStock: true,
-      rating: 4.5,
-      reviews: 24
-    },
-    {
-      id: 2,
-      name: "Black Handbag with Scarf",
-      category: "Women",
-      color: "Black",
-      size: "Medium",
-      price: 30.50,
-      image: Item1,
-      inStock: true,
-      rating: 4.2,
-      reviews: 18
-    },
-    {
-      id: 3,
-      name: "Luxury Leather Heels",
-      category: "Women",
-      color: "Beige",
-      size: "38",
-      price: 45.75,
-      image: Item3,
-      inStock: false,
-      rating: 4.8,
-      reviews: 32
-    },
-    {
-      id: 4,
-      name: "Golden Jewelry Set",
-      category: "Women",
-      color: "Gold",
-      size: "One Size",
-      price: 89.99,
-      image: Item4,
-      inStock: true,
-      rating: 4.7,
-      reviews: 41
-    }
-  ]);
+  const [activeWishlist, setActiveWishlist] = useState(wishlists[0]);
+  const [wishlistData, setWishlistData] = useState(wishlists);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showWishlistSidebar, setShowWishlistSidebar] = useState(false);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [open, setOpen] = useState(false);
+  const [WishilistOpn,setWishilistOpen]= useState(false)
 
-  const removeFromWishlist = (id) => {
-    setWishlistItems(wishlistItems.filter(item => item.id !== id));
-  };
-
-  const moveToCart = (item) => {
-    // In a real application, this would add the item to the cart
-    alert(`${item.name} moved to cart!`);
-  };
-
-  const moveAllToCart = () => {
-    // In a real application, this would add all items to the cart
-    alert("All items moved to cart!");
-  };
-
-  const clearWishlist = () => {
-    setWishlistItems([]);
-  };
-
-  // Function to render star ratings
-  const renderRatingStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
+  // Check if mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
     
-    for (let i = 1; i <= 5; i++) {
-      if (i <= fullStars) {
-        stars.push(
-          <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-极.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-        );
-      } else if (i === fullStars + 1 && hasHalfStar) {
-        stars.push(
-          <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-        );
-      } else {
-        stars.push(
-          <svg key={i} className="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-        );
-      }
-    }
-    
-    return stars;
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const handleDeleteItem = (wishlistId, itemId) => {
+    setWishlistData(prevData => 
+      prevData.map(wishlist => 
+        wishlist.id === wishlistId 
+          ? {
+              ...wishlist,
+              items: wishlist.items.filter(item => item.id !== itemId)
+            }
+          : wishlist
+      )
+    );
   };
 
-  return (
-    <div className="bg-gray-50 min-h-screen py-4 md:py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">My Wishlist</h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-500 text-sm md:text-base">{wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'}</span>
-            {wishlistItems.length > 0 && (
-              <div className="flex gap-2">
+  const activeList = wishlistData.find(list => list.id === activeWishlist.id) || wishlistData[0];
+
+  // Mobile wishlist selector
+  const MobileWishlistSelector = () => (
+    <div className="lg:hidden mb-4">
+      <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowWishlistSidebar(true)}
+            className="flex items-center gap-2 text-gray-700 font-medium"
+          >
+            <span className="capitalize">{activeList.name}</span>
+            {activeList.isDefault && (
+              <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
+                Default
+              </span>
+            )}
+          </button>
+        </div>
+        <FiChevronLeft className="transform rotate-270" />
+      </div>
+
+      {/* Wishlist Sidebar Modal */}
+      {showWishlistSidebar && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden">
+          <div className="absolute left-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-xl">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Your Wishlists</h2>
                 <button 
-                  onClick={moveAllToCart}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-lg hover:opacity-90 transition-opacity text-xs md:text-sm"
+                  onClick={() => setShowWishlistSidebar(false)}
+                  className="p-2 rounded-full hover:bg-gray-100"
                 >
-                  Add All to Cart
-                </button>
-                <button 
-                  onClick={clearWishlist}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs md:text-sm"
-                >
-                  Clear Wishlist
+                  <FiChevronLeft size={20} />
                 </button>
               </div>
-            )}
+            </div>
+            
+            <div className="p-4 space-y-2">
+              {wishlistData.map((list) => (
+                <div
+                  key={list.id}
+                  onClick={() => {
+                    setActiveWishlist(list);
+                    setShowWishlistSidebar(false);
+                  }}
+                  className={`p-3 border rounded-lg cursor-pointer ${
+                    activeWishlist.id === list.id
+                      ? "border-[#1e518e] bg-gradient-to-r from-[#1e518e]/10 to-[#0061b0ee]/10"
+                      : "border-gray-200 bg-white"
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium capitalize text-gray-800">
+                      {list.name}
+                    </h3>
+                    {list.isDefault && (
+                      <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500 mt-1">
+                    {list.items.length > 0
+                      ? `${list.items.length} items`
+                      : "No items"}
+                    <FiLock className="ml-2" size={14} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col w-full p-3 sm:p-4 md:p-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-20 lg:pb-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800">Wishlist</h1>
+        <button
+         onClick={() => setOpen(true)}
+         className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg font-medium text-sm md:text-base w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
+          <FiPlus size={18} />
+          CREATE NEW WISHLIST
+        </button>
+        <CreateWishlistModal isOpen={open} onClose={() => setOpen(false)}/>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+        {/* Left Side - Wishlists (Desktop only) */}
+        <div className="hidden lg:block lg:w-1/4">
+          <div className="flex flex-col gap-2">
+            {wishlistData.map((list) => (
+              <div
+                key={list.id}
+                onClick={() => setActiveWishlist(list)}
+                className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
+                  activeWishlist.id === list.id
+                    ? "border-[#1e518e] bg-gradient-to-r from-[#1e518e]/10 to-[#0061b0ee]/10 shadow-md"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="font-medium capitalize text-gray-800">
+                    {list.name}
+                  </h3>
+                  {list.isDefault && (
+                    <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
+                      Default
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center text-sm text-gray-500 mt-1">
+                  {list.items.length > 0
+                    ? `${list.items.length} items`
+                    : "No items"}
+                  <FiLock className="ml-2" size={14} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {wishlistItems.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">Your wishlist is empty</h3>
-            <p className="mt-1 text-gray-500">Save your favorite items here for later</p>
-            <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={() => navigate("/shop")}
-                className="px-6 py-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-lg hover:opacity-90 transition-opacity"
-              >
-                Start Shopping
+        {/* Right Side - Active Wishlist */}
+        <div className="lg:w-3/4">
+          {/* Mobile Wishlist Selector */}
+          <MobileWishlistSelector />
+
+          {/* Wishlist Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 p-4 bg-white rounded-lg shadow-sm">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800 lg:block hidden">
+                {activeList.name}
+              </h2>
+              {activeList.isDefault && (
+                <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
+                  Default
+                </span>
+              )}
+            </div>
+            
+            {/* View Mode Toggle - Mobile */}
+            {isMobile && activeList.items.length > 0 && (
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <button 
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+                >
+                  <FiGrid size={16} />
+                </button>
+                <button 
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+                >
+                  <FiList size={16} />
+                </button>
+              </div>
+            )}
+            
+            <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+              <button className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors"  onClick={() => setWishilistOpen(true)}>
+                <FiShare2 size={16} /> <span className="hidden xs:inline">Share</span>
               </button>
-              <button
-                onClick={() => navigate("/")}
-                className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Continue Shopping
+               <SeWishilistModal isOpen={WishilistOpn} onClose={() => setWishilistOpen(false)}/>
+              <button className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors">
+                <FiMoreHorizontal size={16} /> <span className="hidden xs:inline">More</span>
               </button>
             </div>
           </div>
-        ) : (
-          <>
-            {/* Desktop Table View */}
-            <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                    <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                    <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                    <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {wishlistItems.map(item => (
-                    <tr key={item.id}>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center">
-                          <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md">
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              className="h-full w-full object-cover object-center"
-                            />
-                            <button 
-                              onClick={() => removeFromWishlist(item.id)}
-                              className="absolute top-1 right-1 bg-white p-1 rounded-full shadow-md hover:bg-red-50 hover:text-red-500 transition-colors"
-                              title="Remove from wishlist"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                              </svg>
-                            </button>
-                          </div>
-                          <div className="ml-4">
-                            <h3 className="text-sm font-medium text-gray-900">{item.name}</h3>
-                            <p className="mt-1 text-xs text-gray-500">{item.category}</p>
-                            <p className="mt-1 text-xs text-gray-500">Color: {item.color} | Size: {item.size}</p>
-                            <div className="flex items-center mt-1">
-                              <div className="flex items-center">
-                                {renderRatingStars(item.rating)}
-                                <span className="ml-1 text-xs text-gray-600">{item.rating}</span>
-                              </div>
-                              <span className="mx-2 text-gray-300">|</span>
-                              <span className="text-xs text-gray-500">{item.reviews} reviews</span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <p className="text-base font-bold text-indigo-600">AED {item.price.toFixed(2)}</p>
-                      </td>
-                      <td className="py-4 px-6">
-                        {item.inStock ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            In Stock
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            Out of Stock
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-4 px-6">
-                        <button 
-                          className={`px-4 py-2 rounded-lg font-medium ${item.inStock ? 
-                            'bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white hover:opacity-90' : 
-                            'bg-gray-200 text-gray-500 cursor-not-allowed'} transition-opacity`}
-                          disabled={!item.inStock}
-                          onClick={() => item.inStock && moveToCart(item)}
-                        >
-                          {item.inStock ? 'Add to Cart' : 'Notify Me'}
-                        </button>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <button 
-                          onClick={() => removeFromWishlist(item.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors"
-                          title="Remove item"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
 
-            {/* Mobile Card View */}
-            <div className="md:hidden space-y-4">
-              {wishlistItems.map(item => (
-                <div key={item.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="p-4 flex">
-                    <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        className="h-full w-full object-cover object-center"
-                      />
-                      {!item.inStock && (
-                        <div className="absolute top-1 left-1 bg-red-100 text-red-800 text-xs font-medium px-1.5 py-0.5 rounded">
-                          Out of Stock
-                        </div>
-                      )}
+          {/* Wishlist Items */}
+          {activeList.items.length > 0 ? (
+            <div className={`
+              ${viewMode === 'grid' 
+                ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4' 
+                : 'flex flex-col gap-3'
+              }
+            `}>
+              {activeList.items.map((item) => (
+                <div
+                  key={item.id}
+                  className={`
+                    border border-gray-200 rounded-lg bg-white group relative transition-all duration-200
+                    ${viewMode === 'grid' 
+                      ? 'p-3 hover:shadow-lg' 
+                      : 'flex gap-3 p-3 hover:shadow-md'
+                    }
+                  `}
+                >
+                  {/* Delete Button */}
+                  <button 
+                    onClick={() => handleDeleteItem(activeList.id, item.id)}
+                    className={`
+                      absolute bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10
+                      ${viewMode === 'grid' 
+                        ? '-top-2 -right-2' 
+                        : '-top-1 -right-1'
+                      }
+                    `}
+                    title="Remove item"
+                  >
+                    <FiTrash2 size={12} />
+                  </button>
+                  
+                  {/* Image Container */}
+                  <div className={`
+                    relative mb-3
+                    ${viewMode === 'grid' 
+                      ? 'w-full h-28 sm:h-32 md:h-36' 
+                      : 'w-20 h-20 flex-shrink-0 mb-0'
+                    }
+                  `}>
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-contain rounded-lg"
+                      sizes={viewMode === 'grid' ? "(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw" : "80px"}
+                    />
+                  </div>
+                  
+                  {/* Product Info */}
+                  <div className={viewMode === 'list' ? 'flex-1 min-w-0' : ''}>
+                    <h3 className={`
+                      font-medium line-clamp-2 text-gray-800
+                      ${viewMode === 'grid' 
+                        ? 'text-xs sm:text-sm min-h-[2.5rem] mb-2' 
+                        : 'text-sm mb-1'
+                      }
+                    `}>
+                      {item.name}
+                    </h3>
+                    
+                    <div className="flex items-center text-yellow-500 text-xs mb-1">
+                      ⭐ {item.rating} 
+                      <span className="ml-1 text-gray-500">({item.reviews})</span>
                     </div>
-                    <div className="ml-4 flex-1">
-                      <div className="flex justify-between">
-                        <h3 className="text-sm font-medium text-gray-900 line-clamp-1">{item.name}</h3>
-                        <button 
-                          onClick={() => removeFromWishlist(item.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors"
-                          title="Remove item"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                    
+                    <p className={`
+                      font-semibold text-gray-900
+                      ${viewMode === 'grid' ? 'text-base md:text-lg' : 'text-lg'}
+                    `}>
+                      AED{item.price}
+                    </p>
+                    
+                    {/* Action Buttons */}
+                    <div className={`
+                      flex gap-2
+                      ${viewMode === 'grid' ? 'mt-3' : 'mt-2'}
+                    `}>
+                      <button className={`
+                        bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2 rounded font-medium hover:from-[#1e518e]/90 hover:to-[#0061b0ee]/90 transition-all duration-200 shadow hover:shadow-md
+                        ${viewMode === 'grid' ? 'flex-1 text-xs' : 'px-3 text-sm'}
+                      `}>
+                        Add to Cart
+                      </button>
+                      
+                      {viewMode === 'list' && (
+                        <button className="border border-gray-300 text-gray-700 px-3 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors">
+                          View
                         </button>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">{item.category}</p>
-                      <p className="mt-1 text-xs text-gray-500">Color: {item.color} | Size: {item.size}</p>
-                      <div className="flex items-center mt-1">
-                        <div className="flex items-center">
-                          {renderRatingStars(item.rating)}
-                          <span className="ml-1 text-xs text-gray-600">{item.rating}</span>
-                        </div>
-                        <span className="mx-2 text-gray-300">|</span>
-                        <span className="text-xs text-gray-500">{item.reviews} reviews</span>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <p className="text-base font-bold text-indigo-600">AED {item.price.toFixed(2)}</p>
-                        <button 
-                          className={`px-3 py-1.5 rounded-lg font-medium text-xs ${item.inStock ? 
-                            'bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white hover:opacity-90' : 
-                            'bg-gray-200 text-gray-500 cursor-not-allowed'} transition-opacity`}
-                          disabled={!item.inStock}
-                          onClick={() => item.inStock && moveToCart(item)}
-                        >
-                          {item.inStock ? 'Add to Cart' : 'Notify Me'}
-                        </button>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          </>
-        )}
-
-      {/* Bottom Info Section */}
-<div className="max-w-7xl mx-auto mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-  <div className="flex items-center bg-white p-4 rounded-lg shadow-sm">
-    <div className="bg-indigo-100 p-3 rounded-full mr-4">
-      <FiTruck className="h-6 w-6 text-indigo-600" />
-    </div>
-    <div>
-      <p className="font-semibold text-sm md:text-base">Free Shipping</p>
-      <p className="text-xs md:text-sm text-gray-500">When you spend AED 50+</p>
-    </div>
-  </div>
-  
-  <div className="flex items-center bg-white p-4 rounded-lg shadow-sm">
-    <div className="bg-indigo-100 p-3 rounded-full mr-4">
-      <FiPhone className="h-6 w-6 text-indigo-600" />
-    </div>
-    <div>
-      <p className="font-semibold text-sm md:text-base">Call Us Anytime</p>
-      <p className="text-xs md:text-sm text-gray-500">+97142671124</p>
-    </div>
-  </div>
-  
-  <div className="flex items-center bg-white p-4 rounded-lg shadow-sm">
-    <div className="bg-indigo-100 p-3 rounded-full mr-4">
-      <FiMessageSquare className="h-6 w-6 text-indigo-600" />
-    </div>
-    <div>
-      <p className="font-semibold text-sm md:text-base">Chat With Us</p>
-      <p className="text-xs md:text-sm text-gray-500">24-hour support</p>
-    </div>
-  </div>
-  
-  <div className="flex items-center bg-white p-4 rounded-lg shadow-sm">
-    <div className="bg-indigo-100 p-3 rounded-full mr-4">
-      <FiGift className="h-6 w-6 text-indigo-600" />
-    </div>
-    <div>
-      <p className="font-semibold text-sm md:text-base">Gift Cards</p>
-      <p className="text-xs md:text-sm text-gray-500">For your loved ones</p>
-    </div>
-  </div>
-</div>
+          ) : (
+            <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg bg-white">
+              <div className="text-gray-400 mb-3">
+                <FiLock size={48} className="mx-auto" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-700">No items yet</h3>
+              <p className="text-gray-500 text-sm mt-1">Start adding items to your wishlist</p>
+              <button className="mt-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300">
+                Browse Products
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Enhanced Mobile Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-2xl z-40">
+        <div className="flex justify-around items-center">
+          <button className="flex flex-col items-center text-xs text-[#1e518e] font-medium">
+            <div className="w-10 h-10 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-lg">W</span>
+            </div>
+            <span className="mt-1">Wishlists</span>
+          </button>
+          
+          <button className="flex flex-col items-center text-xs text-gray-600">
+            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shadow">
+              <FiPlus size={18} className="text-gray-600" />
+            </div>
+            <span className="mt-1">New</span>
+          </button>
+          
+          <button className="flex flex-col items-center text-xs text-gray-600"  onClick={() => setWishilistOpen(true)}>
+            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shadow">
+              <FiShare2 size={16} className="text-gray-600" />
+            </div>
+            <span  className="mt-1">Share</span>
+          </button>
+          <SeWishilistModal isOpen={WishilistOpn} onClose={() => setWishilistOpen(false)}/>
+          <button className="flex flex-col items-center text-xs text-gray-600">
+            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shadow">
+              <FiGrid size={16} className="text-gray-600" />
+            </div>
+            <span className="mt-1">View</span>
+          </button>
+        </div>
+      </div>
+      
+      <SupportSection/>
     </div>
   );
 };
