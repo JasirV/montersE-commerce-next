@@ -170,7 +170,9 @@ const ProductPage = () => {
   // Fixed category filtering logic - now uses API products
   const categoryFilteredProducts = useMemo(() => {
     if (loading) return [];
+    console.log(products, "products.products");
     return products.products.filter((p) => {
+
       // First check if the main category matches
       const isCategoryMatch =
         p.categories &&

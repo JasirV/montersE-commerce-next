@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 
-import Image from "next/image";
+
 
 const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const [dropdown, setDropdown] = useState(null);

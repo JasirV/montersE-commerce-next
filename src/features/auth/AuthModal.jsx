@@ -1,7 +1,9 @@
 import React, { useState, useCallback, lazy, Suspense } from "react";
 import Modal from "react-modal";
 import Image from "next/image";
-import Authentication from "../../assets/wathc image.jpg";
+import Authentication from "../../assets/52_MjExMC53MDEyLm4wMDEuMTHQoS5wNi4xMQ.jpg";
+import { FaTimes } from "react-icons/fa";
+
 
 // Lazy load form components
 const LoginForm = lazy(() => import("./LoginForm"));
@@ -27,10 +29,10 @@ const customStyles = {
     border: "none",
     borderRadius: "12px",
     overflow: "hidden",
-    width: "90%",
-    maxWidth: "800px",
+    width: "90%", // mobile width
+    maxWidth: "700px", // desktop max width
     height: "auto",
-    maxHeight: "90vh",
+    maxHeight: "90vh", // scrollable if content too tall
   },
   overlay: {
     backgroundColor: "rgba(0,0,0,0.55)",
@@ -143,8 +145,20 @@ const AuthModal = ({ isOpen, onRequestClose }) => {
         <ImageBanner />
 
         {/* Right Content */}
-        <div className="w-full md:w-3/5 bg-white p-5 md:p-8 relative  rounded-r-lg">
-          <CloseButton onClose={handleClose} />
+        <div
+          className={`${
+            activeTab == "login" ? "md:mb-11 md:mt-11" : ""
+          } w-full md:w-3/5 bg-white p-5 md:p-8 relative overflow-y-auto rounded-r-lg`}
+        >
+          {/* Mobile Close Button */}
+          <button
+            onClick={handleClose}
+            className="md:hidden absolute top-4 right-4 text-gray-600 hover:text-gray-800 transition-colors bg-gray-100 rounded-full p-2"
+            aria-label="Close modal"
+          >
+            <FaTimes size={18} />
+          </button>
+
 
           {/* Tabs */}
           <TabNavigation activeTab={activeTab} setActiveTab={handleTabChange} />

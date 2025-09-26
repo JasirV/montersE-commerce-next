@@ -16,3 +16,13 @@ export async function fetchProduct({ id, page = 1, limit = 15 } = {}) {
     return { data: null, error, isLoading: false };
   }
 }
+
+
+export async function LandingPageProduct(){
+  try {
+    const response = await api.get("products/home");
+    return { data: response.data, error: null, isLoading: false };
+  } catch (error) {
+    return { data: null, error, isLoading: false };
+  }
+}
