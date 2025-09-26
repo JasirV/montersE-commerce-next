@@ -18,7 +18,7 @@ const ForgotPasswordForm = ({ setActiveTab }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:7000/api/Auth/forgot-password",
+        "http://localhost:9000/api/Auth/forgot-password",
         { email: resetEmail }
       );
 
@@ -33,7 +33,7 @@ const ForgotPasswordForm = ({ setActiveTab }) => {
       console.error("Error sending reset email:", error);
       toast.error(
         error.response?.data?.message ||
-          "Something went wrong. Please try again ❌"
+          "Something went wrong. Please try again "
       );
     } finally {
       setLoading(false);
@@ -44,14 +44,14 @@ const ForgotPasswordForm = ({ setActiveTab }) => {
     if (!submittedEmail) return;
 
     try {
-      await axios.post("http://localhost:7000/api/Auth/forgot-password", {
+      await axios.post("http://localhost:9000/api/Auth/forgot-password", {
         email: submittedEmail,
       });
 
       toast.info("Reset link resent to your email ");
     } catch (error) {
       console.error("Error resending link:", error);
-      toast.error("Failed to resend link ❌");
+      toast.error("Failed to resend link");
     }
   };
 
