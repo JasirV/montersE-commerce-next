@@ -4,6 +4,7 @@ import React, { useState, useMemo, memo, lazy, Suspense, useEffect } from "react
 import { Disclosure } from '@headlessui/react';
 import Link from 'next/link';
 
+
 // Lazy load icons for better performance
 const FiFilter = lazy(() => import('react-icons/fi').then(module => ({ default: module.FiFilter })));
 const FiX = lazy(() => import('react-icons/fi').then(module => ({ default: module.FiX })));
@@ -325,7 +326,10 @@ const FilterSidebar = () => {
         </button>
 
         {/* Waitlist */}
-        <button
+        <Link
+         href="/wishlist"
+         >
+          <button
           className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200"
         >
           <Suspense
@@ -335,9 +339,14 @@ const FilterSidebar = () => {
           </Suspense>
           <span className="text-[10px] xs:text-xs mt-0.5">Waitlist</span>
         </button>
+        </Link>
+   
 
         {/* Cart */}
-        <button
+        <Link
+         href="/cart"
+        >
+          <button
           className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200"
         >
           <Suspense
@@ -348,8 +357,13 @@ const FilterSidebar = () => {
           <span className="text-[10px] xs:text-xs mt-0.5">Cart</span>
         </button>
 
+        </Link>
+        
         {/* My Account */}
-        <button
+        <Link
+        href="/UserProfile"
+        >
+       <button
           className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200"
         >
           <Suspense
@@ -359,6 +373,8 @@ const FilterSidebar = () => {
           </Suspense>
           <span className="text-[10px] xs:text-xs mt-0.5">My Account</span>
         </button>
+        </Link>
+       
 
       </div>
     </div>
@@ -367,7 +383,7 @@ const FilterSidebar = () => {
       <div className={`md:hidden fixed inset-0 z-50 ${mobileFiltersOpen ? 'block' : 'hidden'}`}>
         {/* Overlay */}
         <div 
-          className="fixed inset-0 bg-black bg-opacity-40 transition-opacity duration-300" 
+          className="fixed inset-0  bg-opacity-40 transition-opacity duration-300" 
           onClick={() => setMobileFiltersOpen(false)}
           aria-hidden="true"
         />
