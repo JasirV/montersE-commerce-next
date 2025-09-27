@@ -8,12 +8,11 @@ import { toast } from "react-toastify";
 const RegisterForm = ({ setActiveTab }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
- 
 
-  const [name,setName]= useState("")
-  const [email,setEmail]= useState("")
-  const [password,setPassword] = useState("")
-  const [agreeToTerms,setAgreeToTerms] = useState("")
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [agreeToTerms, setAgreeToTerms] = useState("");
 
   // // ✅ Handle input change
   // const handleInputChange = useCallback((e) => {
@@ -29,32 +28,42 @@ const RegisterForm = ({ setActiveTab }) => {
     setShowPassword((prev) => !prev);
   }, []);
 
-  // ✅ Handle form submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+ // ✅ Handle form submit
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-  const response = await axios.post(
-  "http://localhost:9000/api/Auth/register",
-  {
-    name,
-    email,
-    password,
-  }
-);
-
-      if (response.status === 201 || response.status === 200) {
-        toast.success("🎉 Registration successful!");
-        setActiveTab("login"); // go to login tab
+  try {
+    const response = await axios.post(
+      "http://localhost:9000/api/Auth/register",
+      {
+        name,
+        email,
+        password,
       }
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "❌ Registration failed!");
-    } finally {
-      setLoading(false);
+    );
+
+    if (response.status === 201 || response.status === 200) {
+ // ✅ Store user data consistently as an object
+      const userData = {
+        id: response.data.userId || Date.now(), // Use actual ID from response if available
+        name: name,
+        email: email
+      };
+      
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      toast.success(" Registration successful!");
+      setActiveTab("login"); // go to login tab
     }
-  };
+  } catch (error) {
+    console.error(error);
+    toast.error(error.response?.data?.message || "❌ Registration failed!");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="space-y-4 md:space-y-5">

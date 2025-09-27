@@ -8,83 +8,181 @@ import Jewelry3 from "../assets/Jewelry/view-luxurious-golden-ring-felt-jewelry-
 
 const ProductGrid = () => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Dummy jewelry products for specified categories only
+  const dummyJewelry = [
+    // Jewelry Category
+  // Watches Category
+    {
+      _id: "dummy-watch-1",
+      name: "Rolex Luxury Watch",
+      salePrice: "25,000",
+      images: [{ url: Jewelry1 }],
+      category: "Watches"
+    },
+    {
+      _id: "dummy-watch-2",
+      name: "Omega Seamaster",
+      salePrice: "18,500",
+      images: [{ url: Jewelry2 }],
+      category: "Watches"
+    },
+    {
+      _id: "dummy-watch-3",
+      name: "Cartier Tank Watch",
+      salePrice: "22,000",
+      images: [{ url: Jewelry3 }],
+      category: "Watches"
+    },
+
+
+    // Watches Category
+    {
+      _id: "dummy-watch-1",
+      name: "Rolex Luxury Watch",
+      salePrice: "25,000",
+      images: [{ url: Jewelry1 }],
+      category: "Watches"
+    },
+    {
+      _id: "dummy-watch-2",
+      name: "Omega Seamaster",
+      salePrice: "18,500",
+      images: [{ url: Jewelry2 }],
+      category: "Watches"
+    },
+    {
+      _id: "dummy-watch-3",
+      name: "Cartier Tank Watch",
+      salePrice: "22,000",
+      images: [{ url: Jewelry3 }],
+      category: "Watches"
+    },
+
+    // Bags, wallets & Pens Category
+    {
+      _id: "dummy-bag-1",
+      name: "Designer Leather Bag",
+      salePrice: "7,500",
+      images: [{ url: Jewelry1 }],
+      category: "Bags,wallets&Pens"
+    },
+    {
+      _id: "dummy-bag-2",
+      name: "Luxury Wallet",
+      salePrice: "2,800",
+      images: [{ url: Jewelry2 }],
+      category: "Bags,wallets&Pens"
+    },
+    {
+      _id: "dummy-bag-3",
+      name: "Premium Fountain Pen",
+      salePrice: "1,500",
+      images: [{ url: Jewelry3 }],
+      category: "Bags,wallets&Pens"
+    },
+
+    // Clocks & Pocket Watch Category
+    {
+      _id: "dummy-clock-1",
+      name: "Vintage Pocket Watch",
+      salePrice: "9,800",
+      images: [{ url: Jewelry1 }],
+      category: "Colcks&Pocket Watch"
+    },
+    {
+      _id: "dummy-clock-2",
+      name: "Antique Wall Clock",
+      salePrice: "12,300",
+      images: [{ url: Jewelry2 }],
+      category: "Colcks&Pocket Watch"
+    },
+    {
+      _id: "dummy-clock-3",
+      name: "Modern Desk Clock",
+      salePrice: "4,500",
+      images: [{ url: Jewelry3 }],
+      category: "Colcks&Pocket Watch"
+    },
+
+    // Personal Accessories & Cufflinks Category
+    {
+      _id: "dummy-accessory-1",
+      name: "Designer Cufflinks",
+      salePrice: "3,200",
+      images: [{ url: Jewelry1 }],
+      category: "Personal Accessories& Cufflinks"
+    },
+    {
+      _id: "dummy-accessory-2",
+      name: "Silver Tie Clip",
+      salePrice: "1,800",
+      images: [{ url: Jewelry2 }],
+      category: "Personal Accessories& Cufflinks"
+    },
+    {
+      _id: "dummy-accessory-3",
+      name: "Gold Money Clip",
+      salePrice: "2,500",
+      images: [{ url: Jewelry3 }],
+      category: "Personal Accessories& Cufflinks"
+    },
+
+    // Home Accessories Category
+    {
+      _id: "dummy-home-1",
+      name: "Luxury Home Clock",
+      salePrice: "6,500",
+      images: [{ url: Jewelry1 }],
+      category: "Home Accessories"
+    },
+    {
+      _id: "dummy-home-2",
+      name: "Crystal Vase",
+      salePrice: "3,800",
+      images: [{ url: Jewelry2 }],
+      category: "Home Accessories"
+    },
+    {
+      _id: "dummy-home-3",
+      name: "Silver Photo Frame",
+      salePrice: "2,200",
+      images: [{ url: Jewelry3 }],
+      category: "Home Accessories"
+    },
+
+
+       {
+      _id: "dummy-jewel-1",
+      name: "Cartier Diamond Ring",
+      salePrice: "12,500",
+      images: [{ url: Jewelry1 }],
+      category: "Jewelry"
+    },
+    {
+      _id: "dummy-jewel-2",
+      name: "Tiffany & Co. Necklace",
+      salePrice: "15,700",
+      images: [{ url: Jewelry2 }],
+      category: "Jewelry"
+    },
+    {
+      _id: "dummy-jewel-3",
+      name: "Diamond Earrings",
+      salePrice: "11,200",
+      images: [{ url: Jewelry3 }],
+      category: "Jewelry"
+    },
+
+  ];
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:7000/api/products"
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        // Target product names
-        const targetProducts = [
-          // bags
-          "Cartier Happy Birthday Baguette Shoulder Bag",
-          "CARTIER PANTHERE BAG with WALLET-25023435",
-          "CARTIER DIABOLO BALLPOINT PEN - 363354",
-
-          // cufflinks
-          "Gucci GG Supreme Sherry Line Hand Bag-1002051",
-          "Alviero Martini Geo Classic Bag -47734623",
-          "Gucci Ophidia Boston Hand Bag- 58.02.007",
-
-          // watches
-          "Rolex Orchid 25.5mm - 1352",
-          "Panerai Radiomir Officine",
-          "OMEGA SEAMASTER PROFESSIONAL 300M 36mm REF-2561.80",
-
-          "Cartier Must De Waist Bag",
-          "Chopard Happy Diamonds 22mm - 20/6063",
-          "DUNHILL MILLENNIUM EL PRIMO 40mm",
-
-          "Cartier Panthere Backpack -48554073",
-          "RAYMOND WEIL GOLD G 10M 28mm - 9812",
-          "Tag Heuer Chronograph 38mm - CG 1111.0",
-        ];
-
-        const filteredProducts = data.filter((product) =>
-          targetProducts.some((target) => product.name.includes(target))
-        );
-
-        // ✅ Add dummy Jewelry items
-        const dummyJewelry = [
-          {
-            _id: "dummy-jewel-1",
-            name: "Cartier Diamond Ring",
-            salePrice: "12,500",
-            images: [{ url: Jewelry1 }],
-          },
-          {
-            _id: "dummy-jewel-2",
-            name: "Gucci Gold Bracelet",
-            salePrice: "8,900",
-            images: [{ url: Jewelry2 }],
-          },
-          {
-            _id: "dummy-jewel-3",
-            name: "Tiffany & Co. Necklace",
-            salePrice: "15,700",
-            images: [{ url: Jewelry3 }],
-          },
-        ];
-
-        setProducts([...filteredProducts, ...dummyJewelry]);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
+    const timer = setTimeout(() => {
+      setProducts(dummyJewelry);
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) {
@@ -95,60 +193,11 @@ const ProductGrid = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-xl text-red-500">Error: {error}</div>
-      </div>
-    );
-  }
-
-  /// Group products by category and limit to 3 products per category
+  // Group products by category and limit to 3 products per category
   const categories = {};
 
   products.forEach((product) => {
-    let category = "Other";
-
-    if (
-      product.name.includes("Cartier Happy Birthday Baguette Shoulder Bag") ||
-      product.name.includes("CARTIER PANTHERE BAG with WALLET-25023435") ||
-      product.name.includes("CARTIER DIABOLO BALLPOINT PEN - 363354")
-    ) {
-      category = "Bags, Wallets & Pens";
-    } else if (
-      product.name.includes("Gucci GG Supreme Sherry Line Hand Bag-1002051") ||
-      product.name.includes("Alviero Martini Geo Classic Bag -47734623") ||
-      product.name.includes("Gucci Ophidia Boston Hand Bag- 58.02.007")
-    ) {
-      category = "Personal Accessories & Cufflinks";
-    } else if (
-      product.name.includes("Rolex") ||
-      product.name.includes("Panerai") ||
-      product.name.includes("OMEGA SEAMASTER")
-    ) {
-      category = "Watches";
-    } else if (
-      product.name.includes("Cartier Must De Waist Bag") ||
-      product.name.includes("Chopard Happy Diamonds 22mm - 20/6063") ||
-      product.name.includes("DUNHILL MILLENNIUM EL PRIMO 40mm")
-    ) {
-      category = "Clocks & Pocket Watch";
-    } else if (
-      product.name.includes("Cartier Panthere Backpack -48554073") ||
-      product.name.includes("RAYMOND WEIL GOLD G 10M 28mm - 9812") ||
-      product.name.includes("Tag Heuer Chronograph 38mm - CG 1111.0")
-    ) {
-      category = "Home Accessories";
-    } else if (
-      product.name.toLowerCase().includes("ring") ||
-      product.name.toLowerCase().includes("bracelet") ||
-      product.name.toLowerCase().includes("necklace") ||
-      product.name.toLowerCase().includes("earring") ||
-      product.name.toLowerCase().includes("jewelry") ||
-      product.name.toLowerCase().includes("jewellery")
-    ) {
-      category = "Jewelry";
-    }
+    const category = product.category || "Other";
 
     if (!categories[category]) {
       categories[category] = [];
@@ -185,23 +234,21 @@ const ProductGrid = () => {
                       className="flex flex-col items-center text-center group"
                     >
                       <div className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200">
-  {product?._id && ( // make sure _id exists
-    <Link href={`/ProductDetailPage/${product._id}`}>
-      <Image
-        src={
-          product.images && product.images.length > 0
-            ? product.images[0].url
-            : "https://via.placeholder.com/300x300?text=No+Image"
-        }
-        alt={product.name}
-        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-        width={300}
-        height={300}
-        loading="lazy"
-      />
-    </Link>
-  )}
-</div>
+                        <Link href={`/ProductDetailPage/${product._id}`}>
+                          <Image
+                            src={
+                              product.images && product.images.length > 0
+                                ? product.images[0].url
+                                : "https://via.placeholder.com/300x300?text=No+Image"
+                            }
+                            alt={product.name}
+                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                            width={300}
+                            height={300}
+                            loading="lazy"
+                          />
+                        </Link>
+                      </div>
                       <p className="mt-2 text-sm font-semibold text-gray-800">
                         {product.salePrice
                           ? `${product.salePrice} AED`

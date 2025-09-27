@@ -16,6 +16,7 @@ import Services from "@/components/ui/Services";
 import Footer from "@/components/shared/Footer";
 import "../Mobile/responsive.css";
 import { LandingPageProduct } from "@/service/productService";
+import Watch from "@/layouts/Watch";
 
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -39,7 +40,7 @@ export default function IndexPage() {
   }, []);
 
   // if (loading) return <p className="text-center py-10">⏳ Loading products...</p>;
-  if (error) return <p className="text-center text-red-500">❌ {error}</p>;
+  // if (error) return <p className="text-center text-red-500">❌ {error}</p>;
 
   // Function to open modal with specific action      
   const handleAuthAction = (action) => {
@@ -60,18 +61,15 @@ LandingPageProduct()
         defaultAction={authAction}
       />
 
-
       <Landing />
       <Home />
       <AddSection />
-    <WatchBrand products={products?.brandNew} loading={loading}/>
+      <WatchBrand/>
       <Form />
-      {/* <ChatRobot /> */}
-      <JustforyouWatch productsGrid1Data={products?.newArrivals} productsGrid2Data={products?.montresTrusted} loading={loading}/>
+      <JustforyouWatch/>
       <PremiumBrands />
-      <BrandNewAdded  products={products?.lastBrandNew} loading={loading}/>
+      <Watch/>
       <Services />
-
       <Footer />
     </div>
   );
