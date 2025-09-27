@@ -1,7 +1,7 @@
 import React, { useMemo, memo, useState } from "react";
 import Watch1 from '../assets/Watche/stylish-golden-watch-white-surface.jpg';
 import Image from "next/image";
-import { FaShoppingCart, FaHeart, FaRegHeart, FaStar, FaStarHalfAlt } from "react-icons/fa";
+import { FaShoppingCart, FaHeart, FaRegHeart, FaStar, FaStarHalfAlt, FaPlus, FaMinus } from "react-icons/fa";
 
 // Memoized product data to prevent unnecessary re-renders
 const productsData = [
@@ -40,18 +40,80 @@ const StarRating = memo(({ rating }) => {
 
 StarRating.displayName = 'StarRating';
 
+// Quantity Selector Component
+const QuantitySelector = memo(({ quantity, onQuantityChange, min = 1, max = 100 }) => {
+  const handleIncrement = () => {
+    if (quantity < max) {
+      onQuantityChange(quantity + 1);
+    }
+  };
+
+  const handleDecrement = () => {
+    if (quantity > min) {
+      onQuantityChange(quantity - 1);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const value = parseInt(e.target.value);
+    if (!isNaN(value) && value >= min && value <= max) {
+      onQuantityChange(value);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between bg-gray-100 rounded-lg p-1 border border-gray-200">
+      <button
+        onClick={handleDecrement}
+        disabled={quantity <= min}
+        className="w-6 h-6 xs:w-7 xs:h-7 flex items-center justify-center rounded-md bg-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+        aria-label="Decrease quantity"
+      >
+        <FaMinus className="text-gray-600 text-xs" />
+      </button>
+      
+      <input
+        type="number"
+        value={quantity}
+        onChange={handleInputChange}
+        min={min}
+        max={max}
+        className="w-8 xs:w-10 text-center bg-transparent border-none text-xs xs:text-sm font-semibold text-gray-800 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      />
+      
+      <button
+        onClick={handleIncrement}
+        disabled={quantity >= max}
+        className="w-6 h-6 xs:w-7 xs:h-7 flex items-center justify-center rounded-md bg-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+        aria-label="Increase quantity"
+      >
+        <FaPlus className="text-gray-600 text-xs" />
+      </button>
+    </div>
+  );
+});
+
+QuantitySelector.displayName = 'QuantitySelector';
+
 // Single product card component to prevent re-renders
 const ProductCard = memo(({ product, onAddToCart, onToggleWishlist, isInWishlist }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
-    onAddToCart(product);
+    onAddToCart(product, quantity);
+    // Reset quantity after adding to cart
+    setQuantity(1);
   };
 
   const handleToggleWishlist = (e) => {
     e.stopPropagation();
     onToggleWishlist(product.id);
+  };
+
+  const handleQuantityChange = (newQuantity) => {
+    setQuantity(newQuantity);
   };
 
   return (
@@ -106,15 +168,29 @@ const ProductCard = memo(({ product, onAddToCart, onToggleWishlist, isInWishlist
       {/* Product Info */}
       <p className="text-xs xs:text-sm text-gray-600 mb-3 xs:mb-4 font-medium">{product.info}</p>
 
-      {/* Add to Cart Button */}
-      <button
-        onClick={handleAddToCart}
-        className="mt-auto bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#16487a] hover:to-[#005099] text-white py-2 xs:py-2.5 px-3 xs:px-4 rounded-xl font-semibold text-xs xs:text-sm transition-all duration-200 transform hover:scale-105 shadow-md flex items-center justify-center space-x-2"
-        aria-label={`Add ${product.name} to cart`}
-      >
-        <FaShoppingCart className="text-xs xs:text-sm" />
-        <span>Add to Cart</span>
-      </button>
+      {/* Quantity Selector and Add to Cart Button */}
+      <div className="mt-auto space-y-2 xs:space-y-3">
+        {/* Quantity Selector */}
+        <div className="flex items-center justify-between">
+          <span className="text-xs xs:text-sm text-gray-600 font-medium">Quantity:</span>
+          <QuantitySelector 
+            quantity={quantity} 
+            onQuantityChange={handleQuantityChange}
+            min={1}
+            max={100}
+          />
+        </div>
+
+        {/* Add to Cart Button */}
+        <button
+          onClick={handleAddToCart}
+          className="w-full bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#16487a] hover:to-[#005099] text-white py-2 xs:py-2.5 px-3 xs:px-4 rounded-xl font-semibold text-xs xs:text-sm transition-all duration-200 transform hover:scale-105 shadow-md flex items-center justify-center space-x-2"
+          aria-label={`Add ${quantity} ${product.name} to cart`}
+        >
+          <FaShoppingCart className="text-xs xs:text-sm" />
+          <span>Add to Cart ({quantity})</span>
+        </button>
+      </div>
     </div>
   );
 });
@@ -129,22 +205,22 @@ const Watch = () => {
   const [wishlist, setWishlist] = useState(new Set());
   const [cart, setCart] = useState([]);
 
-  // Handle add to cart
-  const handleAddToCart = (product) => {
+  // Handle add to cart with quantity
+  const handleAddToCart = (product, quantity) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.id === product.id);
       if (existingItem) {
         return prevCart.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      return [...prevCart, { ...product, quantity: 1 }];
+      return [...prevCart, { ...product, quantity }];
     });
     
     // Show feedback (you can replace this with a toast notification)
-    console.log(`Added ${product.name} to cart`);
+    console.log(`Added ${quantity} ${product.name} to cart`);
   };
 
   // Handle toggle wishlist
@@ -162,6 +238,9 @@ const Watch = () => {
 
   // Check if product is in wishlist
   const isInWishlist = (productId) => wishlist.has(productId);
+
+  // Calculate total items in cart
+  const totalItemsInCart = cart.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-100 py-6 xs:py-8 sm:py-12">
@@ -190,13 +269,13 @@ const Watch = () => {
         </div>
       </div>
 
-      {/* Cart Summary (optional - can be moved to a separate component) */}
-      {cart.length > 0 && (
+      {/* Cart Summary */}
+      {totalItemsInCart > 0 && (
         <div className="fixed bottom-4 right-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-full shadow-lg z-50">
           <div className="flex items-center space-x-2">
             <FaShoppingCart />
             <span className="text-sm font-semibold">
-              {cart.reduce((total, item) => total + item.quantity, 0)} items
+              {totalItemsInCart} {totalItemsInCart === 1 ? 'item' : 'items'}
             </span>
           </div>
         </div>

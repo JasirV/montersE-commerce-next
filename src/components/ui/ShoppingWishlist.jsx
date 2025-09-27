@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { FiLock, FiShare2, FiMoreHorizontal, FiPlus, FiTrash2, FiChevronLeft, FiGrid, FiList } from "react-icons/fi";
+import React, { useState, useEffect, useRef } from "react";
+import { FiLock, FiShare2, FiMoreHorizontal, FiPlus, FiTrash2, FiChevronLeft, FiGrid, FiList, FiEdit, FiStar, FiGlobe, FiUser } from "react-icons/fi";
 import Image from "next/image";
 import watch from '../../assets/bag-hanging-from-furniture-item-indoors.jpg'
 import SupportSection from "./SupportSection";
@@ -83,9 +83,25 @@ const ShoppingWishlist = () => {
   const [wishlistData, setWishlistData] = useState(wishlists);
   const [isMobile, setIsMobile] = useState(false);
   const [showWishlistSidebar, setShowWishlistSidebar] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid');
   const [open, setOpen] = useState(false);
-  const [WishilistOpn,setWishilistOpen]= useState(false)
+  const [WishilistOpn, setWishilistOpen] = useState(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setMoreDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -111,7 +127,102 @@ const ShoppingWishlist = () => {
     );
   };
 
+  const handleMakeDefault = () => {
+    setWishlistData(prevData =>
+      prevData.map(wishlist => ({
+        ...wishlist,
+        isDefault: wishlist.id === activeWishlist.id
+      }))
+    );
+    setMoreDropdownOpen(false);
+  };
+
+  const handleTogglePublicSharing = () => {
+    // Implement public sharing toggle logic here
+    console.log("Toggle public sharing for:", activeWishlist.name);
+    setMoreDropdownOpen(false);
+  };
+
+  const handleEmptyWishlist = () => {
+    setWishlistData(prevData =>
+      prevData.map(wishlist =>
+        wishlist.id === activeWishlist.id
+          ? { ...wishlist, items: [] }
+          : wishlist
+      )
+    );
+    setMoreDropdownOpen(false);
+  };
+
+  const handleDeleteWishlist = () => {
+    if (wishlistData.length > 1 && !activeWishlist.isDefault) {
+      setWishlistData(prevData =>
+        prevData.filter(wishlist => wishlist.id !== activeWishlist.id)
+      );
+      setActiveWishlist(wishlistData.find(wishlist => wishlist.id !== activeWishlist.id));
+    }
+    setMoreDropdownOpen(false);
+  };
+
   const activeList = wishlistData.find(list => list.id === activeWishlist.id) || wishlistData[0];
+
+  // More Options Dropdown Component
+  const MoreOptionsDropdown = () => (
+    <div 
+      ref={dropdownRef}
+      className={`absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 transition-all duration-200 ${
+        moreDropdownOpen ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform -translate-y-2 pointer-events-none'
+      }`}
+    >
+      <div className="p-2">
+        {/* Make this default wishlist */}
+        <button
+          onClick={handleMakeDefault}
+          className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+        >
+          <FiStar className="mr-3 text-gray-500" size={16} />
+          <span>Make this default wishlist</span>
+        </button>
+
+        {/* Enable/Disable Public Sharing */}
+        <button
+          onClick={handleTogglePublicSharing}
+          className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+        >
+          <FiGlobe className="mr-3 text-gray-500" size={16} />
+          <span>Enable/Disable Public Sharing</span>
+        </button>
+
+        {/* Empty Wishlist */}
+        <button
+          onClick={handleEmptyWishlist}
+          disabled={activeList.items.length === 0}
+          className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
+            activeList.items.length === 0
+              ? 'text-gray-400 cursor-not-allowed'
+              : 'text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          <FiTrash2 className="mr-3" size={16} />
+          <span>Empty Wishlist</span>
+        </button>
+
+        {/* Delete Wishlist */}
+        <button
+          onClick={handleDeleteWishlist}
+          disabled={activeList.isDefault || wishlistData.length <= 1}
+          className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
+            activeList.isDefault || wishlistData.length <= 1
+              ? 'text-gray-400 cursor-not-allowed'
+              : 'text-red-600 hover:bg-red-50'
+          }`}
+        >
+          <FiTrash2 className="mr-3" size={16} />
+          <span>Delete</span>
+        </button>
+      </div>
+    </div>
+  );
 
   // Mobile wishlist selector
   const MobileWishlistSelector = () => (
@@ -243,7 +354,7 @@ const ShoppingWishlist = () => {
           <MobileWishlistSelector />
 
           {/* Wishlist Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 p-4 bg-white rounded-lg shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 p-4 bg-white rounded-lg shadow-sm relative">
             <div className="flex items-center gap-2">
               <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800 lg:block hidden">
                 {activeList.name}
@@ -277,10 +388,20 @@ const ShoppingWishlist = () => {
               <button className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors"  onClick={() => setWishilistOpen(true)}>
                 <FiShare2 size={16} /> <span className="hidden xs:inline">Share</span>
               </button>
-               <SeWishilistModal isOpen={WishilistOpn} onClose={() => setWishilistOpen(false)}/>
-              <button className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors">
-                <FiMoreHorizontal size={16} /> <span className="hidden xs:inline">More</span>
-              </button>
+              <SeWishilistModal isOpen={WishilistOpn} onClose={() => setWishilistOpen(false)}/>
+              
+              {/* More Button with Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                  className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors"
+                >
+                  <FiMoreHorizontal size={16} /> <span className="hidden xs:inline">More</span>
+                </button>
+                
+                {/* Dropdown Menu */}
+                <MoreOptionsDropdown />
+              </div>
             </div>
           </div>
 
@@ -420,15 +541,70 @@ const ShoppingWishlist = () => {
             <span  className="mt-1">Share</span>
           </button>
           <SeWishilistModal isOpen={WishilistOpn} onClose={() => setWishilistOpen(false)}/>
-          <button className="flex flex-col items-center text-xs text-gray-600">
-            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shadow">
-              <FiGrid size={16} className="text-gray-600" />
-            </div>
-            <span className="mt-1">View</span>
-          </button>
+          
+          {/* Mobile More Button */}
+          <div className="relative">
+            <button 
+              onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+              className="flex flex-col items-center text-xs text-gray-600"
+            >
+              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shadow">
+                <FiMoreHorizontal size={16} className="text-gray-600" />
+              </div>
+              <span className="mt-1">More</span>
+            </button>
+            
+            {/* Mobile Dropdown - Positioned above the navigation */}
+            {moreDropdownOpen && (
+              <div className="absolute bottom-full right-0 mb-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                <div className="p-2">
+                  <button
+                    onClick={handleMakeDefault}
+                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                  >
+                    <FiStar className="mr-3 text-gray-500" size={16} />
+                    <span>Make this default wishlist</span>
+                  </button>
+
+                  <button
+                    onClick={handleTogglePublicSharing}
+                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                  >
+                    <FiGlobe className="mr-3 text-gray-500" size={16} />
+                    <span>Enable/Disable Public Sharing</span>
+                  </button>
+
+                  <button
+                    onClick={handleEmptyWishlist}
+                    disabled={activeList.items.length === 0}
+                    className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
+                      activeList.items.length === 0
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <FiTrash2 className="mr-3" size={16} />
+                    <span>Empty Wishlist</span>
+                  </button>
+
+                  <button
+                    onClick={handleDeleteWishlist}
+                    disabled={activeList.isDefault || wishlistData.length <= 1}
+                    className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
+                      activeList.isDefault || wishlistData.length <= 1
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-red-600 hover:bg-red-50'
+                    }`}
+                  >
+                    <FiTrash2 className="mr-3" size={16} />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      
       <SupportSection/>
     </div>
   );
