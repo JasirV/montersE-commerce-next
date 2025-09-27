@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { FiTrash2, FiHeart, FiShoppingCart } from "react-icons/fi";
 import Image from "next/image";
+import Link from "next/link";
 import SupportSection from "@/components/ui/SupportSection";
 import Item1 from '../../assets/Watche/rendering-smart-home-device.jpg'
 import Item2 from '../../assets/beautiful-rendering-steel-object.jpg'
@@ -275,12 +276,17 @@ const ShoppingCart = () => {
             <span>฿{subtotal.toFixed(2)}</span>
           </div>
 
-          <button 
+          <Link
+           href="/Chekout"
+          >
+             <button 
             disabled={cartItems.length === 0}
             className="w-full bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {cartItems.length === 0 ? 'CART IS EMPTY' : 'CHECKOUT'}
           </button>
+          </Link>
+         
 
           {/* Extra Info */}
           <p className="text-xs sm:text-sm text-yellow-600 mt-3">
