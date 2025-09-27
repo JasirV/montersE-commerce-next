@@ -39,6 +39,8 @@ const productsData = [
 
 // Single product card component to prevent re-renders
 const ProductCard = memo(({ product }) => {
+  // console.log(product,'product lin 42');
+  
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
       {/* Product Image */}
@@ -46,7 +48,8 @@ const ProductCard = memo(({ product }) => {
         <Image
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-contain p-3 xs:p-4"
+          fill
+          className="object-contain p-3 xs:p-4"
           loading="lazy"
         />
         {/* Wishlist Button */}

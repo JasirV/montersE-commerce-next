@@ -48,9 +48,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const megaMenuData = {
     watches: {
       categories: [
-        { name: "luxury/Classic Watches", path: "/watches/luxury" },
-        { name: "Sports/casual Watches", path: "/watches/sports" },
-        { name: "Classic/casual Watches", path: "/watches/classic" },
+        { name: "luxury Watches", path: "/watches/luxury" },
+        { name: "Sports Watches", path: "/watches/sports" },
+        { name: "Classic Watches", path: "/watches/classic" },
         { name: "Smart Watches", path: "/watches/smart" },
         { name: "Limited Edition", path: "/watches/limited-edition" },
       ],
