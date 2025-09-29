@@ -51,8 +51,8 @@ const BrandNewAdded = ({ products, loading }) => {
     <section className="w-full bg-white">
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-12 py-12">
         {/* Title - Updated */}
-        <h2 className="text-2xl font-bold text-gray-700 mb-8 text-center tracking-tight">
-          BRAND NEW
+        <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
+          Brand New
         </h2>
 
         {/* Products Grid */}

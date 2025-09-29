@@ -4,20 +4,18 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { signIn } from "next-auth/react";
 
 const LoginForm = ({ setActiveTab, onRequestClose }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState("")
-  const [Loading,setLoading]=useState("")
+  const [rememberMe, setRememberMe] = useState("");
+  const [Loading, setLoading] = useState("");
 
   const togglePasswordVisibility = useCallback(() => {
     setShowPassword((prev) => !prev);
   }, []);
-
-
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,23 +29,29 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
         }
       );
       if (response.status === 201 || response.status === 200) {
+        // ✅ Store user data consistently
+        const userData = {
+          id: response.data.userId,
+          name: response.data.name || email.split("@")[0], // Fallback to username from email
+          email: email,
+        };
 
-         // ✅ Store user data consistently
-      const userData = {
-        id: response.data.userId,
-        name: response.data.name || email.split('@')[0], // Fallback to username from email
-        email: email
-      };
-      
-      localStorage.setItem("user", JSON.stringify(userData));
-      
+        localStorage.setItem("user", JSON.stringify(userData));
+        // Trigger navbar update immediately
+        if (window.triggerNavbarAuthUpdate) {
+          window.triggerNavbarAuthUpdate();
+        }
+
+        // Also dispatch the custom event
+        window.dispatchEvent(new Event("authChange"));
+
         toast.success(" Login successful!");
-        onRequestClose()
+        onRequestClose();
       }
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || "❌Login failed!");
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
@@ -159,12 +163,14 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
         <button
           type="button"
           className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 px-4 hover:bg-gray-50 transition-colors text-sm"
+          onClick={() => signIn("google")}
         >
           <FcGoogle size={18} />
           <span className="font-medium">Google</span>
         </button>
         <button
           type="button"
+          onClick={() => signIn("facebook")}
           className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 px-4 hover:bg-gray-50 transition-colors text-sm"
         >
           <FaFacebook size={18} className="text-blue-600" />
