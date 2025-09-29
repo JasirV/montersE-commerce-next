@@ -246,7 +246,7 @@ const Watch = () => {
     <div className="bg-gradient-to-br from-gray-50 to-gray-100 py-6 xs:py-8 sm:py-12">
       {/* Section Title */}
       <div className="text-center mb-8 xs:mb-10 sm:mb-12">
-        <h2 className="text-2xl xs:text-3xl sm:text-4xl font-bold bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] bg-clip-text text-transparent mb-2">
+        <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
           Just For You
         </h2>
         <p className="text-gray-600 text-sm xs:text-base max-w-2xl mx-auto px-4">

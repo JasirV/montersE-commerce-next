@@ -5,10 +5,13 @@ import React, { useState, useEffect } from "react";
 import Jewelry1 from "../assets/Jewelry/luxury-jewellery-display.jpg";
 import Jewelry2 from "../assets/Jewelry/side-view-pair-silver-diamond-earrings-with-emerald-black-wall-black.jpg";
 import Jewelry3 from "../assets/Jewelry/view-luxurious-golden-ring-felt-jewelry-display (1).jpg";
+import { useCurrency } from "@/app/CurrencyContext";
 
 const ProductGrid = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+
+    const { currency, rate } = useCurrency();
 
   // Dummy jewelry products for specified categories only
   const dummyJewelry = [
@@ -249,11 +252,11 @@ const ProductGrid = () => {
                           />
                         </Link>
                       </div>
-                      <p className="mt-2 text-sm font-semibold text-gray-800">
-                        {product.salePrice
-                          ? `${product.salePrice} AED`
-                          : "Price not available"}
-                      </p>
+                    <p className="mt-2 text-sm font-semibold text-gray-800">
+              {product.salePrice
+                ? `${(parseFloat(product.salePrice.replace(/,/g, "")) * rate).toFixed(2)} ${currency}`
+                : "Price not available"}
+            </p>
                       <p className="text-xs text-gray-500 line-clamp-2">
                         {product.name}
                       </p>
