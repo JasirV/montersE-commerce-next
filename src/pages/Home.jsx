@@ -13,8 +13,8 @@ const ProductGrid = () => {
 
     const { currency, rate } = useCurrency();
 
-  // Dummy jewelry products for specified categories only
-  const dummyJewelry = [
+   // Dummy jewelry products for specified categories only
+    const dummyJewelry = [
     // Jewelry Category
   // Watches Category
     {

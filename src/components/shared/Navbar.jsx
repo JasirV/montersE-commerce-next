@@ -19,7 +19,8 @@ import { useSession, signOut } from "next-auth/react";
 
 
 const Navbar = ({ onSignUpClick }) => {
-  const { data: session, status } = useSession();
+const sessionData = useSession();
+const { data: session, status } = sessionData || {};
 
   const router = useRouter();
 
