@@ -8,7 +8,7 @@ import {
   FaApplePay,
 } from "react-icons/fa";
 import tabby from "../assets/tabby-new.png";
-import bag from "../assets/HandBags/cream-kitted-bag-still-life.jpg";
+import bag from "../assets/beautiful-elegance-luxury-fashion-green-handbag.jpg";
 import watch from "../assets/Watche/stylish-golden-watch-white-surface.jpg";
 import Image from "next/image";
 
