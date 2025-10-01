@@ -1,4 +1,4 @@
-// LoginForm.js
+// LoginForm.js - Updated to trigger immediate navbar update
 import React, { useState, useCallback } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaEye, FaEyeSlash } from "react-icons/fa";
@@ -10,51 +10,72 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState("");
-  const [Loading, setLoading] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const togglePasswordVisibility = useCallback(() => {
     setShowPassword((prev) => !prev);
   }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const response = await axios.post(
-        " http://localhost:9000/api/Auth/Login",
-        {
-          email,
-          password,
-        }
+  try {
+    const response = await axios.post(
+      "http://localhost:9000/api/Auth/Login",
+      {
+        email,
+        password,
+      }
+    );
+
+    if (response.status === 201 || response.status === 200) {
+      // ✅ Extract token + user data
+      const { token, userId, name } = response.data;
+
+      const userData = {
+        id: userId,
+        name: name || email.split("@")[0],
+        email,
+        token, // 👈 store token alongside user
+      };
+
+      // ✅ Store user + token in localStorage
+      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("token", token); // 👈 optional separate storage
+
+      // ✅ Trigger navbar update
+      if (window.triggerNavbarAuthUpdate) {
+        window.triggerNavbarAuthUpdate();
+      }
+      window.dispatchEvent(new Event("authChange"));
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: "user",
+          newValue: JSON.stringify(userData),
+        })
       );
-      if (response.status === 201 || response.status === 200) {
-        // ✅ Store user data consistently
-        const userData = {
-          id: response.data.userId,
-          name: response.data.name || email.split("@")[0], // Fallback to username from email
-          email: email,
-        };
+      window.dispatchEvent(new Event("localStorageUpdated"));
 
-        localStorage.setItem("user", JSON.stringify(userData));
-        // Trigger navbar update immediately
+      toast.success("✅ Login successful!");
+      onRequestClose();
+
+      // Small delay to ensure state updates
+      setTimeout(() => {
         if (window.triggerNavbarAuthUpdate) {
           window.triggerNavbarAuthUpdate();
         }
-
-        // Also dispatch the custom event
-        window.dispatchEvent(new Event("authChange"));
-
-        toast.success(" Login successful!");
-        onRequestClose();
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "❌Login failed!");
-    } finally {
-      setLoading(false);
+      }, 100);
     }
-  };
+  } catch (error) {
+    console.error("Login error:", error);
+    toast.error(error.response?.data?.message || "❌ Login failed!");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="space-y-4 md:space-y-5">
@@ -123,7 +144,7 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
               id="remember-me"
               name="rememberMe"
               checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.value)}
+              onChange={(e) => setRememberMe(e.target.checked)}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label
@@ -144,9 +165,10 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
 
         <button
           type="submit"
-          className="w-full bg-[#2d5582]  hover:bg-[#2d5587] text-white py-2.5 px-4 rounded-lg transition duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+          disabled={loading}
+          className="w-full bg-[#2d5582] hover:bg-[#2d5587] text-white py-2.5 px-4 rounded-lg transition duration-200 text-sm font-medium shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          SIGN IN
+          {loading ? "SIGNING IN..." : "SIGN IN"}
         </button>
       </form>
 
