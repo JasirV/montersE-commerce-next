@@ -15,8 +15,15 @@ import logo from "../../assets/montreslogo.png";
 import SubNavbar from "./SubNavabar";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
+
 
 const Navbar = ({ onSignUpClick }) => {
+const sessionData = useSession();
+const { data: session, status } = sessionData || {};
+
+  const router = useRouter();
+
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -24,10 +31,18 @@ const Navbar = ({ onSignUpClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  console.log(user,"hehhh");
-  
-  const router = useRouter();
+
+
+ 
+
+
+
+
+  // Debug session data
+  useEffect(() => {
+    console.log("Session status:", status);
+    console.log("Session data:", session);
+  }, [session, status]);
 
   const popularSearches = [
     { term: "Rolex Daytona", path: "/search?q=rolex+daytona" },
@@ -37,47 +52,38 @@ const Navbar = ({ onSignUpClick }) => {
     { term: "Luxury Watches for Men", path: "/search?q=luxury+watches+men" },
   ];
 
-  // Check authentication status - CORRECTED
+  // Get user data from session
+  const getUserData = useCallback(() => {
+    if (session?.user) {
+      return {
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image,
+        // Add any other user properties you need
+      };
+    }
+    return null;
+  }, [session]);
+
+  const user = getUserData();
+
   useEffect(() => {
     setIsClient(true);
-    const checkAuth = () => {
-      // Check if user data exists in localStorage with key "user"
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        try {
-          const parsedUser = JSON.parse(userData);
-          setUser(parsedUser);
-        } catch (error) {
-          console.error('Error parsing user data:', error);
-          // Clear corrupted data
-          localStorage.removeItem('user');
-          localStorage.removeItem('userName');
-          localStorage.removeItem('userEmail');
-        }
-      }
-    };
-
-    checkAuth();
 
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     
-    // Listen for storage changes (for logout from other tabs)
-    window.addEventListener('storage', checkAuth);
-    
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener('storage', checkAuth);
     };
   }, []);
 
-  // Logout function - CORRECTED
-  const handleLogout = useCallback(() => {
-    setUser(null);
-    // Clear all user-related data from localStorage
-    localStorage.removeItem('user');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
+  // Handle logout with NextAuth
+  const handleLogout = useCallback(async () => {
+    await signOut({ 
+      redirect: false,
+      callbackUrl: "/"
+    });
     setUserDropdownOpen(false);
     router.push('/');
   }, [router]);
@@ -130,6 +136,24 @@ const Navbar = ({ onSignUpClick }) => {
       setIsMobileSearchOpen(false);
     }
   }, [searchQuery, router]);
+
+  // Show loading state while checking authentication
+  if (status === "loading") {
+    return (
+      <header className="w-full bg-white sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 md:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-4">
+              <div className="h-8 w-32 bg-gray-200 animate-pulse rounded"></div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="h-8 w-8 bg-gray-200 animate-pulse rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <>
@@ -232,7 +256,7 @@ const Navbar = ({ onSignUpClick }) => {
                 <FaShoppingCart className="text-lg md:text-xl" />
               </Link>
 
-              {/* User Account Section - CORRECTED */}
+              {/* User Account Section */}
               {user ? (
                 <div className="relative user-dropdown-container">
                   <button
@@ -240,9 +264,19 @@ const Navbar = ({ onSignUpClick }) => {
                     className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-full transition-all duration-200"
                     aria-label="User account menu"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm font-medium">
-                      {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                    </div>
+                    {user.image ? (
+                      <Image
+                        src={user.image}
+                        alt={user.name || 'User'}
+                        className="w-8 h-8 rounded-full"
+                        width={32}
+                        height={32}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
                     <span className="text-sm font-medium max-w-[100px] truncate">
                       {user.name ? user.name.split(' ')[0] : 'User'}
                     </span>
@@ -319,7 +353,7 @@ const Navbar = ({ onSignUpClick }) => {
                 <FaShoppingCart size={18} className="text-gray-700" />
               </Link>
 
-              {/* Mobile User Account - CORRECTED */}
+              {/* Mobile User Account */}
               {user ? (
                 <div className="relative user-dropdown-container">
                   <button
@@ -327,9 +361,19 @@ const Navbar = ({ onSignUpClick }) => {
                     className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center shadow hover:shadow-md transition-all"
                     aria-label="User account menu"
                   >
-                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                      {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                    </div>
+                    {user.image ? (
+                      <Image
+                        src={user.image}
+                        alt={user.name || 'User'}
+                        className="w-6 h-6 rounded-full"
+                        width={24}
+                        height={24}
+                      />
+                    ) : (
+                      <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
                   </button>
 
                   {userDropdownOpen && (

@@ -8,6 +8,10 @@ import {
   FaEnvelope,
   FaComments,
   FaQuestionCircle,
+  FaDollarSign,
+  FaEuroSign,
+  FaPoundSign,
+  FaRupeeSign,
 } from "react-icons/fa";
 import Link from "next/link";
 import Rolex from '../../assets/Rolex Submariner.jpg'
@@ -19,14 +23,74 @@ import LeatherBag  from  '../../assets/Leather Bag.jpg'
 import SilverCufflinks from '../../assets/Silver Cufflinks.jpg'
 import FountainPen from '../../assets/Fountain Pen.jpg'
 import AccessoryDeals from '../../assets/Accessory Deals.jpg'
+import { useCurrency } from "@/app/CurrencyContext";
 import Image from "next/image";
 
+
+import axios from "axios";
+
 const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
+  const { currency, setCurrency, setRate } = useCurrency();
   const [dropdown, setDropdown] = useState(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState({
+    code: "AED",
+    symbol: "د.إ",
+    name: "UAE Dirham",
+    flag: "🇦🇪"
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Handle currency change
+  const handleCurrencyChange = async (currency) => {
+    setIsLoading(true);
+    setSelectedCurrency(currency);
+    setCurrency(currency.code);
+
+    try {
+      const res = await axios.get(
+        `http://localhost:9000/api/Auth/convert-price`,
+        {
+          params: { 
+            amount: 1, 
+            from: "AED", 
+            to: currency.code 
+          },
+        }
+      );
+      
+      if (res.data && res.data.converted !== undefined) {
+        setRate(res.data.converted);
+        console.log(`Currency changed to ${currency.code}, rate: ${res.data.converted}`);
+      } else {
+        throw new Error("Invalid response from server");
+      }
+    } catch (err) {
+      console.error("Conversion failed", err.response?.data || err.message);
+      // Fallback to default rate if API fails
+      const fallbackRates = {
+        "USD": 0.27,
+        "EUR": 0.25,
+        "GBP": 0.21,
+        "INR": 22.5,
+        "SAR": 1.02,
+        "AED": 1
+      };
+      setRate(fallbackRates[currency.code] || 1);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initialize currency from context on component mount
+  useEffect(() => {
+    const initialCurrency = currencyOptions.find(opt => opt.code === currency) || currencyOptions[0];
+    setSelectedCurrency(initialCurrency);
+  }, [currency]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -43,6 +107,16 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       window.removeEventListener("resize", checkScreenSize);
     };
   }, []);
+
+  // Currency options
+  const currencyOptions = [
+    { code: "AED", symbol: "د.إ", name: "UAE Dirham", flag: "🇦🇪" },
+    { code: "USD", symbol: "$", name: "US Dollar", flag: "🇺🇸" },
+    { code: "EUR", symbol: "€", name: "Euro", flag: "🇪🇺" },
+    { code: "GBP", symbol: "£", name: "British Pound", flag: "🇬🇧" },
+    { code: "INR", symbol: "₹", name: "Indian Rupee", flag: "🇮🇳" },
+    { code: "SAR", symbol: "﷼", name: "Saudi Riyal", flag: "🇸🇦" },
+  ];
 
   // Mega menu data for different categories
   const megaMenuData = {
@@ -229,9 +303,129 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   const toggleHelp = useCallback(() => setIsHelpOpen((prev) => !prev), []);
   const toggleLanguage = useCallback(() => setIsLanguageOpen((prev) => !prev), []);
+  const toggleCurrency = useCallback(() => setIsCurrencyOpen((prev) => !prev), []);
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), [setIsMobileMenuOpen]);
 
-  // Function to render mega menu for desktop ONLY
+  const handleCurrencySelect = useCallback((currency) => {
+    handleCurrencyChange(currency);
+    setIsCurrencyOpen(false);
+  }, []);
+
+  // Function to get currency icon
+  const getCurrencyIcon = (code) => {
+    switch (code) {
+      case 'USD': return <FaDollarSign className="text-green-600" />;
+      case 'EUR': return <FaEuroSign className="text-blue-600" />;
+      case 'GBP': return <FaPoundSign className="text-red-600" />;
+      case 'INR': return <FaRupeeSign className="text-orange-600" />;
+      default: return <span className="text-amber-600 font-bold">{selectedCurrency.symbol}</span>;
+    }
+  };
+
+  // Function to render currency selector for desktop
+  const renderDesktopCurrencySelector = () => (
+    <div className="relative">
+      <button
+        onClick={toggleCurrency}
+        disabled={isLoading}
+        className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-100 text-sm transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isLoading ? (
+          <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+          getCurrencyIcon(selectedCurrency.code)
+        )}
+        <span className="font-medium">{selectedCurrency.code}</span>
+        <FaChevronDown 
+          className={`transition-transform duration-200 ${isCurrencyOpen ? "rotate-180" : ""}`} 
+          size={12}
+        />
+      </button>
+      
+      {isCurrencyOpen && (
+        <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-lg py-2 z-50 border border-gray-200">
+          <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
+            SELECT CURRENCY
+          </div>
+          {currencyOptions.map((currency) => (
+            <button
+              key={currency.code}
+              onClick={() => handleCurrencySelect(currency)}
+              disabled={isLoading}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors ${
+                selectedCurrency.code === currency.code 
+                  ? "bg-amber-50 text-amber-700" 
+                  : "hover:bg-gray-50 text-gray-700"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <span className="text-base">{currency.flag}</span>
+              <span className="flex-1 text-left">
+                {currency.name}
+              </span>
+              <span className={`font-medium ${
+                selectedCurrency.code === currency.code ? "text-amber-600" : "text-gray-500"
+              }`}>
+                {currency.code}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // Function to render currency selector for mobile
+  const renderMobileCurrencySelector = () => (
+    <div className="border-b border-gray-100">
+      <button
+        onClick={toggleCurrency}
+        disabled={isLoading}
+        className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors disabled:opacity-50"
+      >
+        <div className="flex items-center gap-3">
+          {isLoading ? (
+            <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            getCurrencyIcon(selectedCurrency.code)
+          )}
+          <span className="font-medium text-base">Currency</span>
+        </div>
+        <FaChevronDown 
+          className={`text-gray-400 transition-transform duration-200 ${isCurrencyOpen ? "rotate-180" : ""}`} 
+        />
+      </button>
+      
+      {isCurrencyOpen && (
+        <div className="bg-gray-50 pl-5">
+          <div className="px-5 py-2 text-xs font-semibold text-gray-500 border-t border-gray-200">
+            SELECT CURRENCY
+          </div>
+          {currencyOptions.map((currency) => (
+            <button
+              key={currency.code}
+              onClick={() => handleCurrencySelect(currency)}
+              disabled={isLoading}
+              className={`w-full flex items-center gap-3 px-5 py-3 text-sm border-t border-gray-100 transition-colors ${
+                selectedCurrency.code === currency.code 
+                  ? "bg-amber-50 text-amber-700" 
+                  : "text-gray-600 hover:bg-gray-100"
+              } disabled:opacity-50`}
+            >
+              <span className="text-base">{currency.flag}</span>
+              <span className="flex-1 text-left">
+                {currency.name} ({currency.code})
+              </span>
+              {selectedCurrency.code === currency.code && (
+                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+
   const renderMegaMenu = (megaMenuKey) => {
     if (!isDesktop) return null; // Only render on desktop
 
@@ -268,7 +462,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                     href={`/product/${product.id}`}
                     className="group flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-all duration-200"
                   >
-                    <Image
+                     <Image
                       src={product.image}
                       alt={product.name}
                       width={product.width}
@@ -431,13 +625,18 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         <div className="bg-gray-50 p-3 rounded-lg">
           <h4 className="font-semibold text-gray-900 mb-1">{data.promotion.title}</h4>
           <p className="text-sm text-gray-600 mb-2">{data.promotion.description}</p>
-          <button className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded text-sm w-full transition-colors">
+          <Link
+            href={megaMenuKey === "watches" ? "/watches" : megaMenuKey === "leathers" ? "/leathers" : "/accessories"}
+            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded text-sm w-full transition-colors block text-center"
+            onClick={closeMobileMenu}
+          >
             {data.promotion.cta}
-          </button>
+          </Link>
         </div>
       </div>
     );
   };
+
 
   return (
     <>
@@ -475,20 +674,26 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
             </div>
           </nav>
 
-          {/* Help & Language - Right side */}
+          {/* Right side items - Currency, Help & Language */}
           <div className="flex items-center gap-4 md:gap-6">
+            {/* Currency Selector */}
+            {renderDesktopCurrencySelector()}
+
             {/* Help */}
             <div className="relative">
               <button
                 onClick={toggleHelp}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-100 text-sm"
+                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-100 text-sm transition-colors duration-200"
               >
-                <FaPhone className="text-[#1e518e]" />
+                <FaPhone className="text-[#1e518e]" size={14} />
                 <span>Support</span>
-                <FaChevronDown className={`transition-transform ${isHelpOpen ? "rotate-180" : ""}`} />
+                <FaChevronDown 
+                  className={`transition-transform duration-200 ${isHelpOpen ? "rotate-180" : ""}`} 
+                  size={12}
+                />
               </button>
               {isHelpOpen && (
-                <div className="absolute right-0 mt-2 w-52 bg-white shadow-lg rounded-lg py-2 z-50 border border-gray-200">
+                <div className="absolute right-0 mt-2 w-52 bg-white shadow-xl rounded-lg py-2 z-50 border border-gray-200">
                   <a
                     href="tel:+97112345678"
                     className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 text-sm transition-colors"
@@ -528,14 +733,17 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
             <div className="relative">
               <button
                 onClick={toggleLanguage}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-100 text-sm"
+                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-100 text-sm transition-colors duration-200"
               >
-                <FaGlobe className="text-[#1e518e]" />
+                <FaGlobe className="text-[#1e518e]" size={14} />
                 <span>English</span>
-                <FaChevronDown className={`transition-transform ${isLanguageOpen ? "rotate-180" : ""}`} />
+                <FaChevronDown 
+                  className={`transition-transform duration-200 ${isLanguageOpen ? "rotate-180" : ""}`} 
+                  size={12}
+                />
               </button>
               {isLanguageOpen && (
-                <div className="absolute right-0 mt-2 w-36 bg-white shadow-lg rounded-lg py-2 z-50 border border-gray-200">
+                <div className="absolute right-0 mt-2 w-36 bg-white shadow-xl rounded-lg py-2 z-50 border border-gray-200">
                   <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-sm transition-colors">
                     🇬🇧 English
                   </button>
@@ -574,17 +782,27 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         <div className="overflow-y-auto h-full pb-20">
           {menuItems.map((item) => (
             <div key={item.name} className="border-b border-gray-100">
-              <button
-                onClick={() => toggleDropdown(item.name)}
-                className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors"
-              >
-                <span className="font-medium text-gray-700 hover:text-yellow-600 transition">{item.name}</span>
-                {(item.subMenu || item.hasMegaMenu) && (
+              {/* If item has no submenu or mega menu, render as direct link */}
+              {(!item.subMenu && !item.hasMegaMenu) ? (
+                <Link
+                  href={item.path}
+                  className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors"
+                  onClick={closeMobileMenu}
+                >
+                  <span className="font-medium text-gray-700 hover:text-yellow-600 transition">{item.name}</span>
+                </Link>
+              ) : (
+                // If item has submenu or mega menu, render as toggle button
+                <button
+                  onClick={() => toggleDropdown(item.name)}
+                  className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors"
+                >
+                  <span className="font-medium text-gray-700 hover:text-yellow-600 transition">{item.name}</span>
                   <span className="text-gray-400">
                     {dropdown === item.name ? <FaChevronDown size={14} /> : <FaChevronRight size={14} />}
                   </span>
-                )}
-              </button>
+                </button>
+              )}
 
               {/* Mobile Menu Content (simplified layout for mobile) */}
               {(item.hasMegaMenu || item.subMenu) && dropdown === item.name && (
@@ -597,6 +815,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               )}
             </div>
           ))}
+
+          {/* Currency Selector for Mobile */}
+          {renderMobileCurrencySelector()}
 
           {/* Mobile Help */}
           <div className="border-b border-gray-100">
@@ -695,9 +916,12 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         </div>
       </div>
 
-      {/* Overlay for mobile menu */}
+      {/* Overlay for mobile menu - Changed to blur effect */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={closeMobileMenu}></div>
+        <div 
+          className="fixed inset-0 backdrop-blur-sm bg-white/10 z-40 md:hidden" 
+          onClick={closeMobileMenu}
+        ></div>
       )}
     </>
   );
