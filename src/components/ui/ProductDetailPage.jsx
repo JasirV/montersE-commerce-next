@@ -136,7 +136,7 @@ const ProductDetailPage = () => {
   );
 };
 
-  console.log(product, "product lin 474");
+
 
   return (
     <div className="bg-gray-100 min-h-screen py-3 xs:py-4 sm:py-6 px-2 xs:px-3 sm:px-4">

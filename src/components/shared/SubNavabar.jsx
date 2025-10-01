@@ -51,8 +51,8 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         { name: "luxury Watches", path: "/watches/luxury" },
         { name: "Sports Watches", path: "/watches/sports" },
         { name: "Classic Watches", path: "/watches/classic" },
-        { name: "Smart Watches", path: "/watches/smart" },
-        { name: "Limited Edition", path: "/watches/limited-edition" },
+        // { name: "Smart Watches", path: "/watches/smart" },
+        // { name: "Limited Edition", path: "/watches/limited-edition" },
       ],
       featuredProducts: [
         {
