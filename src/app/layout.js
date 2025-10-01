@@ -4,7 +4,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Providers from "./Providers";
 import { CurrencyProvider } from "./CurrencyContext";
-
+import { SessionProvider } from 'next-auth/react';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,9 +28,9 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ToastContainer />
-        <Providers>
+        <SessionProvider>
           <CurrencyProvider>{children}</CurrencyProvider>
-        </Providers>
+        </SessionProvider>
       </body>
     </html>
   );
