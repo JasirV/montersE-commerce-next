@@ -23,7 +23,7 @@ export default function IndexPage() {
     setAuthAction(action);
     setModalIsOpen(true);
   };
-  LandingPageProduct();
+
 
   return (
     <div>
