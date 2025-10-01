@@ -19,7 +19,7 @@ const CreateWishlistModal = ({ isOpen, onClose, onWishlistCreated }) => {
       setLoading(true);
 
       const token = localStorage.getItem("token"); // 👈 adjust if you store it differently
-      console.log(token,"neew");
+      console.log(token,"My token");
       
 
       const { data } = await axios.post(
