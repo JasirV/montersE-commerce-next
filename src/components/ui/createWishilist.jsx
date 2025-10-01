@@ -1,10 +1,56 @@
 import React, { useState } from "react";
+import axios from "axios";
+import { toast } from "react-toastify"; // optional for alerts
 
-const CreateWishlistModal = ({ isOpen, onClose }) => {
+const CreateWishlistModal = ({ isOpen, onClose, onWishlistCreated }) => {
   const [wishlistName, setWishlistName] = useState("");
   const [isDefault, setIsDefault] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleCreate = async () => {
+    if (!wishlistName.trim()) {
+      toast.error("Please enter a wishlist name");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem("token"); // 👈 adjust if you store it differently
+      console.log(token,"neew");
+      
+
+      const { data } = await axios.post(
+        "http://localhost:9000/api/products/wishlist/create",
+        { name: wishlistName, isDefault },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // if backend uses JWT
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      toast.success(data.message || "Wishlist created successfully");
+
+      // pass new wishlist back to parent
+      if (onWishlistCreated) {
+        onWishlistCreated(data.wishlists);
+      }
+
+      setWishlistName("");
+      setIsDefault(true);
+      onClose();
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to create wishlist"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 px-4">
@@ -48,13 +94,13 @@ const CreateWishlistModal = ({ isOpen, onClose }) => {
         {/* Footer */}
         <div className="px-4 py-3">
           <button
-            onClick={() => {
-              console.log("Created:", wishlistName, "Default:", isDefault);
-              onClose();
-            }}
-            className="w-full py-2 rounded-md text-white font-medium bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:opacity-90 transition"
+            onClick={handleCreate}
+            disabled={loading}
+            className={`w-full py-2 rounded-md text-white font-medium bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:opacity-90 transition ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            CREATE
+            {loading ? "Creating..." : "CREATE"}
           </button>
         </div>
       </div>

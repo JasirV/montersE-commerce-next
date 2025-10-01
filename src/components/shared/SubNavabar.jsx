@@ -14,18 +14,17 @@ import {
   FaRupeeSign,
 } from "react-icons/fa";
 import Link from "next/link";
-import Rolex from '../../assets/Rolex Submariner.jpg'
-import Omega from '../../assets/Omega Seamaster.jpg'
-import WatchCollection from '../../assets/Watch Collection.jpg'
-import LeatherWallet   from '../../assets/Leather Wallet.jpg'
-import LeatherSale  from '../../assets/Leather Sale.jpg'
-import LeatherBag  from  '../../assets/Leather Bag.jpg'
-import SilverCufflinks from '../../assets/Silver Cufflinks.jpg'
-import FountainPen from '../../assets/Fountain Pen.jpg'
-import AccessoryDeals from '../../assets/Accessory Deals.jpg'
+import Rolex from "../../assets/Rolex Submariner.jpg";
+import Omega from "../../assets/Omega Seamaster.jpg";
+import WatchCollection from "../../assets/Watch Collection.jpg";
+import LeatherWallet from "../../assets/Leather Wallet.jpg";
+import LeatherSale from "../../assets/Leather Sale.jpg";
+import LeatherBag from "../../assets/Leather Bag.jpg";
+import SilverCufflinks from "../../assets/Silver Cufflinks.jpg";
+import FountainPen from "../../assets/Fountain Pen.jpg";
+import AccessoryDeals from "../../assets/Accessory Deals.jpg";
 import { useCurrency } from "@/app/CurrencyContext";
 import Image from "next/image";
-
 
 import axios from "axios";
 
@@ -41,7 +40,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     code: "AED",
     symbol: "د.إ",
     name: "UAE Dirham",
-    flag: "🇦🇪"
+    flag: "🇦🇪",
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -55,17 +54,19 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       const res = await axios.get(
         `http://localhost:9000/api/Auth/convert-price`,
         {
-          params: { 
-            amount: 1, 
-            from: "AED", 
-            to: currency.code 
+          params: {
+            amount: 1,
+            from: "AED",
+            to: currency.code,
           },
         }
       );
-      
+
       if (res.data && res.data.converted !== undefined) {
         setRate(res.data.converted);
-        console.log(`Currency changed to ${currency.code}, rate: ${res.data.converted}`);
+        console.log(
+          `Currency changed to ${currency.code}, rate: ${res.data.converted}`
+        );
       } else {
         throw new Error("Invalid response from server");
       }
@@ -73,12 +74,12 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       console.error("Conversion failed", err.response?.data || err.message);
       // Fallback to default rate if API fails
       const fallbackRates = {
-        "USD": 0.27,
-        "EUR": 0.25,
-        "GBP": 0.21,
-        "INR": 22.5,
-        "SAR": 1.02,
-        "AED": 1
+        USD: 0.27,
+        EUR: 0.25,
+        GBP: 0.21,
+        INR: 22.5,
+        SAR: 1.02,
+        AED: 1,
       };
       setRate(fallbackRates[currency.code] || 1);
     } finally {
@@ -88,20 +89,22 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   // Initialize currency from context on component mount
   useEffect(() => {
-    const initialCurrency = currencyOptions.find(opt => opt.code === currency) || currencyOptions[0];
+    const initialCurrency =
+      currencyOptions.find((opt) => opt.code === currency) ||
+      currencyOptions[0];
     setSelectedCurrency(initialCurrency);
   }, [currency]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     const checkScreenSize = () => setIsDesktop(window.innerWidth >= 768);
-    
+
     // Initial check
     checkScreenSize();
-    
+
     window.addEventListener("scroll", handleScroll);
     window.addEventListener("resize", checkScreenSize);
-    
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", checkScreenSize);
@@ -122,11 +125,11 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const megaMenuData = {
     watches: {
       categories: [
-        { name: "luxury/Classic Watches", path: "/watches/luxury" },
-        { name: "Sports/casual Watches", path: "/watches/sports" },
-        { name: "Classic/casual Watches", path: "/watches/classic" },
-        { name: "Smart Watches", path: "/watches/smart" },
-        { name: "Limited Edition", path: "/watches/limited-edition" },
+        { name: "luxury Watches", path: "/watches/luxury" },
+        { name: "Sports Watches", path: "/watches/sports" },
+        { name: "Classic Watches", path: "/watches/classic" },
+        // { name: "Smart Watches", path: "/watches/smart" },
+        // { name: "Limited Edition", path: "/watches/limited-edition" },
       ],
       featuredProducts: [
         {
@@ -135,7 +138,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           price: "AED8,500",
           image: Rolex,
           width: 80,
-          height: 80
+          height: 80,
         },
         {
           id: 2,
@@ -143,7 +146,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           price: "AED4,200",
           image: Omega,
           width: 80,
-          height: 80
+          height: 80,
         },
       ],
       promotion: {
@@ -170,7 +173,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           price: "AED299",
           image: LeatherBag,
           width: 80,
-          height: 80
+          height: 80,
         },
         {
           id: 4,
@@ -178,7 +181,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           price: "AED89",
           image: LeatherWallet,
           width: 80,
-          height: 80
+          height: 80,
         },
       ],
       promotion: {
@@ -205,7 +208,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           price: "AED199",
           image: FountainPen,
           width: 80,
-          height: 80
+          height: 80,
         },
         {
           id: 6,
@@ -213,7 +216,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           price: "AED129",
           image: SilverCufflinks,
           width: 80,
-          height: 80
+          height: 80,
         },
       ],
       promotion: {
@@ -302,9 +305,18 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   );
 
   const toggleHelp = useCallback(() => setIsHelpOpen((prev) => !prev), []);
-  const toggleLanguage = useCallback(() => setIsLanguageOpen((prev) => !prev), []);
-  const toggleCurrency = useCallback(() => setIsCurrencyOpen((prev) => !prev), []);
-  const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), [setIsMobileMenuOpen]);
+  const toggleLanguage = useCallback(
+    () => setIsLanguageOpen((prev) => !prev),
+    []
+  );
+  const toggleCurrency = useCallback(
+    () => setIsCurrencyOpen((prev) => !prev),
+    []
+  );
+  const closeMobileMenu = useCallback(
+    () => setIsMobileMenuOpen(false),
+    [setIsMobileMenuOpen]
+  );
 
   const handleCurrencySelect = useCallback((currency) => {
     handleCurrencyChange(currency);
@@ -314,11 +326,20 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   // Function to get currency icon
   const getCurrencyIcon = (code) => {
     switch (code) {
-      case 'USD': return <FaDollarSign className="text-green-600" />;
-      case 'EUR': return <FaEuroSign className="text-blue-600" />;
-      case 'GBP': return <FaPoundSign className="text-red-600" />;
-      case 'INR': return <FaRupeeSign className="text-orange-600" />;
-      default: return <span className="text-amber-600 font-bold">{selectedCurrency.symbol}</span>;
+      case "USD":
+        return <FaDollarSign className="text-green-600" />;
+      case "EUR":
+        return <FaEuroSign className="text-blue-600" />;
+      case "GBP":
+        return <FaPoundSign className="text-red-600" />;
+      case "INR":
+        return <FaRupeeSign className="text-orange-600" />;
+      default:
+        return (
+          <span className="text-amber-600 font-bold">
+            {selectedCurrency.symbol}
+          </span>
+        );
     }
   };
 
@@ -336,12 +357,14 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           getCurrencyIcon(selectedCurrency.code)
         )}
         <span className="font-medium">{selectedCurrency.code}</span>
-        <FaChevronDown 
-          className={`transition-transform duration-200 ${isCurrencyOpen ? "rotate-180" : ""}`} 
+        <FaChevronDown
+          className={`transition-transform duration-200 ${
+            isCurrencyOpen ? "rotate-180" : ""
+          }`}
           size={12}
         />
       </button>
-      
+
       {isCurrencyOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-lg py-2 z-50 border border-gray-200">
           <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
@@ -353,18 +376,20 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               onClick={() => handleCurrencySelect(currency)}
               disabled={isLoading}
               className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors ${
-                selectedCurrency.code === currency.code 
-                  ? "bg-amber-50 text-amber-700" 
+                selectedCurrency.code === currency.code
+                  ? "bg-amber-50 text-amber-700"
                   : "hover:bg-gray-50 text-gray-700"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <span className="text-base">{currency.flag}</span>
-              <span className="flex-1 text-left">
-                {currency.name}
-              </span>
-              <span className={`font-medium ${
-                selectedCurrency.code === currency.code ? "text-amber-600" : "text-gray-500"
-              }`}>
+              <span className="flex-1 text-left">{currency.name}</span>
+              <span
+                className={`font-medium ${
+                  selectedCurrency.code === currency.code
+                    ? "text-amber-600"
+                    : "text-gray-500"
+                }`}
+              >
                 {currency.code}
               </span>
             </button>
@@ -390,11 +415,13 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           )}
           <span className="font-medium text-base">Currency</span>
         </div>
-        <FaChevronDown 
-          className={`text-gray-400 transition-transform duration-200 ${isCurrencyOpen ? "rotate-180" : ""}`} 
+        <FaChevronDown
+          className={`text-gray-400 transition-transform duration-200 ${
+            isCurrencyOpen ? "rotate-180" : ""
+          }`}
         />
       </button>
-      
+
       {isCurrencyOpen && (
         <div className="bg-gray-50 pl-5">
           <div className="px-5 py-2 text-xs font-semibold text-gray-500 border-t border-gray-200">
@@ -406,8 +433,8 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               onClick={() => handleCurrencySelect(currency)}
               disabled={isLoading}
               className={`w-full flex items-center gap-3 px-5 py-3 text-sm border-t border-gray-100 transition-colors ${
-                selectedCurrency.code === currency.code 
-                  ? "bg-amber-50 text-amber-700" 
+                selectedCurrency.code === currency.code
+                  ? "bg-amber-50 text-amber-700"
                   : "text-gray-600 hover:bg-gray-100"
               } disabled:opacity-50`}
             >
@@ -425,7 +452,6 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     </div>
   );
 
-
   const renderMegaMenu = (megaMenuKey) => {
     if (!isDesktop) return null; // Only render on desktop
 
@@ -437,7 +463,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Column 1: Categories */}
             <div>
-              <h3 className="font-semibold text-gray-900 mb-4 text-lg">Categories</h3>
+              <h3 className="font-semibold text-gray-900 mb-4 text-lg">
+                Categories
+              </h3>
               <ul className="space-y-3">
                 {data.categories.map((category) => (
                   <li key={category.name}>
@@ -454,7 +482,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
             {/* Column 2: Featured Products */}
             <div className="lg:col-span-2">
-              <h3 className="font-semibold text-gray-900 mb-4 text-lg">Featured Products</h3>
+              <h3 className="font-semibold text-gray-900 mb-4 text-lg">
+                Featured Products
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {data.featuredProducts.map((product) => (
                   <Link
@@ -462,7 +492,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                     href={`/product/${product.id}`}
                     className="group flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-all duration-200"
                   >
-                     <Image
+                    <Image
                       src={product.image}
                       alt={product.name}
                       width={product.width}
@@ -473,7 +503,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                       <h4 className="font-medium text-gray-900 group-hover:text-amber-600 transition-colors">
                         {product.name}
                       </h4>
-                      <p className="text-amber-600 font-semibold">{product.price}</p>
+                      <p className="text-amber-600 font-semibold">
+                        {product.price}
+                      </p>
                     </div>
                   </Link>
                 ))}
@@ -493,7 +525,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                   <div className="text-center text-white">
-                    <h4 className="font-bold text-lg">{data.promotion.title}</h4>
+                    <h4 className="font-bold text-lg">
+                      {data.promotion.title}
+                    </h4>
                     <p className="text-sm mb-2">{data.promotion.description}</p>
                     <button className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
                       {data.promotion.cta}
@@ -512,7 +546,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const renderDesktopSubMenu = (subItems, level = 0) => {
     return (
       <div
-        className={`absolute ${level === 0 ? "left-0 top-full" : "left-full top-0"} mt-0 w-52 bg-white shadow-xl rounded-b-md py-2 border-t-2 border-amber-300 z-50`}
+        className={`absolute ${
+          level === 0 ? "left-0 top-full" : "left-full top-0"
+        } mt-0 w-52 bg-white shadow-xl rounded-b-md py-2 border-t-2 border-amber-300 z-50`}
       >
         {subItems.map((sub) => (
           <div key={sub.name} className="relative group">
@@ -521,7 +557,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               className="block px-4 py-2 text-gray-800 hover:bg-amber-50 text-sm border-b border-gray-100 transition-colors flex justify-between items-center"
             >
               {sub.name}
-              {sub.subMenu && <FaChevronRight size={12} className="text-gray-400" />}
+              {sub.subMenu && (
+                <FaChevronRight size={12} className="text-gray-400" />
+              )}
             </Link>
 
             {sub.subMenu && (
@@ -563,7 +601,11 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
         {sub.subMenu && dropdown === `${parentName}-${sub.name}` && (
           <div className="bg-gray-100 pl-5">
-            {renderMobileSubMenu(sub.subMenu, `${parentName}-${sub.name}`, level + 1)}
+            {renderMobileSubMenu(
+              sub.subMenu,
+              `${parentName}-${sub.name}`,
+              level + 1
+            )}
           </div>
         )}
       </div>
@@ -614,7 +656,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 />
                 <div>
                   <p className="font-medium text-sm">{product.name}</p>
-                  <p className="text-amber-600 text-sm font-semibold">{product.price}</p>
+                  <p className="text-amber-600 text-sm font-semibold">
+                    {product.price}
+                  </p>
                 </div>
               </Link>
             ))}
@@ -623,10 +667,20 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
         {/* Promotion */}
         <div className="bg-gray-50 p-3 rounded-lg">
-          <h4 className="font-semibold text-gray-900 mb-1">{data.promotion.title}</h4>
-          <p className="text-sm text-gray-600 mb-2">{data.promotion.description}</p>
+          <h4 className="font-semibold text-gray-900 mb-1">
+            {data.promotion.title}
+          </h4>
+          <p className="text-sm text-gray-600 mb-2">
+            {data.promotion.description}
+          </p>
           <Link
-            href={megaMenuKey === "watches" ? "/watches" : megaMenuKey === "leathers" ? "/leathers" : "/accessories"}
+            href={
+              megaMenuKey === "watches"
+                ? "/watches"
+                : megaMenuKey === "leathers"
+                ? "/leathers"
+                : "/accessories"
+            }
             className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded text-sm w-full transition-colors block text-center"
             onClick={closeMobileMenu}
           >
@@ -636,7 +690,6 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       </div>
     );
   };
-
 
   return (
     <>
@@ -665,10 +718,15 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                   </Link>
 
                   {/* Mega Menu for specific items - DESKTOP ONLY */}
-                  {item.hasMegaMenu && dropdown === item.name && renderMegaMenu(item.megaMenuKey)}
+                  {item.hasMegaMenu &&
+                    dropdown === item.name &&
+                    renderMegaMenu(item.megaMenuKey)}
 
                   {/* Regular Submenu for other items */}
-                  {item.subMenu && !item.hasMegaMenu && dropdown === item.name && renderDesktopSubMenu(item.subMenu)}
+                  {item.subMenu &&
+                    !item.hasMegaMenu &&
+                    dropdown === item.name &&
+                    renderDesktopSubMenu(item.subMenu)}
                 </div>
               ))}
             </div>
@@ -687,8 +745,10 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               >
                 <FaPhone className="text-[#1e518e]" size={14} />
                 <span>Support</span>
-                <FaChevronDown 
-                  className={`transition-transform duration-200 ${isHelpOpen ? "rotate-180" : ""}`} 
+                <FaChevronDown
+                  className={`transition-transform duration-200 ${
+                    isHelpOpen ? "rotate-180" : ""
+                  }`}
                   size={12}
                 />
               </button>
@@ -701,7 +761,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                     <FaPhone className="text-[#1e518e]" />
                     <div>
                       <div>Call Support</div>
-                      <div className="text-xs text-gray-500">+971 1234 5678</div>
+                      <div className="text-xs text-gray-500">
+                        +971 1234 5678
+                      </div>
                     </div>
                   </a>
                   <Link
@@ -737,8 +799,10 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               >
                 <FaGlobe className="text-[#1e518e]" size={14} />
                 <span>English</span>
-                <FaChevronDown 
-                  className={`transition-transform duration-200 ${isLanguageOpen ? "rotate-180" : ""}`} 
+                <FaChevronDown
+                  className={`transition-transform duration-200 ${
+                    isLanguageOpen ? "rotate-180" : ""
+                  }`}
                   size={12}
                 />
               </button>
@@ -783,13 +847,15 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           {menuItems.map((item) => (
             <div key={item.name} className="border-b border-gray-100">
               {/* If item has no submenu or mega menu, render as direct link */}
-              {(!item.subMenu && !item.hasMegaMenu) ? (
+              {!item.subMenu && !item.hasMegaMenu ? (
                 <Link
                   href={item.path}
                   className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors"
                   onClick={closeMobileMenu}
                 >
-                  <span className="font-medium text-gray-700 hover:text-yellow-600 transition">{item.name}</span>
+                  <span className="font-medium text-gray-700 hover:text-yellow-600 transition">
+                    {item.name}
+                  </span>
                 </Link>
               ) : (
                 // If item has submenu or mega menu, render as toggle button
@@ -797,9 +863,15 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                   onClick={() => toggleDropdown(item.name)}
                   className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors"
                 >
-                  <span className="font-medium text-gray-700 hover:text-yellow-600 transition">{item.name}</span>
+                  <span className="font-medium text-gray-700 hover:text-yellow-600 transition">
+                    {item.name}
+                  </span>
                   <span className="text-gray-400">
-                    {dropdown === item.name ? <FaChevronDown size={14} /> : <FaChevronRight size={14} />}
+                    {dropdown === item.name ? (
+                      <FaChevronDown size={14} />
+                    ) : (
+                      <FaChevronRight size={14} />
+                    )}
                   </span>
                 </button>
               )}
@@ -807,10 +879,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               {/* Mobile Menu Content (simplified layout for mobile) */}
               {(item.hasMegaMenu || item.subMenu) && dropdown === item.name && (
                 <div className="bg-gray-50 pl-5">
-                  {item.hasMegaMenu 
+                  {item.hasMegaMenu
                     ? renderMobileMenuContent(item.megaMenuKey)
-                    : renderMobileSubMenu(item.subMenu, item.name)
-                  }
+                    : renderMobileSubMenu(item.subMenu, item.name)}
                 </div>
               )}
             </div>
@@ -829,7 +900,11 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 <FaPhone className="text-[#1e518e]" />
                 <span className="font-medium text-base">Help & Support</span>
               </div>
-              <FaChevronDown className={`text-gray-400 transition-transform ${isHelpOpen ? "rotate-180" : ""}`} />
+              <FaChevronDown
+                className={`text-gray-400 transition-transform ${
+                  isHelpOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
             {isHelpOpen && (
               <div className="bg-gray-50 pl-5">
@@ -879,7 +954,11 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 <FaGlobe className="text-[#1e518e]" />
                 <span className="font-medium text-base">Language</span>
               </div>
-              <FaChevronDown className={`text-gray-400 transition-transform ${isLanguageOpen ? "rotate-180" : ""}`} />
+              <FaChevronDown
+                className={`text-gray-400 transition-transform ${
+                  isLanguageOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
             {isLanguageOpen && (
               <div className="bg-gray-50 pl-5">
@@ -918,8 +997,8 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
       {/* Overlay for mobile menu - Changed to blur effect */}
       {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 backdrop-blur-sm bg-white/10 z-40 md:hidden" 
+        <div
+          className="fixed inset-0 backdrop-blur-sm bg-white/10 z-40 md:hidden"
           onClick={closeMobileMenu}
         ></div>
       )}

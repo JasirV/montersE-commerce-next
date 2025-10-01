@@ -3,9 +3,9 @@ import React, { useState } from "react";
 import { FiTrash2, FiHeart, FiShoppingCart } from "react-icons/fi";
 import Image from "next/image";
 import Link from "next/link";
-import SupportSection from "@/components/ui/SupportSection";
+
 import Item1 from '../../assets/Watche/rendering-smart-home-device.jpg'
-import Item2 from '../../assets/beautiful-rendering-steel-object.jpg'
+import Item2 from '../../assets/Watche/ChatGPT Image Aug 10, 2025, 10_35_04 PM.png'
 
 const ShoppingCart = () => {
   const [cartItems, setCartItems] = useState([
@@ -317,7 +317,7 @@ const ShoppingCart = () => {
           </div>
         </div>
       </div>
-      <SupportSection/>
+     
     </div>
   );
 };

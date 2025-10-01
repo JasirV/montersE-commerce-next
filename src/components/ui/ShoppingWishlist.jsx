@@ -1,170 +1,268 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { FiLock, FiShare2, FiMoreHorizontal, FiPlus, FiTrash2, FiChevronLeft, FiGrid, FiList, FiEdit, FiStar, FiGlobe, FiUser } from "react-icons/fi";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { FiLock, FiShare2, FiMoreHorizontal, FiPlus, FiTrash2, FiChevronLeft, FiGrid, FiList, FiStar, FiGlobe, FiUser, FiShoppingCart, FiEye } from "react-icons/fi";
 import Image from "next/image";
-import watch from '../../assets/bag-hanging-from-furniture-item-indoors.jpg'
-import SupportSection from "./SupportSection";
+import watch from '../../assets/Watche/elegant-watch-with-silver-golden-chain-isolated.jpg'
 import CreateWishlistModal from "../ui/createWishilist";
 import SeWishilistModal from '../ui/seeWishilist'
+import axios from 'axios';
 
-// Sample data
-const wishlists = [
-  {
-    id: 1,
-    name: "farhan",
-    items: [
-      {
-        id: 101,
-        name: "Apple Watch Ultra 3 GPS + Cellular 49mm Black Titanium Case",
-        price: "3,199",
-        rating: 5.0,
-        reviews: 2,
-        image: watch,
-      },
-      {
-        id: 102,
-        name: "Apple iPhone 17 Pro 256 GB Cosmic Orange 5G",
-        price: "5,049",
-        rating: 4.4,
-        reviews: 49,
-        image: watch,
-      },
-      {
-        id: 103,
-        name: "MacBook Pro 16-inch M3 Max",
-        price: "7,299",
-        rating: 4.8,
-        reviews: 32,
-        image: watch,
-      },
-      {
-        id: 104,
-        name: "AirPods Pro 3rd Generation",
-        price: "1,299",
-        rating: 4.7,
-        reviews: 128,
-        image: watch,
-      },
-      {
-        id: 105,
-        name: "iPad Pro 12.9-inch M2",
-        price: "4,299",
-        rating: 4.9,
-        reviews: 67,
-        image: watch,
-      },
-      {
-        id: 106,
-        name: "Samsung Galaxy S24 Ultra",
-        price: "4,899",
-        rating: 4.6,
-        reviews: 89,
-        image: watch,
-      },
-    ],
-    isDefault: true,
-  },
-  { 
-    id: 2, 
-    name: "Muhammad", 
-    items: [], 
-    isDefault: false 
-  },
-  { 
-    id: 3, 
-    name: "Birthday", 
-    items: [], 
-    isDefault: false 
-  },
-];
+// API base URL
+const API_BASE_URL = 'http://localhost:9000/api';
 
 const ShoppingWishlist = () => {
-  const [activeWishlist, setActiveWishlist] = useState(wishlists[0]);
-  const [wishlistData, setWishlistData] = useState(wishlists);
+  const [activeWishlist, setActiveWishlist] = useState(null);
+  const [wishlistData, setWishlistData] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [showWishlistSidebar, setShowWishlistSidebar] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   const [open, setOpen] = useState(false);
   const [WishilistOpn, setWishilistOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [token, setToken] = useState(null);
   const dropdownRef = useRef(null);
 
-  // Close dropdown when clicking outside
+  // ✅ Get token only in browser
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) setToken(storedToken);
+  }, []);
+
+  // Axios instance with interceptor for auth
+  const api = axios.create({
+    baseURL: API_BASE_URL,
+  });
+
+  // Add token to requests
+  useEffect(() => {
+    const requestInterceptor = api.interceptors.request.use(
+      (config) => {
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    return () => {
+      api.interceptors.request.eject(requestInterceptor);
+    };
+  }, [token]);
+
+  // Fetch wishlists with useCallback to prevent unnecessary re-renders
+  const fetchWishlists = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get('/products/wishlists');
+      const wishlists = response.data.wishlists || [];
+      setWishlistData(wishlists);
+      
+      if (wishlists.length > 0) {
+        const defaultWishlist = wishlists.find(w => w.isDefault) || wishlists[0];
+        setActiveWishlist(defaultWishlist);
+      } else {
+        setActiveWishlist(null);
+      }
+    } catch (err) {
+      console.error('Error fetching wishlists:', err);
+      setError(err.response?.data?.message || 'Failed to load wishlists');
+      setWishlistData([]);
+      setActiveWishlist(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  // Fetch wishlists once token is available
+  useEffect(() => {
+    if (token) fetchWishlists();
+  }, [token, fetchWishlists]);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Close dropdown outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setMoreDropdownOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Check if mobile on mount and resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const handleDeleteItem = (wishlistId, itemId) => {
-    setWishlistData(prevData => 
-      prevData.map(wishlist => 
-        wishlist.id === wishlistId 
-          ? {
-              ...wishlist,
-              items: wishlist.items.filter(item => item.id !== itemId)
-            }
-          : wishlist
-      )
-    );
-  };
-
-  const handleMakeDefault = () => {
-    setWishlistData(prevData =>
-      prevData.map(wishlist => ({
-        ...wishlist,
-        isDefault: wishlist.id === activeWishlist.id
-      }))
-    );
-    setMoreDropdownOpen(false);
-  };
-
-  const handleTogglePublicSharing = () => {
-    // Implement public sharing toggle logic here
-    console.log("Toggle public sharing for:", activeWishlist.name);
-    setMoreDropdownOpen(false);
-  };
-
-  const handleEmptyWishlist = () => {
-    setWishlistData(prevData =>
-      prevData.map(wishlist =>
-        wishlist.id === activeWishlist.id
-          ? { ...wishlist, items: [] }
-          : wishlist
-      )
-    );
-    setMoreDropdownOpen(false);
-  };
-
-  const handleDeleteWishlist = () => {
-    if (wishlistData.length > 1 && !activeWishlist.isDefault) {
-      setWishlistData(prevData =>
-        prevData.filter(wishlist => wishlist.id !== activeWishlist.id)
+  // API Functions
+  const handleDeleteItem = async (wishlistId, itemId) => {
+    try {
+      await api.delete(`/products/wishlists/${wishlistId}/items/${itemId}`);
+      
+      // Update local state
+      setWishlistData(prevData => 
+        prevData.map(wishlist => 
+          wishlist.id === wishlistId 
+            ? {
+                ...wishlist,
+                items: wishlist.items.filter(item => item.id !== itemId)
+              }
+            : wishlist
+        )
       );
-      setActiveWishlist(wishlistData.find(wishlist => wishlist.id !== activeWishlist.id));
+
+      // Update active wishlist if needed
+      if (activeWishlist?.id === wishlistId) {
+        setActiveWishlist(prev => ({
+          ...prev,
+          items: prev.items.filter(item => item.id !== itemId)
+        }));
+      }
+    } catch (err) {
+      console.error('Error deleting item:', err);
+      setError('Failed to delete item from wishlist');
     }
-    setMoreDropdownOpen(false);
   };
 
-  const activeList = wishlistData.find(list => list.id === activeWishlist.id) || wishlistData[0];
+  const handleMakeDefault = async () => {
+    if (!activeWishlist) return;
+    
+    try {
+      await api.put(`/products/wishlists/${activeWishlist.id}/default`);
+      
+      // Update local state
+      setWishlistData(prevData =>
+        prevData.map(wishlist => ({
+          ...wishlist,
+          isDefault: wishlist.id === activeWishlist.id
+        }))
+      );
+
+      setActiveWishlist(prev => ({ ...prev, isDefault: true }));
+    } catch (err) {
+      console.error('Error setting default wishlist:', err);
+      setError(err.response?.data?.message || 'Failed to update default wishlist');
+    } finally {
+      setMoreDropdownOpen(false);
+    }
+  };
+
+  const handleTogglePublicSharing = async () => {
+    if (!activeWishlist) return;
+    
+    try {
+      const newSharingStatus = !activeWishlist.isPublic;
+      await api.put(`/products/wishlists/${activeWishlist.id}/sharing`, {
+        isPublic: newSharingStatus
+      });
+      
+      // Update local state
+      setWishlistData(prevData =>
+        prevData.map(wishlist =>
+          wishlist.id === activeWishlist.id
+            ? { ...wishlist, isPublic: newSharingStatus }
+            : wishlist
+        )
+      );
+
+      setActiveWishlist(prev => ({ ...prev, isPublic: newSharingStatus }));
+    } catch (err) {
+      console.error('Error toggling public sharing:', err);
+      setError(err.response?.data?.message || 'Failed to update sharing settings');
+    } finally {
+      setMoreDropdownOpen(false);
+    }
+  };
+
+  const handleEmptyWishlist = async () => {
+    if (!activeWishlist) return;
+    
+    try {
+      await api.delete(`/products/wishlists/${activeWishlist.id}/items`);
+      
+      // Update local state
+      setWishlistData(prevData =>
+        prevData.map(wishlist =>
+          wishlist.id === activeWishlist.id
+            ? { ...wishlist, items: [] }
+            : wishlist
+        )
+      );
+
+      setActiveWishlist(prev => ({ ...prev, items: [] }));
+    } catch (err) {
+      console.error('Error emptying wishlist:', err);
+      setError(err.response?.data?.message || 'Failed to empty wishlist');
+    } finally {
+      setMoreDropdownOpen(false);
+    }
+  };
+
+  const handleDeleteWishlist = async () => {
+    if (!activeWishlist || wishlistData.length <= 1 || activeWishlist.isDefault) return;
+    
+    try {
+      await api.delete(`/products/wishlists/${activeWishlist.id}`);
+      
+      // Update local state
+      const newWishlistData = wishlistData.filter(wishlist => wishlist.id !== activeWishlist.id);
+      setWishlistData(newWishlistData);
+      
+      if (newWishlistData.length > 0) {
+        const defaultWishlist = newWishlistData.find(w => w.isDefault) || newWishlistData[0];
+        setActiveWishlist(defaultWishlist);
+      } else {
+        setActiveWishlist(null);
+      }
+    } catch (err) {
+      console.error('Error deleting wishlist:', err);
+      setError(err.response?.data?.message || 'Failed to delete wishlist');
+    } finally {
+      setMoreDropdownOpen(false);
+    }
+  };
+
+  const handleAddToCart = async (item) => {
+    try {
+      await api.post('/cart/items', {
+        productId: item.productId || item.id,
+        quantity: 1
+      });
+      
+      // Optional: Show success message or update cart count
+      console.log('Item added to cart:', item.name);
+      
+      // You can add a toast notification here
+      // toast.success('Item added to cart!');
+      
+    } catch (err) {
+      console.error('Error adding item to cart:', err);
+      setError(err.response?.data?.message || 'Failed to add item to cart');
+    }
+  };
+
+  const handleViewProduct = (item) => {
+    // Navigate to product page
+    // router.push(`/products/${item.productId || item.id}`);
+    console.log('View product:', item);
+  };
+
+  // Handle wishlist creation success
+  const handleWishlistCreated = () => {
+    fetchWishlists();
+    setOpen(false);
+  };
+
+  const activeList = activeWishlist || wishlistData[0] || { items: [] };
 
   // More Options Dropdown Component
   const MoreOptionsDropdown = () => (
@@ -178,7 +276,12 @@ const ShoppingWishlist = () => {
         {/* Make this default wishlist */}
         <button
           onClick={handleMakeDefault}
-          className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+          disabled={activeList?.isDefault}
+          className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
+            activeList?.isDefault
+              ? 'text-gray-400 cursor-not-allowed'
+              : 'text-gray-700 hover:bg-gray-100'
+          }`}
         >
           <FiStar className="mr-3 text-gray-500" size={16} />
           <span>Make this default wishlist</span>
@@ -190,15 +293,15 @@ const ShoppingWishlist = () => {
           className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
         >
           <FiGlobe className="mr-3 text-gray-500" size={16} />
-          <span>Enable/Disable Public Sharing</span>
+          <span>{activeList?.isPublic ? 'Disable' : 'Enable'} Public Sharing</span>
         </button>
 
         {/* Empty Wishlist */}
         <button
           onClick={handleEmptyWishlist}
-          disabled={activeList.items.length === 0}
+          disabled={!activeList?.items || activeList.items.length === 0}
           className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
-            activeList.items.length === 0
+            !activeList?.items || activeList.items.length === 0
               ? 'text-gray-400 cursor-not-allowed'
               : 'text-gray-700 hover:bg-gray-100'
           }`}
@@ -210,15 +313,15 @@ const ShoppingWishlist = () => {
         {/* Delete Wishlist */}
         <button
           onClick={handleDeleteWishlist}
-          disabled={activeList.isDefault || wishlistData.length <= 1}
+          disabled={activeList?.isDefault || wishlistData.length <= 1}
           className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
-            activeList.isDefault || wishlistData.length <= 1
+            activeList?.isDefault || wishlistData.length <= 1
               ? 'text-gray-400 cursor-not-allowed'
               : 'text-red-600 hover:bg-red-50'
           }`}
         >
           <FiTrash2 className="mr-3" size={16} />
-          <span>Delete</span>
+          <span>Delete Wishlist</span>
         </button>
       </div>
     </div>
@@ -233,10 +336,15 @@ const ShoppingWishlist = () => {
             onClick={() => setShowWishlistSidebar(true)}
             className="flex items-center gap-2 text-gray-700 font-medium"
           >
-            <span className="capitalize">{activeList.name}</span>
-            {activeList.isDefault && (
+            <span className="capitalize">{activeList?.name || 'No wishlists'}</span>
+            {activeList?.isDefault && (
               <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
                 Default
+              </span>
+            )}
+            {activeList?.isPublic && (
+              <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">
+                Public
               </span>
             )}
           </button>
@@ -269,7 +377,7 @@ const ShoppingWishlist = () => {
                     setShowWishlistSidebar(false);
                   }}
                   className={`p-3 border rounded-lg cursor-pointer ${
-                    activeWishlist.id === list.id
+                    activeWishlist?.id === list.id
                       ? "border-[#1e518e] bg-gradient-to-r from-[#1e518e]/10 to-[#0061b0ee]/10"
                       : "border-gray-200 bg-white"
                   }`}
@@ -278,14 +386,21 @@ const ShoppingWishlist = () => {
                     <h3 className="font-medium capitalize text-gray-800">
                       {list.name}
                     </h3>
-                    {list.isDefault && (
-                      <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
-                        Default
-                      </span>
-                    )}
+                    <div className="flex gap-1">
+                      {list.isDefault && (
+                        <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
+                          Default
+                        </span>
+                      )}
+                      {list.isPublic && (
+                        <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">
+                          Public
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center text-sm text-gray-500 mt-1">
-                    {list.items.length > 0
+                    {list.items && list.items.length > 0
                       ? `${list.items.length} items`
                       : "No items"}
                     <FiLock className="ml-2" size={14} />
@@ -299,18 +414,68 @@ const ShoppingWishlist = () => {
     </div>
   );
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col w-full p-3 sm:p-4 md:p-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-20 lg:pb-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e518e] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading wishlists...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && wishlistData.length === 0) {
+    return (
+      <div className="flex flex-col w-full p-3 sm:p-4 md:p-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-20 lg:pb-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="text-red-500 text-lg mb-2">Error</div>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button 
+              onClick={fetchWishlists}
+              className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg font-medium"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col w-full p-3 sm:p-4 md:p-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-20 lg:pb-6">
+      {/* Error Banner */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <div className="flex justify-between items-center">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-red-700 font-bold">
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6">
         <h1 className="text-xl md:text-2xl font-bold text-gray-800">Wishlist</h1>
         <button
-         onClick={() => setOpen(true)}
-         className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg font-medium text-sm md:text-base w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
+          onClick={() => setOpen(true)}
+          className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg font-medium text-sm md:text-base w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
           <FiPlus size={18} />
           CREATE NEW WISHLIST
         </button>
-        <CreateWishlistModal isOpen={open} onClose={() => setOpen(false)}/>
+        <CreateWishlistModal 
+          isOpen={open} 
+          onClose={() => setOpen(false)}
+          onWishlistCreated={handleWishlistCreated}
+        />
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
@@ -322,7 +487,7 @@ const ShoppingWishlist = () => {
                 key={list.id}
                 onClick={() => setActiveWishlist(list)}
                 className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
-                  activeWishlist.id === list.id
+                  activeWishlist?.id === list.id
                     ? "border-[#1e518e] bg-gradient-to-r from-[#1e518e]/10 to-[#0061b0ee]/10 shadow-md"
                     : "border-gray-200 bg-white hover:border-gray-300"
                 }`}
@@ -331,14 +496,21 @@ const ShoppingWishlist = () => {
                   <h3 className="font-medium capitalize text-gray-800">
                     {list.name}
                   </h3>
-                  {list.isDefault && (
-                    <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
-                      Default
-                    </span>
-                  )}
+                  <div className="flex gap-1">
+                    {list.isDefault && (
+                      <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
+                        Default
+                      </span>
+                    )}
+                    {list.isPublic && (
+                      <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">
+                        Public
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center text-sm text-gray-500 mt-1">
-                  {list.items.length > 0
+                  {list.items && list.items.length > 0
                     ? `${list.items.length} items`
                     : "No items"}
                   <FiLock className="ml-2" size={14} />
@@ -354,59 +526,71 @@ const ShoppingWishlist = () => {
           <MobileWishlistSelector />
 
           {/* Wishlist Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 p-4 bg-white rounded-lg shadow-sm relative">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800 lg:block hidden">
-                {activeList.name}
-              </h2>
-              {activeList.isDefault && (
-                <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
-                  Default
-                </span>
-              )}
-            </div>
-            
-            {/* View Mode Toggle - Mobile */}
-            {isMobile && activeList.items.length > 0 && (
-              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                <button 
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
-                >
-                  <FiGrid size={16} />
-                </button>
-                <button 
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
-                >
-                  <FiList size={16} />
-                </button>
+          {activeList && (
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 p-4 bg-white rounded-lg shadow-sm relative">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800 lg:block hidden">
+                  {activeList.name}
+                </h2>
+                <div className="flex gap-1">
+                  {activeList.isDefault && (
+                    <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
+                      Default
+                    </span>
+                  )}
+                  {activeList.isPublic && (
+                    <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">
+                      Public
+                    </span>
+                  )}
+                </div>
               </div>
-            )}
-            
-            <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-              <button className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors"  onClick={() => setWishilistOpen(true)}>
-                <FiShare2 size={16} /> <span className="hidden xs:inline">Share</span>
-              </button>
-              <SeWishilistModal isOpen={WishilistOpn} onClose={() => setWishilistOpen(false)}/>
               
-              {/* More Button with Dropdown */}
-              <div className="relative">
+              {/* View Mode Toggle */}
+              {activeList.items && activeList.items.length > 0 && (
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                  <button 
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+                  >
+                    <FiGrid size={16} />
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+                  >
+                    <FiList size={16} />
+                  </button>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                 <button 
-                  onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
-                  className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors"  
+                  onClick={() => setWishilistOpen(true)}
                 >
-                  <FiMoreHorizontal size={16} /> <span className="hidden xs:inline">More</span>
+                  <FiShare2 size={16} /> <span className="hidden xs:inline">Share</span>
                 </button>
+                <SeWishilistModal isOpen={WishilistOpn} onClose={() => setWishilistOpen(false)}/>
                 
-                {/* Dropdown Menu */}
-                <MoreOptionsDropdown />
+                {/* More Button with Dropdown */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                    className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors"
+                  >
+                    <FiMoreHorizontal size={16} /> <span className="hidden xs:inline">More</span>
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  <MoreOptionsDropdown />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Wishlist Items */}
-          {activeList.items.length > 0 ? (
+          {activeList && activeList.items && activeList.items.length > 0 ? (
             <div className={`
               ${viewMode === 'grid' 
                 ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4' 
@@ -448,7 +632,7 @@ const ShoppingWishlist = () => {
                     }
                   `}>
                     <Image
-                      src={item.image}
+                      src={item.image || watch}
                       alt={item.name}
                       fill
                       className="object-contain rounded-lg"
@@ -469,15 +653,15 @@ const ShoppingWishlist = () => {
                     </h3>
                     
                     <div className="flex items-center text-yellow-500 text-xs mb-1">
-                      ⭐ {item.rating} 
-                      <span className="ml-1 text-gray-500">({item.reviews})</span>
+                      ⭐ {item.rating || '4.5'} 
+                      <span className="ml-1 text-gray-500">({item.reviews || '0'})</span>
                     </div>
                     
                     <p className={`
                       font-semibold text-gray-900
                       ${viewMode === 'grid' ? 'text-base md:text-lg' : 'text-lg'}
                     `}>
-                      AED{item.price}
+                      AED{item.price || '0.00'}
                     </p>
                     
                     {/* Action Buttons */}
@@ -485,18 +669,24 @@ const ShoppingWishlist = () => {
                       flex gap-2
                       ${viewMode === 'grid' ? 'mt-3' : 'mt-2'}
                     `}>
-                      <button className={`
-                        bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2 rounded font-medium hover:from-[#1e518e]/90 hover:to-[#0061b0ee]/90 transition-all duration-200 shadow hover:shadow-md
-                        ${viewMode === 'grid' ? 'flex-1 text-xs' : 'px-3 text-sm'}
-                      `}>
+                      <button 
+                        onClick={() => handleAddToCart(item)}
+                        className={`
+                          bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2 rounded font-medium hover:from-[#1e518e]/90 hover:to-[#0061b0ee]/90 transition-all duration-200 shadow hover:shadow-md
+                          ${viewMode === 'grid' ? 'flex-1 text-xs' : 'px-3 text-sm'}
+                        `}
+                      >
                         Add to Cart
                       </button>
                       
-                      {viewMode === 'list' && (
-                        <button className="border border-gray-300 text-gray-700 px-3 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors">
-                          View
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => handleViewProduct(item)}
+                        className={`border border-gray-300 text-gray-700 py-2 rounded font-medium hover:bg-gray-50 transition-colors ${
+                          viewMode === 'grid' ? 'flex-1 text-xs' : 'px-3 text-sm'
+                        }`}
+                      >
+                        View
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -527,18 +717,24 @@ const ShoppingWishlist = () => {
             <span className="mt-1">Wishlists</span>
           </button>
           
-          <button className="flex flex-col items-center text-xs text-gray-600">
+          <button 
+            onClick={() => setOpen(true)}
+            className="flex flex-col items-center text-xs text-gray-600"
+          >
             <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shadow">
               <FiPlus size={18} className="text-gray-600" />
             </div>
             <span className="mt-1">New</span>
           </button>
           
-          <button className="flex flex-col items-center text-xs text-gray-600"  onClick={() => setWishilistOpen(true)}>
+          <button 
+            className="flex flex-col items-center text-xs text-gray-600"  
+            onClick={() => setWishilistOpen(true)}
+          >
             <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shadow">
               <FiShare2 size={16} className="text-gray-600" />
             </div>
-            <span  className="mt-1">Share</span>
+            <span className="mt-1">Share</span>
           </button>
           <SeWishilistModal isOpen={WishilistOpn} onClose={() => setWishilistOpen(false)}/>
           
@@ -560,7 +756,12 @@ const ShoppingWishlist = () => {
                 <div className="p-2">
                   <button
                     onClick={handleMakeDefault}
-                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                    disabled={activeList?.isDefault}
+                    className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
+                      activeList?.isDefault
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
                   >
                     <FiStar className="mr-3 text-gray-500" size={16} />
                     <span>Make this default wishlist</span>
@@ -571,14 +772,14 @@ const ShoppingWishlist = () => {
                     className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                   >
                     <FiGlobe className="mr-3 text-gray-500" size={16} />
-                    <span>Enable/Disable Public Sharing</span>
+                    <span>{activeList?.isPublic ? 'Disable' : 'Enable'} Public Sharing</span>
                   </button>
 
                   <button
                     onClick={handleEmptyWishlist}
-                    disabled={activeList.items.length === 0}
+                    disabled={!activeList?.items || activeList.items.length === 0}
                     className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
-                      activeList.items.length === 0
+                      !activeList?.items || activeList.items.length === 0
                         ? 'text-gray-400 cursor-not-allowed'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
@@ -589,15 +790,15 @@ const ShoppingWishlist = () => {
 
                   <button
                     onClick={handleDeleteWishlist}
-                    disabled={activeList.isDefault || wishlistData.length <= 1}
+                    disabled={activeList?.isDefault || wishlistData.length <= 1}
                     className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
-                      activeList.isDefault || wishlistData.length <= 1
+                      activeList?.isDefault || wishlistData.length <= 1
                         ? 'text-gray-400 cursor-not-allowed'
                         : 'text-red-600 hover:bg-red-50'
                     }`}
                   >
                     <FiTrash2 className="mr-3" size={16} />
-                    <span>Delete</span>
+                    <span>Delete Wishlist</span>
                   </button>
                 </div>
               </div>
@@ -605,7 +806,6 @@ const ShoppingWishlist = () => {
           </div>
         </div>
       </div>
-      <SupportSection/>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 'use client';
 import Footer from "@/components/shared/Footer";
 import Navbar from "@/components/shared/Navbar";
+import SupportSection from "@/components/ui/SupportSection";
 import { useState } from "react";
 
 
@@ -25,9 +26,10 @@ export default function UserLayout({ children }) {
       <main >
         {children}
       </main>
-
+    <SupportSection/>
       {/* ✅ Footer */}
       <Footer/>
+     
     </div>
   )
 }
