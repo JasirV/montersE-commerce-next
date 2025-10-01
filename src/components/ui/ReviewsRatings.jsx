@@ -37,25 +37,25 @@ const RatingBar = React.memo(({ star, width, color }) => (
   <div className="flex items-center gap-2">
     <span className="w-4">{star}</span>
     <div className="flex-1 bg-gray-200 rounded h-2">
-      <div
-        className={`h-2 rounded ${color}`}
-        style={{ width }}
-      ></div>
+      <div className={`h-2 rounded ${color}`} style={{ width }}></div>
     </div>
   </div>
 ));
 
-RatingBar.displayName = 'RatingBar';
+RatingBar.displayName = "RatingBar";
 
 // Single review component to prevent re-renders
 const ReviewItem = React.memo(({ review }) => {
+  // console.log(review,'review lin 57');
   return (
     <div className="border-b pb-6">
       <div className="flex items-center gap-3 mb-2">
         <Image
           src={review.avatar}
           alt={review.name}
-          className="w-10 h-10 rounded-full"
+          width={40}
+          height={40}
+          className=" rounded-full"
           loading="lazy"
         />
         <div>
@@ -92,17 +92,20 @@ const ReviewItem = React.memo(({ review }) => {
   );
 });
 
-ReviewItem.displayName = 'ReviewItem';
+ReviewItem.displayName = "ReviewItem";
 
 const ReviewsRatings = () => {
   // Memoize the rating bars data
-  const ratingBars = useMemo(() => [
-    { star: 5, width: "60%", color: "bg-blue-600" },
-    { star: 4, width: "40%", color: "bg-blue-600" },
-    { star: 3, width: "0%", color: "bg-gray-300" },
-    { star: 2, width: "0%", color: "bg-gray-300" },
-    { star: 1, width: "0%", color: "bg-gray-300" }
-  ], []);
+  const ratingBars = useMemo(
+    () => [
+      { star: 5, width: "60%", color: "bg-blue-600" },
+      { star: 4, width: "40%", color: "bg-blue-600" },
+      { star: 3, width: "0%", color: "bg-gray-300" },
+      { star: 2, width: "0%", color: "bg-gray-300" },
+      { star: 1, width: "0%", color: "bg-gray-300" },
+    ],
+    []
+  );
 
   return (
     <div className="bg-gray-100 py-6 px-4">
@@ -116,7 +119,7 @@ const ReviewsRatings = () => {
               Welding Machine With 1 Year Warranty
             </p>
           </div>
-          <Link to="/GeneralReview">
+          <Link href="/GeneralReview">
             <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
               Write a Review
             </button>
@@ -135,11 +138,11 @@ const ReviewsRatings = () => {
           </div>
           <div className="flex-1">
             {ratingBars.map((bar, index) => (
-              <RatingBar 
-                key={index} 
-                star={bar.star} 
-                width={bar.width} 
-                color={bar.color} 
+              <RatingBar
+                key={index}
+                star={bar.star}
+                width={bar.width}
+                color={bar.color}
               />
             ))}
           </div>
@@ -152,22 +155,24 @@ const ReviewsRatings = () => {
           ))}
         </div>
       </div>
-      
+
       {/* Lazy load SimillarProduct with a loading fallback */}
-      <Suspense fallback={
-        <div className="max-w-7xl mx-auto mt-6">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow p-4">
-                <div className="h-40 bg-gray-200 rounded animate-pulse mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3"></div>
-              </div>
-            ))}
+      <Suspense
+        fallback={
+          <div className="max-w-7xl mx-auto mt-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-lg shadow p-4">
+                  <div className="h-40 bg-gray-200 rounded animate-pulse mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3"></div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      }>
+        }
+      >
         <SimillarProduct />
       </Suspense>
     </div>

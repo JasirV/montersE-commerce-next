@@ -1,142 +1,45 @@
 "use client";
+import ProductCard from "@/features/product/ProductCard";
+import { LeatherBycategory } from "@/service/productService";
+import { useParams } from "next/navigation";
+import React, {
+  memo,
+  Suspense,
+  use,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { FiFilter } from "react-icons/fi";
+import FilterSidebar from "@/features/product/ProductFilterSidebar";
 
-import React, { useState, useMemo, memo, Suspense, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import ProductCard from "./ProductCard";
-import FilterSidebar from "./ProductFilterSidebar";
-import { fetchProduct } from "../../service/productService";
-import { FiFilter, FiX } from "react-icons/fi";
-
-const Pagination = memo(
-  ({ currentPage, totalPages,  setCurrentPage }) => {
-    const itemsPerPage = 15;
-
-    const pageNumbers = useMemo(() => {
-      const maxVisiblePages = 5;
-      let startPage = Math.max(
-        1,
-        currentPage - Math.floor(maxVisiblePages / 2)
-      );
-      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-      if (endPage - startPage + 1 < maxVisiblePages) {
-        startPage = Math.max(1, endPage - maxVisiblePages + 1);
-      }
-
-      return Array.from(
-        { length: endPage - startPage + 1 },
-        (_, i) => startPage + i
-      );
-    }, [currentPage, totalPages]);
-
-    if (totalPages <= 1) return null;
-
-    const isFirstPage = currentPage === 1;
-    const isLastPage = currentPage === totalPages;
-
-    // Calculate range display
-    const startItem = (currentPage - 1) * itemsPerPage + 1;
-    console.log(totalPages, "totalPages");
-    return (
-      <div className="mt-6 flex flex-col items-center gap-2">
-        {/* Pagination Buttons */}
-        <div className="flex flex-wrap justify-center gap-1 xs:gap-2">
-          <button
-            onClick={() => setCurrentPage(1)}
-            disabled={isFirstPage}
-            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-            aria-label="First page"
-          >
-            &laquo;
-          </button>
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={isFirstPage}
-            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-            aria-label="Previous page"
-          >
-            &lsaquo;
-          </button>
-
-          {pageNumbers.map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md min-w-[2rem] ${
-                currentPage === page
-                  ? "bg-[#8b6b4a] text-white"
-                  : "hover:bg-gray-100"
-              }`}
-              aria-label={`Page ${page}`}
-              aria-current={currentPage === page ? "page" : undefined}
-            >
-              {page}
-            </button>
-          ))}
-
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={isLastPage}
-            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-            aria-label="Next page"
-          >
-            &rsaquo;
-          </button>
-          <button
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={isLastPage}
-            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-            aria-label="Last page"
-          >
-            &raquo;
-          </button>
-        </div>
-
-        {/* Info summary below pagination */}
-        <div className="text-xs text-gray-600 mt-1">
-          Showing <strong>{startItem}</strong>–
-          <strong>{totalPages}</strong> of <strong>{}</strong>{" "}
-         Page <strong>{currentPage}</strong> of{" "}
-          <strong>{totalPages}</strong>
-        </div>
-      </div>
-    );
-  }
-);
-
-Pagination.displayName = "Pagination";
-
-const ProductPage = () => {
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [sortOption, setSortOption] = useState("featured");
-  const [brandSearch, setBrandSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+const page = () => {
+  const [crrentPage, setCurrentPage] = useState(1);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null); // reset error
-        const { data } = await fetchProduct({ page: currentPage, limit: 15 });
-        setProducts(data || []);
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        setError("Failed to load products. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProducts();
-  }, [currentPage]);
-
-  console.log(products, "products");
+  const [sortOption, setSortOption] = useState("featured");
   const { category, subcategory } = useParams();
-  const productsPerPage = 12;
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [brandSearch, setBrandSearch] = useState("");
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      const { data, error, isLoading } = await LeatherBycategory("Bag", {
+        page: crrentPage,
+        limit: 15,
+      });
+      if (data) {
+        setProducts(data || []);
+      } else {
+        setError(error);
+      }
+      setLoading(false);
+    };
+    fetchProducts();
+  }, [crrentPage]);
 
+  const productsPerPage = 12;
   const [activeFilters, setActiveFilters] = useState({
     category: [],
     price: [],
@@ -146,33 +49,23 @@ const ProductPage = () => {
     availability: [],
     badges: [],
   });
+  const clearAllFilters = () => {
+    setActiveFilters({
+      category: [],
+      price: [],
+      brand: [],
+      discount: [],
+      rating: [],
+      availability: [],
+      badges: [],
+    });
+    setCurrentPage(1);
+  };
 
-  // useEffect(() => {
-  //   const fetchProducts = async () => {
-  //     try {
-  //       setLoading(true);
-  //       const response = await axios.get(
-  //         "https://montres-ecommerce-backend-1.onrender.com/api/products"
-  //       );
-  //       setProducts(response.data); // Store API products in state
-  //       console.log(response.data,"response.data");
-
-  //     } catch (error) {
-  //       console.error("Error fetching products:", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchProducts();
-  // }, []);
-
-  // Fixed category filtering logic - now uses API products
   const categoryFilteredProducts = useMemo(() => {
     if (loading) return [];
     console.log(products, "products.products");
-    return products.products.filter((p) => {
-
+    return products?.products?.filter((p) => {
       // First check if the main category matches
       const isCategoryMatch =
         p.categories &&
@@ -196,30 +89,6 @@ const ProductPage = () => {
     });
   }, [category, subcategory, products, loading]);
 
-  const toggleFilter = (type, value) => {
-    setActiveFilters((prev) => {
-      const updated = prev[type].includes(value)
-        ? prev[type].filter((v) => v !== value)
-        : [...prev[type], value];
-      return { ...prev, [type]: updated };
-    });
-    setCurrentPage(1);
-  };
-
-  const clearAllFilters = () => {
-    setActiveFilters({
-      category: [],
-      price: [],
-      brand: [],
-      discount: [],
-      rating: [],
-      availability: [],
-      badges: [],
-    });
-    setCurrentPage(1);
-  };
-
-  // Filter products based on active filters
   const filteredProducts = useMemo(() => {
     return categoryFilteredProducts.filter((p) => {
       if (
@@ -250,46 +119,43 @@ const ProductPage = () => {
     });
   }, [categoryFilteredProducts, activeFilters]);
 
-  // Sort products
   const sortedProducts = useMemo(() => {
-    return [...filteredProducts].sort((a, b) => {
-      switch (sortOption) {
-        case "priceLowHigh":
-          return parseFloat(a.price) - parseFloat(b.price);
-        case "priceHighLow":
-          return parseFloat(b.price) - parseFloat(a.price);
-        case "rating":
-          return b.rating - a.rating;
-        case "discount":
-          return parseFloat(b.discount) - parseFloat(a.discount);
-        default:
-          return 0;
-      }
-    });
-  }, [filteredProducts, sortOption]);
+  if (!sortOption) return filteredProducts;
 
+  const result = [...filteredProducts].sort((a, b) => {
+    switch (sortOption) {
+      case "priceLowHigh":
+        return parseFloat(a.price) - parseFloat(b.price);
+      case "priceHighLow":
+        return parseFloat(b.price) - parseFloat(a.price);
+      case "rating":
+        return b.rating - a.rating;
+      case "discount":
+        return parseFloat(b.discount) - parseFloat(a.discount);
+      default:
+        return 0;
+    }
+  });
+
+  // 👇 if sorting resulted in empty array, fallback to original
+  console.log(products ,'pro')
+  return result.length > 0 ? result : products.products || [];
+}, [filteredProducts, sortOption, products]);
+
+  console.log(products.totalProducts);
+  const toggleFilter = (type, value) => {
+    setActiveFilters((prev) => {
+      const updated = prev[type].includes(value)
+        ? prev[type].filter((v) => v !== value)
+        : [...prev[type], value];
+      return { ...prev, [type]: updated };
+    });
+    setCurrentPage(1);
+  };
   const brands = useMemo(
     () => [...new Set(categoryFilteredProducts.map((p) => p.brand))],
     [categoryFilteredProducts]
   );
-  const totalPages = Math.ceil(sortedProducts.length / productsPerPage);
-
-  // Current page products
-  const currentProducts = useMemo(() => {
-    return sortedProducts.slice(
-      (currentPage - 1) * productsPerPage,
-      currentPage * productsPerPage
-    );
-  }, [sortedProducts, currentPage]);
-
-  // Update breadcrumb to show actual category and subcategory
-  // const breadcrumbText = useMemo(() => {
-  //   if (subcategory) {
-  //     return `${category.charAt(0).toUpperCase() + category.slice(1)} / ${subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}`;
-  //   }
-  //   return `${category?.charAt(0)?.toUpperCase() + category.slice(1)}`;
-  // }, [category, subcategory]);
-
   return (
     <div className="bg-[#f8f5f2] min-h-screen">
       <div className="container mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 py-4 xs:py-5 sm:py-6 md:py-8 lg:py-10">
@@ -442,11 +308,11 @@ const ProductPage = () => {
                 </div>
 
                 {/* Pagination */}
+                {console.log(products,'products')}
                 <Pagination
                   currentPage={products.currentPage}
                   totalPages={products.totalPages}
                   setCurrentPage={setCurrentPage}
-                  
                 />
               </>
             ) : (
@@ -472,6 +338,97 @@ const ProductPage = () => {
     </div>
   );
 };
+const Pagination = memo(({ currentPage, totalPages, setCurrentPage }) => {
+  const itemsPerPage = 15;
 
-export default memo(ProductPage);
+  const pageNumbers = useMemo(() => {
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    return Array.from(
+      { length: endPage - startPage + 1 },
+      (_, i) => startPage + i
+    );
+  }, [currentPage, totalPages]);
+
+  if (totalPages <= 1) return null;
+
+  const isFirstPage = currentPage === 1;
+  const isLastPage = currentPage === totalPages;
+
+  // Calculate range display
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  console.log(totalPages, "totalPages");
+  return (
+    <div className="mt-6 flex flex-col items-center gap-2">
+      {/* Pagination Buttons */}
+      <div className="flex flex-wrap justify-center gap-1 xs:gap-2">
+        <button
+          onClick={() => setCurrentPage(1)}
+          disabled={isFirstPage}
+          className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
+          aria-label="First page"
+        >
+          &laquo;
+        </button>
+        <button
+          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+          disabled={isFirstPage}
+          className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
+          aria-label="Previous page"
+        >
+          &lsaquo;
+        </button>
+
+        {pageNumbers.map((page) => (
+          <button
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md min-w-[2rem] ${
+              currentPage === page
+                ? "bg-[#8b6b4a] text-white"
+                : "hover:bg-gray-100"
+            }`}
+            aria-label={`Page ${page}`}
+            aria-current={currentPage === page ? "page" : undefined}
+          >
+            {page}
+          </button>
+        ))}
+
+        <button
+          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+          disabled={isLastPage}
+          className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
+          aria-label="Next page"
+        >
+          &rsaquo;
+        </button>
+        <button
+          onClick={() => setCurrentPage(totalPages)}
+          disabled={isLastPage}
+          className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
+          aria-label="Last page"
+        >
+          &raquo;
+        </button>
+      </div>
+
+      {/* Info summary below pagination */}
+      <div className="text-xs text-gray-600 mt-1">
+        Showing <strong>{startItem}</strong>–<strong>{totalPages}</strong> of{" "}
+        <strong>{}</strong> Page <strong>{currentPage}</strong> of{" "}
+        <strong>{totalPages}</strong>
+      </div>
+    </div>
+  );
+});
+
+Pagination.displayName = "Pagination";
+
+export default page;
