@@ -17,6 +17,7 @@ import { LandingPageProduct } from "@/service/productService";
 import Watch from "@/layouts/Watch";
 import "../Mobile/responsive.css";
 
+
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [authAction, setAuthAction] = useState("login");

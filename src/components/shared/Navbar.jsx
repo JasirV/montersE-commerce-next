@@ -17,11 +17,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 
-
 const Navbar = ({ onSignUpClick }) => {
-const sessionData = useSession();
-const { data: session, status } = sessionData || {};
-
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);
@@ -31,45 +28,99 @@ const { data: session, status } = sessionData || {};
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-
-
- 
-
-
-
+  const [localUser, setLocalUser] = useState(null); // New state for localStorage user
+  const [authUpdateTrigger, setAuthUpdateTrigger] = useState(0); // Force re-renders
 
   // Debug session data
   useEffect(() => {
     console.log("Session status:", status);
     console.log("Session data:", session);
-  }, [session, status]);
+    console.log("Local user data:", localUser);
+  }, [session, status, localUser]);
 
-  const popularSearches = [
-    { term: "Rolex Daytona", path: "/search?q=rolex+daytona" },
-    { term: "Omega Seamaster", path: "/search?q=omega+seamaster" },
-    { term: "Patek Philippe", path: "/search?q=patek+philippe" },
-    { term: "Audemars Piguet", path: "/search?q=audemars+piguet" },
-    { term: "Luxury Watches for Men", path: "/search?q=luxury+watches+men" },
-  ];
-
-  // Get user data from session
+  // Get user data from both session and localStorage
   const getUserData = useCallback(() => {
+    // First check NextAuth session
     if (session?.user) {
       return {
         name: session.user.name,
         email: session.user.email,
         image: session.user.image,
-        // Add any other user properties you need
+        source: 'session'
       };
     }
+    
+    // Then check localStorage (for custom login)
+    if (isClient && localUser) {
+      return {
+        ...localUser,
+        source: 'localStorage'
+      };
+    }
+    
     return null;
-  }, [session]);
+  }, [session, isClient, localUser]);
 
   const user = getUserData();
 
+  // Load user from localStorage on client side
   useEffect(() => {
     setIsClient(true);
+    loadUserFromStorage();
+  }, []);
 
+  // Listen for auth changes
+  useEffect(() => {
+    const handleAuthChange = () => {
+      console.log("Auth change event received");
+      loadUserFromStorage();
+      setAuthUpdateTrigger(prev => prev + 1); // Force re-render
+    };
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'user') {
+        console.log("LocalStorage user changed");
+        loadUserFromStorage();
+      }
+    };
+
+    // Set up global function for other components to trigger auth updates
+    window.triggerNavbarAuthUpdate = handleAuthChange;
+
+    // Listen for custom auth events
+    window.addEventListener('authChange', handleAuthChange);
+    // Listen for localStorage changes
+    window.addEventListener('storage', handleStorageChange);
+    // Listen for same-tab storage events (using custom event from LoginForm)
+    window.addEventListener('localStorageUpdated', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('authChange', handleAuthChange);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('localStorageUpdated', handleStorageChange);
+      delete window.triggerNavbarAuthUpdate;
+    };
+  }, []);
+
+  const loadUserFromStorage = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedUser = localStorage.getItem('user');
+        console.log("Loading user from storage:", storedUser);
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          setLocalUser(userData);
+        } else {
+          setLocalUser(null);
+        }
+      } catch (error) {
+        console.error('Error reading user from localStorage:', error);
+        setLocalUser(null);
+      }
+    }
+  };
+
+  useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     
@@ -78,15 +129,25 @@ const { data: session, status } = sessionData || {};
     };
   }, []);
 
-  // Handle logout with NextAuth
+  // Handle logout for both session and localStorage
   const handleLogout = useCallback(async () => {
-    await signOut({ 
-      redirect: false,
-      callbackUrl: "/"
-    });
+    if (user?.source === 'session') {
+      // NextAuth logout
+      await signOut({ 
+        redirect: false,
+        callbackUrl: "/"
+      });
+    } else {
+      // localStorage logout
+      localStorage.removeItem('user');
+      setLocalUser(null);
+      // Dispatch event to sync across tabs
+      window.dispatchEvent(new Event('authChange'));
+    }
+    
     setUserDropdownOpen(false);
     router.push('/');
-  }, [router]);
+  }, [user, router]);
 
   // Handle user dashboard navigation
   const handleUserDashboard = useCallback(() => {
@@ -137,6 +198,14 @@ const { data: session, status } = sessionData || {};
     }
   }, [searchQuery, router]);
 
+  const popularSearches = [
+    { term: "Rolex Daytona", path: "/search?q=rolex+daytona" },
+    { term: "Omega Seamaster", path: "/search?q=omega+seamaster" },
+    { term: "Patek Philippe", path: "/search?q=patek+philippe" },
+    { term: "Audemars Piguet", path: "/search?q=audemars+piguet" },
+    { term: "Luxury Watches for Men", path: "/search?q=luxury+watches+men" },
+  ];
+
   // Show loading state while checking authentication
   if (status === "loading") {
     return (
@@ -162,6 +231,7 @@ const { data: session, status } = sessionData || {};
         className={`w-full bg-white sticky top-0 z-50 transition-all duration-300 ${
           scrolled ? "shadow-md" : "shadow-sm"
         }`}
+        key={authUpdateTrigger} // Force re-render when auth changes
       >
         <div className="container mx-auto px-4 md:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 md:h-16 lg:h-18">
@@ -294,6 +364,9 @@ const { data: session, status } = sessionData || {};
                         </p>
                         <p className="text-xs text-gray-500 truncate">
                           {user.email || ''}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {user.source === 'session' ? 'NextAuth' : 'Local Storage'}
                         </p>
                       </div>
                       

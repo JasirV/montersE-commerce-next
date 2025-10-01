@@ -2,10 +2,12 @@
 import Image from "next/image";
 import React, { useState, useEffect, useRef } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import BigSales from "../../assets/8005340.jpg";
-import BigShpping from "../../assets/5544257.jpg";
-import shoppingStore from "../../assets/cyber-monday-shopping-sales.jpg";
-import EcommsersePocket from "../../assets/E-Commerce Facebook Ad.png";
+
+// Import your images - replace these with optimized smaller banner images
+import LuxuryWatchCollection from "../../assets/Banners/LuxuryWatchCollection.jpg";
+import NewArrivals2025 from "../../assets/Banners/NewArrivals2025.jpg";
+import ExclusiveLimited from "../../assets/Banners/ExclusiveLimited.jpg";
+import WorldWideShipping from "../../assets/Banners/WorldWideShipping.jpg";
 
 const EcommerceBannerSlider = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -16,56 +18,60 @@ const EcommerceBannerSlider = () => {
   const slides = [
     {
       type: "image",
-      content: BigSales,
-      alt: "Luxury watches collection with discount offer",
-      title: "Summer Sale 2023",
-      subtitle: "Up to 40% Off Premium Watches",
-      description:
-        "Limited time offer on selected luxury timepieces. Free shipping and 2-year warranty included.",
-      cta: "Shop Now",
+      content: LuxuryWatchCollection,
+      alt: "Montres Luxury Watches 2025 Collection",
+      title: "MONTRES 2025 COLLECTION",
+      subtitle: "Exclusive Launch",
+      description: "Discover our premium Swiss timepieces with advanced craftsmanship and timeless elegance.",
+      cta: "Explore Collection",
       buttonVariant: "primary",
       textPosition: "left",
       textColor: "text-white",
-      overlay: "bg-black/40",
+      overlay: "bg-gradient-to-r from-black/60 to-transparent",
+      theme: "luxury"
     },
     {
       type: "image",
-      content: EcommsersePocket,
-      alt: "Exclusive chronograph watch design",
-      subtitle: "Exclusive Timepieces",
-      description:
-        "Discover our latest designs with cutting-edge technology and craftsmanship.",
-      cta: "View Collection",
-      buttonVariant: "secondary",
-      textPosition: "center",
+      content: NewArrivals2025,
+      alt: "Montres New Arrivals Luxury Watches",
+      title: "NEW ARRIVALS",
+      subtitle: "Spring Summer 2025",
+      description: "Fresh designs featuring innovative technology and premium materials.",
+      cta: "View New Pieces",
+      buttonVariant: "primary",
+      textPosition: "left",
       textColor: "text-white",
-      overlay: "bg-black/40",
+      overlay: "bg-gradient-to-l from-black/60 to-transparent",
+      theme: "new"
     },
     {
       type: "image",
-      content: BigShpping,
-      alt: "Close-up of leather strap wristwatch",
-      title: "Free Shipping",
-      subtitle: "On All Orders Over AED500",
-      description:
-        "Enjoy complimentary worldwide shipping and easy returns on premium purchases.",
+      content: ExclusiveLimited,
+      alt: "Montres Limited Edition Luxury Watches",
+      title: "LIMITED EDITION",
+      subtitle: "Only 50 Pieces Worldwide",
+      description: "Exclusive chronograph series with diamond accents. Each piece numbered.",
+      cta: "Reserve Now",
       buttonVariant: "outline",
       textPosition: "left",
       textColor: "text-white",
-      overlay: "bg-black/30",
+      overlay: "bg-gradient-to-r from-gray-900/70 to-transparent",
+      theme: "exclusive"
     },
     {
       type: "image",
-      content: shoppingStore,
-      alt: "Store showcasing premium watches",
-      title: "New Arrivals",
-      subtitle: "Discover Our Latest Collection",
-      description: "Fresh designs now available with exclusive launch offers.",
-      buttonVariant: "primary",
-      textPosition: "right",
+      content: WorldWideShipping,
+      alt: "Montres GCC Fast Shipping Service",
+      title: "FREE EXPRESS DELIVERY",
+      subtitle: "Across GCC & Middle East",
+      description: "Complimentary 24-hour delivery in UAE. 3-day delivery to neighboring countries.",
+      cta: "Learn More",
+      buttonVariant: "secondary",
+      textPosition: "center",
       textColor: "text-white",
-      overlay: "bg-black/30",
-    },
+      overlay: "bg-gradient-to-t from-blue-900/40 to-transparent",
+      theme: "shipping"
+    }
   ];
 
   // Slide controls
@@ -75,10 +81,10 @@ const EcommerceBannerSlider = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   const goToSlide = (index) => setCurrentSlide(index);
 
-  // Auto-play
+  // Auto-play with pause on hover
   useEffect(() => {
     if (!isHovering) {
-      intervalRef.current = setInterval(nextSlide, 6000);
+      intervalRef.current = setInterval(nextSlide, 5000);
     }
     return () => clearInterval(intervalRef.current);
   }, [isHovering]);
@@ -91,42 +97,42 @@ const EcommerceBannerSlider = () => {
     }
   }, [currentSlide]);
 
-  // Reusable text content block
+  // Mobile-optimized text content block
   const renderTextBlock = (slide) => (
     <div
-      className={`max-w-xl sm:max-w-2xl px-3 sm:px-6 md:px-8 lg:px-10 ${slide.textColor} animate-fadeInUp
+      className={`w-full px-3 sm:px-4 md:px-6 ${slide.textColor} animate-fadeInUp
         ${
           slide.textPosition === "left"
-            ? "text-left mr-auto"
+            ? "text-left"
             : slide.textPosition === "right"
-            ? "text-right ml-auto"
-            : "text-center mx-auto"
+            ? "text-right"
+            : "text-center"
         }`}
     >
       {slide.subtitle && (
-        <p className="text-xs sm:text-sm md:text-base text-amber-400 mb-2 tracking-wide uppercase">
+        <p className="text-xs xs:text-sm sm:text-base text-amber-300 font-light mb-1 xs:mb-2 tracking-wider uppercase">
           {slide.subtitle}
         </p>
       )}
       {slide.title && (
-        <h2 className="text-lg sm:text-2xl md:text-3xl lg:text-5xl font-bold mb-3 leading-snug">
+        <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 xs:mb-3 leading-tight">
           {slide.title}
         </h2>
       )}
       {slide.description && (
-        <p className="text-xs sm:text-sm md:text-base lg:text-lg mb-4 line-clamp-2">
+        <p className="text-xs xs:text-sm sm:text-base mb-3 xs:mb-4 leading-relaxed max-w-xs xs:max-w-sm sm:max-w-md mx-auto line-clamp-2 xs:line-clamp-3">
           {slide.description}
         </p>
       )}
       {slide.cta && (
         <button
-          className={`px-4 sm:px-5 py-2 sm:py-3 rounded-md font-medium transition-colors duration-300 text-sm sm:text-base
+          className={`px-4 xs:px-5 py-2 xs:py-2.5 rounded-lg font-semibold transition-all duration-300 text-xs xs:text-sm transform hover:scale-105 active:scale-95
             ${
               slide.buttonVariant === "primary"
-                ? "bg-amber-500 hover:bg-amber-600 text-white shadow"
+                ? "bg-amber-600 hover:bg-amber-700 text-white shadow-lg hover:shadow-xl"
                 : slide.buttonVariant === "secondary"
-                ? "border-2 border-white text-white hover:bg-white/20"
-                : "bg-white text-gray-800 border border-gray-300 hover:bg-gray-100"
+                ? "border-2 border-white text-white hover:bg-white/10 backdrop-blur-sm"
+                : "border-2 border-white text-white hover:bg-white hover:text-gray-900"
             }`}
         >
           {slide.cta}
@@ -138,14 +144,14 @@ const EcommerceBannerSlider = () => {
   return (
     <>
       <section
-        className="relative w-full h-[40vh] sm:h-[50vh] lg:h-[65vh] xl:h-[75vh] overflow-hidden"
+        className="relative w-full h-[35vh] xs:h-[40vh] sm:h-[45vh] md:h-[50vh] lg:h-[55vh] overflow-hidden bg-gray-100"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
         {slides.map((slide, index) => (
           <div
             key={index}
-            className={`absolute inset-0 transition-opacity duration-700 ${
+            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
               index === currentSlide ? "opacity-100 z-20" : "opacity-0 z-10"
             }`}
           >
@@ -155,6 +161,9 @@ const EcommerceBannerSlider = () => {
                 alt={slide.alt}
                 className="w-full h-full object-cover"
                 loading={index === 0 ? "eager" : "lazy"}
+                priority={index === 0}
+                quality={75}
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, (max-width: 1024px) 100vw, 100vw"
               />
             ) : (
               <video
@@ -169,15 +178,15 @@ const EcommerceBannerSlider = () => {
               </video>
             )}
 
-            {/* Overlay + Text */}
+            {/* Mobile-optimized Overlay + Text */}
             <div
               className={`absolute inset-0 ${slide.overlay} flex items-center 
                 ${
                   slide.textPosition === "left"
-                    ? "justify-start pl-4 sm:pl-10 md:pl-16"
+                    ? "justify-start pl-3 xs:pl-4 sm:pl-6 md:pl-8 lg:pl-12"
                     : slide.textPosition === "right"
-                    ? "justify-end pr-4 sm:pr-10 md:pr-16"
-                    : "justify-center"
+                    ? "justify-end pr-3 xs:pr-4 sm:pr-6 md:pr-8 lg:pr-12"
+                    : "justify-center text-center"
                 }`}
             >
               {renderTextBlock(slide)}
@@ -185,43 +194,50 @@ const EcommerceBannerSlider = () => {
           </div>
         ))}
 
-        {/* Arrows */}
-        <div className="absolute inset-0 flex items-center justify-between px-3 sm:px-6 z-30">
+        {/* Mobile-optimized Navigation Arrows */}
+        <div className="absolute inset-0 flex items-center justify-between px-1 xs:px-2 sm:px-3 md:px-4 z-30 pointer-events-none">
           <button
             onClick={prevSlide}
-            className="bg-black/30 hover:bg-black/50 p-2 sm:p-3 rounded-full"
-            aria-label="Previous"
+            className="bg-black/40 hover:bg-black/60 p-1.5 xs:p-2 sm:p-2.5 rounded-full backdrop-blur-sm transition-all duration-300 transform hover:scale-110 active:scale-95 pointer-events-auto touch-manipulation"
+            aria-label="Previous slide"
           >
-            <FaChevronLeft className="text-white text-lg sm:text-xl" />
+            <FaChevronLeft className="text-white text-sm xs:text-base sm:text-lg" />
           </button>
           <button
             onClick={nextSlide}
-            className="bg-black/30 hover:bg-black/50 p-2 sm:p-3 rounded-full"
-            aria-label="Next"
+            className="bg-black/40 hover:bg-black/60 p-1.5 xs:p-2 sm:p-2.5 rounded-full backdrop-blur-sm transition-all duration-300 transform hover:scale-110 active:scale-95 pointer-events-auto touch-manipulation"
+            aria-label="Next slide"
           >
-            <FaChevronRight className="text-white text-lg sm:text-xl" />
+            <FaChevronRight className="text-white text-sm xs:text-base sm:text-lg" />
           </button>
         </div>
 
-        {/* Dots */}
-        <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-30">
+        {/* Mobile-optimized Dots Indicator */}
+        <div className="absolute bottom-2 xs:bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-1 xs:gap-1.5 sm:gap-2 z-30">
           {slides.map((_, idx) => (
             <button
               key={idx}
               onClick={() => goToSlide(idx)}
-              className={`h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full transition-all
+              className={`h-1.5 xs:h-2 w-1.5 xs:w-2 rounded-full transition-all duration-300 backdrop-blur-sm touch-manipulation
                 ${
                   currentSlide === idx
-                    ? "bg-amber-500 w-5 sm:w-6"
-                    : "bg-white/50 hover:bg-white/75"
+                    ? "bg-amber-400 w-4 xs:w-6 sm:w-8 shadow-lg"
+                    : "bg-white/60 hover:bg-white/80"
                 }`}
-              aria-label={`Slide ${idx + 1}`}
+              aria-label={`Go to slide ${idx + 1}`}
             />
           ))}
         </div>
+
+        {/* Mobile-optimized Slide Counter */}
+        <div className="absolute bottom-2 xs:bottom-3 right-2 xs:right-3 sm:right-4 z-30 bg-black/40 backdrop-blur-sm rounded-full px-2 xs:px-2.5 py-0.5 xs:py-1">
+          <span className="text-white text-xs xs:text-sm font-medium">
+            {currentSlide + 1} / {slides.length}
+          </span>
+        </div>
       </section>
 
-      {/* Animation */}
+      {/* Enhanced Mobile Animation Styles */}
       <style jsx global>{`
         @keyframes fadeInUp {
           from {
@@ -234,7 +250,61 @@ const EcommerceBannerSlider = () => {
           }
         }
         .animate-fadeInUp {
-          animation: fadeInUp 0.6s ease-out;
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+        
+        /* Line clamp utilities for text truncation */
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        
+        /* Touch manipulation for better mobile performance */
+        .touch-manipulation {
+          touch-action: manipulation;
+        }
+        
+        /* Mobile-first responsive enhancements */
+        @media (max-width: 375px) {
+          .banner-section {
+            height: 35vh !important;
+          }
+        }
+        
+        @media (max-width: 320px) {
+          .banner-section {
+            height: 32vh !important;
+          }
+        }
+        
+        /* Prevent text selection on mobile */
+        .banner-section * {
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          user-select: none;
+        }
+        
+        /* Improved loading states */
+        .banner-section img {
+          transition: opacity 0.3s ease;
+        }
+        
+        .banner-section img[data-loading="true"] {
+          opacity: 0;
+        }
+        
+        .banner-section img[data-loading="false"] {
+          opacity: 1;
         }
       `}</style>
     </>
