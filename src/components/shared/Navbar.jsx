@@ -17,6 +17,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 
+
 const Navbar = ({ onSignUpClick }) => {
  const sessionData = useSession();
   const session = sessionData?.data;
