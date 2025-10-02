@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import {
   FaCcVisa,
   FaCcMastercard,
@@ -7,15 +8,16 @@ import {
   FaGooglePay,
   FaApplePay,
 } from "react-icons/fa";
-import tabby from "../assets/tabby-new.png";
-import bag from "../assets/beautiful-elegance-luxury-fashion-green-handbag.jpg";
-import watch from "../assets/Watche/stylish-golden-watch-white-surface.jpg";
 import Image from "next/image";
+import { getCart } from "@/service/productService";
 
 const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("montres");
   const [step, setStep] = useState("checkout"); // checkout | payment
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [checkoutProducts, setCheckoutProducts] = useState([]);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [isMounted, setIsMounted] = useState(false); // ✅ Prevent hydration errors
 
   const handlePlaceOrder = () => {
     if (!privacyAccepted) {
@@ -25,6 +27,25 @@ const CheckoutPage = () => {
     setStep("payment");
   };
 
+  useEffect(() => {
+    setIsMounted(true); // component is mounted, safe to use client-only APIs
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const result = await getCart(token);
+        setCheckoutProducts(result.cart || []);
+        setTotalAmount(result.totalAmount || 0);
+      } catch (err) {
+        console.log("Failed to fetch cart:", err.message);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (!isMounted) return null; // ✅ Wait for client mount to render
+  console.log(checkoutProducts)
   return (
     <div className="min-h-screen bg-gray-50 p-4 flex justify-center">
       <div className="w-full max-w-6xl">
@@ -36,70 +57,47 @@ const CheckoutPage = () => {
 
               {/* Form */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {[
+                  { label: "First name *", type: "text" },
+                  { label: "Last name", type: "text" },
+                  { label: "Phone *", type: "text" },
+                  { label: "Email *", type: "email" },
+                  { label: "State / County", type: "text" },
+                ].map((field, i) => (
+                  <div key={i}>
+                    <label className="block text-sm font-medium">{field.label}</label>
+                    <input
+                      type={field.type}
+                      className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                ))}
+
                 <div>
-                  <label className="block text-sm font-medium">
-                    First name *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">Last name</label>
-                  <input
-                    type="text"
-                    className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">Phone *</label>
-                  <input
-                    type="text"
-                    className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">Email *</label>
-                  <input
-                    type="email"
-                    className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">
-                    Country / Region *
-                  </label>
+                  <label className="block text-sm font-medium">Country / Region *</label>
                   <select className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-purple-500">
-                    <option>United Arab Emirates</option>
-                    <option>Bahrain</option>
-                    <option>Egypt</option>
-                    <option>Iran</option>
-                    <option>Iraq</option>
-                    <option>India</option>
-                    <option>Kuwait</option>
-                    <option>Saudi Arabia</option>
-                    <option>Palestine</option>
-                    <option>Yemen</option>
-                    <option>USA</option>
+                    {[
+                      "United Arab Emirates",
+                      "Bahrain",
+                      "Egypt",
+                      "Iran",
+                      "Iraq",
+                      "India",
+                      "Kuwait",
+                      "Saudi Arabia",
+                      "Palestine",
+                      "Yemen",
+                      "USA",
+                    ].map((c, i) => (
+                      <option key={i}>{c}</option>
+                    ))}
                   </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">
-                    State / County
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-purple-500"
-                  />
                 </div>
               </div>
 
               {/* Address */}
               <div className="mb-6">
-                <label className="block text-sm font-medium">
-                  Street address *
-                </label>
+                <label className="block text-sm font-medium">Street address *</label>
                 <input
                   type="text"
                   className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-purple-500"
@@ -108,9 +106,7 @@ const CheckoutPage = () => {
 
               {/* Notes */}
               <div className="mb-6">
-                <label className="block text-sm font-medium">
-                  Order notes (optional)
-                </label>
+                <label className="block text-sm font-medium">Order notes (optional)</label>
                 <textarea
                   className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-purple-500"
                   rows="3"
@@ -125,42 +121,31 @@ const CheckoutPage = () => {
 
               {/* Products */}
               <div className="space-y-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Image src={bag} alt="Bag" className="w-12 h-12 rounded" />
-                    <div>
-                      <p className="text-sm font-medium">
-                        Seiko Sport Chronograph 38mm
-                      </p>
-                      <p className="text-xs text-gray-500">SKU: MON0145</p>
+                {checkoutProducts.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Image
+                        src={item.productId.images?.[0]?.url || "/placeholder.png"}
+                        alt={item.productId.name}
+                        width={48}
+                        height={48}
+                        className="w-12 h-12 rounded"
+                      />
+                      <div>
+                        <p className="text-sm font-medium">{item.productId.name}</p>
+                        <p className="text-xs text-gray-500">{item.productId.sku}</p>
+                      </div>
                     </div>
+                    <span className="text-sm">{item.productId.sellprice}</span>
                   </div>
-                  <span className="text-sm">1,100.0 AED</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Image
-                      src={watch}
-                      alt="Watch"
-                      className="w-12 h-12 rounded"
-                    />
-                    <div>
-                      <p className="text-sm font-medium">
-                        Raymond Weil Amadeus 200
-                      </p>
-                      <p className="text-xs text-gray-500">SKU: MON0086</p>
-                    </div>
-                  </div>
-                  <span className="text-sm">1,200.0 AED</span>
-                </div>
+                ))}
               </div>
 
               {/* Totals */}
               <div className="border-t pt-4 text-sm space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>2,300.0 AED</span>
+                  <span>{totalAmount} AED</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
@@ -171,7 +156,7 @@ const CheckoutPage = () => {
               {/* Final Total */}
               <div className="flex justify-between text-lg font-semibold mt-4">
                 <span>Total</span>
-                <span>2,300.0 AED</span>
+                <span>{totalAmount} AED</span>
               </div>
 
               {/* Payment Options */}
@@ -179,9 +164,7 @@ const CheckoutPage = () => {
                 {/* Montres Trading Option */}
                 <label
                   className={`flex items-center p-3 border rounded-lg cursor-pointer ${
-                    paymentMethod === "montres"
-                      ? "border-purple-500 bg-purple-50"
-                      : "hover:bg-gray-50"
+                    paymentMethod === "montres" ? "border-purple-500 bg-purple-50" : "hover:bg-gray-50"
                   }`}
                 >
                   <input
@@ -207,9 +190,7 @@ const CheckoutPage = () => {
                 {/* Tabby Option */}
                 <label
                   className={`flex items-center p-3 border rounded-lg cursor-pointer ${
-                    paymentMethod === "tabby"
-                      ? "border-purple-500 bg-purple-50"
-                      : "hover:bg-gray-50"
+                    paymentMethod === "tabby" ? "border-purple-500 bg-purple-50" : "hover:bg-gray-50"
                   }`}
                 >
                   <input
@@ -221,15 +202,12 @@ const CheckoutPage = () => {
                     className="mr-3"
                   />
                   <div>
-                    <p className="font-medium">
-                      Pay in 4. No interest, no fees.
-                    </p>
-                    <Image src={tabby} alt="Tabby" className="h-6 mt-1" />
+                    <p className="font-medium">Pay in 4. No interest, no fees.</p>
                   </div>
                 </label>
               </div>
 
-              {/* Privacy Policy Notice */}
+              {/* Privacy Policy */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-start">
                   <input
@@ -239,13 +217,8 @@ const CheckoutPage = () => {
                     onChange={(e) => setPrivacyAccepted(e.target.checked)}
                     className="mt-1 mr-3"
                   />
-                  <label
-                    htmlFor="privacy-policy"
-                    className="text-sm text-gray-600"
-                  >
-                    Your personal data will be used to process your order,
-                    support your experience throughout this website, and for
-                    other purposes described in our{" "}
+                  <label htmlFor="privacy-policy" className="text-sm text-gray-600">
+                    Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our{" "}
                     <a
                       href="/privacy-policy"
                       className="text-purple-600 hover:underline"
@@ -326,7 +299,7 @@ const CheckoutPage = () => {
               <div>
                 <h2 className="font-semibold text-lg mb-4">Pay with Tabby</h2>
                 <div className="border p-4 rounded-lg text-center">
-                  <Image src={tabby} alt="Tabby" className="h-8 mx-auto mb-4" />
+                  {/* <Image src={tabby} alt="Tabby" className="h-8 mx-auto mb-4" /> */}
                   <p className="mb-2">
                     Complete your payment in 4 easy installments. No fees.
                   </p>

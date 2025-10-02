@@ -16,12 +16,13 @@ import { useParams } from "next/navigation";
 const ReviewsRatings = lazy(() => import("./ReviewsRatings"));
 // import advertiseVideo from "../../assets/6811913-hd_1920_1080_25fps (1).mp4";
 import Image from "next/image";
-import { fetchProduct } from "@/service/productService";
+import { addToCart, fetchProduct } from "@/service/productService";
 
 const ProductDetailPage = () => {
   // const location = useLocation();
   const [product, setProducts] = useState({});
   const [isLoading, setLoading] = useState(true);
+  const [isInCart, setIsInCart] = useState(false);
   const [error, setError] = useState(null);
   const { id } = useParams();
   // Get product data from navigation state or fetch if needed
@@ -135,6 +136,27 @@ const ProductDetailPage = () => {
     </ul>
   );
 };
+
+  const handleAddToCart = async () => {
+    try {
+      const token = localStorage.getItem("token"); // assume JWT is saved
+      console.log(id,'id')
+      await addToCart(token, id, 1);
+
+      // store in localStorage for quick UI update
+      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart.push({ productId: id, quantity: 1 });
+      localStorage.setItem("cart", JSON.stringify(cart));
+
+      setIsInCart(true);
+    } catch (error) {
+      console.error("Add to cart failed:", error);
+      // alert("Failed to add to cart. Please try again.");
+    }
+  };
+  const handleGoToCart = () => {
+    router.push("/cart");
+  };
 
 
 
@@ -320,9 +342,21 @@ const ProductDetailPage = () => {
 
           {/* Action Buttons */}
           <div className="flex flex-col xs:flex-row gap-2 xs:gap-3 sm:gap-4 mb-4 xs:mb-5 sm:mb-6">
-            <button className="flex-1 bg-blue-900 text-white py-2 xs:py-3 rounded-lg font-semibold hover:bg-blue-800 text-sm xs:text-base">
-              ADD TO CART
-            </button>
+            {isInCart ? (
+              <button
+                onClick={handleGoToCart}
+                className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-500"
+              >
+                GO TO CART
+              </button>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                className="flex-1 bg-blue-900 text-white py-3 rounded-lg font-semibold hover:bg-blue-800"
+              >
+                ADD TO CART
+              </button>
+            )}
             <button className="flex-1 bg-red-600 text-white py-2 xs:py-3 rounded-lg font-semibold hover:bg-red-500 text-sm xs:text-base">
               BUY NOW
             </button>
