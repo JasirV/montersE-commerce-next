@@ -36,7 +36,7 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
       
       // ✅ Extract token + user data
       const { token, userId, name } = response.data;
-
+      
       const userData = {
         id: userId,
         name: name || email.split("@")[0],

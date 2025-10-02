@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import axios from "axios";
 
+
 const Navbar = ({ onSignUpClick }) => {
   const sessionData = useSession();
   const session = sessionData?.data;
