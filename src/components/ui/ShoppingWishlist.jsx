@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
 import {
   FiLock,
   FiShare2,
@@ -11,19 +12,18 @@ import {
   FiList,
   FiStar,
   FiGlobe,
-  FiUser,
-  FiShoppingCart,
-  FiEye,
 } from "react-icons/fi";
 import Image from "next/image";
 import watch from "../../assets/Watche/elegant-watch-with-silver-golden-chain-isolated.jpg";
 import CreateWishlistModal from "../ui/createWishilist";
 import SeWishilistModal from "../ui/seeWishilist";
 import axios from "axios";
-
-
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ShoppingWishlist = () => {
+  const router = useRouter();
+  const params = useParams();
   const [activeWishlist, setActiveWishlist] = useState(null);
   const [wishlistData, setWishlistData] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
@@ -40,52 +40,90 @@ const ShoppingWishlist = () => {
   useEffect(() => {
     // Get token from localStorage
     const storedToken = localStorage.getItem("token");
-    console.log(storedToken, "storedToken");
-
     if (storedToken) setToken(storedToken);
   }, []);
 
-  useEffect(() => {
-    const fetchWishlists = async () => {
-      if (!token) return;
 
-      try {
-        setLoading(true);
-        setError(null);
 
-        const response = await axios.get(
-          "http://localhost:9000/api/products/wishlists",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`, // add token directly here
-            },
-          }
-        );
+const fetchWishlists = async () => {
+  if (!token) return;
 
-        console.log(response, "my response");
+  try {
+    setLoading(true);
+    setError(null);
 
-        const wishlists = response.data.wishlists || [];
-        setWishlistData(wishlists);
-
-        if (wishlists.length > 0) {
-          const defaultWishlist =
-            wishlists.find((w) => w.isDefault) || wishlists[0];
-          setActiveWishlist(defaultWishlist);
-        } else {
-          setActiveWishlist(null);
+    const response = await axios.get(
+      "http://localhost:9000/api/products/wishlists/getAll",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        // Add cache busting to ensure fresh data
+        params: {
+          _t: Date.now()
         }
-      } catch (err) {
-        console.error("Error fetching wishlists:", err);
-        setError(err.response?.data?.message || "Failed to load wishlists");
-        setWishlistData([]);
-        setActiveWishlist(null);
-      } finally {
-        setLoading(false);
       }
-    };
+    );
 
+    console.log("📥 Fetch wishlists response:", response.data);
+    const wishlists = response.data.wishlists || [];
+    
+    // Enhanced processing with better boolean conversion
+    const processedWishlists = wishlists.map(wishlist => ({
+      ...wishlist,
+      // Ensure proper boolean conversion
+      isPublic: wishlist.isPublic === true || wishlist.isPublic === 'true',
+      isDefault: Boolean(wishlist.isDefault)
+    }));
+    
+    console.log("✅ Processed wishlists with public status:", processedWishlists.map(w => ({
+      name: w.name,
+      isPublic: w.isPublic,
+      type: typeof w.isPublic
+    })));
+    
+    setWishlistData(processedWishlists);
+
+    // Sync with URL parameter - IMPROVED LOGIC
+    const wishlistId = params.id;
+    
+    if (processedWishlists.length > 0) {
+      let targetWishlist = null;
+      
+      // First, try to find wishlist by URL ID
+      if (wishlistId) {
+        targetWishlist = processedWishlists.find(w => w.id === wishlistId);
+        console.log(`🎯 Looking for wishlist by ID ${wishlistId}:`, targetWishlist);
+      }
+      
+      // If not found or no ID in URL, use default or first wishlist
+      if (!targetWishlist) {
+        targetWishlist = processedWishlists.find(w => w.isDefault) || processedWishlists[0];
+        console.log(`🎯 Using default/first wishlist:`, targetWishlist);
+        
+        // Update URL to reflect the actual wishlist being shown
+        if (targetWishlist && targetWishlist.id !== wishlistId) {
+          router.replace(`/wishlist/${targetWishlist.id}`);
+        }
+      }
+      
+      setActiveWishlist(targetWishlist);
+    } else {
+      setActiveWishlist(null);
+    }
+  } catch (err) {
+    console.error("❌ Error fetching wishlists:", err);
+    setError(err.response?.data?.message || "Failed to load wishlists");
+    setWishlistData([]);
+    setActiveWishlist(null);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  useEffect(() => {
     fetchWishlists();
-  }, [token]);
+  }, [token, params.id]);
 
   // Detect mobile
   useEffect(() => {
@@ -106,60 +144,220 @@ const ShoppingWishlist = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Handle wishlist selection
+  const handleWishlistSelect = (wishlist) => {
+    setActiveWishlist(wishlist);
+    setMoreDropdownOpen(false);
+    router.push(`/wishlist/${wishlist.id}`);
+  };
 
+  // Update wishlist selection for mobile
+  const updateWishlistSelection = (list) => {
+    setActiveWishlist(list);
+    setShowWishlistSidebar(false);
+    setMoreDropdownOpen(false);
+    router.push(`/wishlist/${list.id}`);
+  };
 
-  // API Functions
-  const handleDeleteItem = async (wishlistId, itemId) => {
-   
+  // Delete item from wishlist
+  const handleDeleteItem = async (wishlistId, productId) => {
+    if (!token || !wishlistId || !productId) return;
+    
+    try {
+      const response = await axios.delete(
+        `http://localhost:9000/api/products/wishlist/remove`,
+        { 
+          headers: { Authorization: `Bearer ${token}` },
+          data: {
+            wishlistId: wishlistId,
+            productId: productId
+          }
+        }
+      );
+
+      toast.success("Item removed from wishlist successfully!");
+      // Refresh wishlists after deleting item
+      fetchWishlists();
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast.error(error.response?.data?.message || "Failed to delete item");
+    }
   };
 
   const handleMakeDefault = async () => {
+    if (!activeWishlist || activeWishlist.isDefault || !token) return;
+    
+    try {
+      const response = await axios.put(
+        `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/default`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      toast.success("Wishlist set as default successfully!");
+      fetchWishlists();
+      setMoreDropdownOpen(false);
+    } catch (error) {
+      console.error("Error making wishlist default:", error);
+      toast.error(error.response?.data?.message || "Failed to update wishlist");
+    }
+  };
+
+// Toggle Public Sharing with API integration - IMPROVED STATE SYNC
+const handleTogglePublicSharing = async () => {
+  if (!activeWishlist || !token) return;
   
-  };
-
-  const handleTogglePublicSharing = async () => {
-   
-  };
-
-  const handleEmptyWishlist = async () => {
- 
-  };
-
-
-
-const handleDeleteWishlist = async (wishlistId) => {
   try {
-    // Make DELETE request to backend
-    const response = await axios.delete(
-      `http://localhost:9000/api/products/wishlists/${wishlistId}`, // replace with your actual endpoint
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // if you are using token auth
-        },
+    const newPublicStatus = !activeWishlist.isPublic;
+
+    // Optimistically update UI
+    const optimisticWishlist = {
+      ...activeWishlist,
+      isPublic: newPublicStatus
+    };
+    setActiveWishlist(optimisticWishlist);
+    
+    // Update wishlistData array optimistically
+    setWishlistData(prev => prev.map(wishlist => 
+      wishlist.id === activeWishlist.id 
+        ? { ...wishlist, isPublic: newPublicStatus }
+        : wishlist
+    ));
+
+    const response = await axios.put(
+      `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/visibility`,
+      { 
+        isPublic: newPublicStatus 
+      },
+      { 
+        headers: { Authorization: `Bearer ${token}` } 
       }
     );
 
-    console.log(response,"delete");
+    // console.log("📥 API Response:", response.data);
     
-
-    // Optionally, update frontend state after deletion
-    if (response.status === 200) {
-      console.log(response.data.message); // "Wishlist deleted successfully"
+    if (response.data.success) {
+      toast.success(response.data.message || `Wishlist is now ${newPublicStatus ? "public" : "private"}`);
       
-      // Assuming you have wishlistData state
-      setWishlistData(response.data.wishlists);
+      // Update with actual server response to ensure consistency
+      if (response.data.wishlist) {
+        const serverWishlist = {
+          ...activeWishlist,
+          isPublic: response.data.wishlist.isPublic,
+          publicSlug: response.data.wishlist.publicSlug
+        };
+        
+        console.log("🔄 Server wishlist data:", serverWishlist);
+        setActiveWishlist(serverWishlist);
+        
+        setWishlistData(prev => prev.map(wishlist => 
+          wishlist.id === activeWishlist.id 
+            ? { ...wishlist, isPublic: response.data.wishlist.isPublic }
+            : wishlist
+        ));
+      }
+      
+      setMoreDropdownOpen(false);
+      
+    } else {
+      // Revert optimistic update if API call failed
+      setActiveWishlist(activeWishlist);
+      setWishlistData(prev => prev.map(wishlist => 
+        wishlist.id === activeWishlist.id 
+          ? { ...wishlist, isPublic: activeWishlist.isPublic }
+          : wishlist
+      ));
+      throw new Error(response.data.message || "Failed to update visibility");
     }
+    
   } catch (error) {
-    console.error("Error deleting wishlist:", error);
-    alert(error.response?.data?.message || "Failed to delete wishlist");
+    console.error("❌ Error updating wishlist visibility:", error);
+    
+    // Revert optimistic updates on error
+    setActiveWishlist(activeWishlist);
+    setWishlistData(prev => prev.map(wishlist => 
+      wishlist.id === activeWishlist.id 
+        ? { ...wishlist, isPublic: activeWishlist.isPublic }
+        : wishlist
+    ));
+    
+    const errorMessage = error.response?.data?.message || "Failed to update wishlist visibility";
+    toast.error(errorMessage);
   }
 };
 
+  const handleEmptyWishlist = async () => {
+    if (!activeWishlist || !activeWishlist.items || activeWishlist.items.length === 0 || !token) return;
+    
+    try {
+      const response = await axios.delete(
+        `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/items`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      toast.success("Wishlist emptied successfully!");
+      fetchWishlists();
+      setMoreDropdownOpen(false);
+    } catch (error) {
+      console.error("Error emptying wishlist:", error);
+      toast.error(error.response?.data?.message || "Failed to empty wishlist");
+    }
+  };
+
+  // Delete entire wishlist
+  const handleDeleteWishlist = async (wishlistId) => {
+    console.log(wishlistId, "wishlistId");
+    
+    if (!wishlistId || !token) {
+      toast.error("Wishlist ID or token is missing");
+      return;
+    }
+
+    try {
+      const response = await axios.delete(
+        `http://localhost:9000/api/products/wishlists/${wishlistId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      toast.success("Wishlist deleted successfully!");
+      // Refresh the wishlists after deletion
+      fetchWishlists();
+      setMoreDropdownOpen(false);
+    } catch (error) {
+      console.error("Error deleting wishlist:", error);
+      toast.error(error.response?.data?.message || "Failed to delete wishlist");
+    }
+  };
 
   // Handle wishlist creation success
-  const handleWishlistCreated = () => {
+  const handleWishlistCreated = (newWishlist) => {
     fetchWishlists();
     setOpen(false);
+
+    // Navigate to the new wishlist
+    if (newWishlist && newWishlist.id) {
+      router.push(`/wishlist/${newWishlist.id}`);
+    }
+  };
+
+  // Helper function to get item image
+  const getItemImage = (item) => {
+    if (item.image && item.image.url) {
+      return item.image.url;
+    }
+    return watch; // fallback image
+  };
+
+  // Get the appropriate icon for public/private status
+  const getPrivacyIcon = (isPublic) => {
+    return isPublic ? 
+      <FiGlobe className="text-green-500" size={16} /> : 
+      <FiLock className="text-gray-500" size={16} />;
+  };
+
+  // Get privacy status text
+  const getPrivacyStatusText = (isPublic) => {
+    return isPublic ? "Public" : "Private";
   };
 
   const activeList = activeWishlist || wishlistData[0] || { items: [] };
@@ -194,9 +392,9 @@ const handleDeleteWishlist = async (wishlistId) => {
           onClick={handleTogglePublicSharing}
           className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
         >
-          <FiGlobe className="mr-3 text-gray-500" size={16} />
-          <span>
-            {activeList?.isPublic ? "Disable" : "Enable"} Public Sharing
+          {getPrivacyIcon(activeList?.isPublic)}
+          <span className="ml-3">
+            {activeList?.isPublic ? "Make Private" : "Make Public"}
           </span>
         </button>
 
@@ -214,9 +412,8 @@ const handleDeleteWishlist = async (wishlistId) => {
           <span>Empty Wishlist</span>
         </button>
 
-        {/* Delete Wishlist */}
         <button
-          onClick={handleDeleteWishlist}
+          onClick={() => handleDeleteWishlist(activeList?.id)}
           disabled={activeList?.isDefault || wishlistData.length <= 1}
           className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
             activeList?.isDefault || wishlistData.length <= 1
@@ -278,10 +475,7 @@ const handleDeleteWishlist = async (wishlistId) => {
               {wishlistData.map((list) => (
                 <div
                   key={list.id}
-                  onClick={() => {
-                    setActiveWishlist(list);
-                    setShowWishlistSidebar(false);
-                  }}
+                  onClick={() => updateWishlistSelection(list)}
                   className={`p-3 border rounded-lg cursor-pointer ${
                     activeWishlist?.id === list.id
                       ? "border-[#1e518e] bg-gradient-to-r from-[#1e518e]/10 to-[#0061b0ee]/10"
@@ -309,7 +503,9 @@ const handleDeleteWishlist = async (wishlistId) => {
                     {list.items && list.items.length > 0
                       ? `${list.items.length} items`
                       : "No items"}
-                    <FiLock className="ml-2" size={14} />
+                    <span className="ml-2">
+                      {getPrivacyIcon(list.isPublic)}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -396,8 +592,8 @@ const handleDeleteWishlist = async (wishlistId) => {
           <div className="flex flex-col gap-2">
             {wishlistData.map((list, index) => (
               <div
-                key={list.id || index} // fallback to index if id is missing
-                onClick={() => setActiveWishlist(list)}
+                key={list.id || index}
+                onClick={() => handleWishlistSelect(list)}
                 className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
                   activeWishlist?.id === list.id
                     ? "border-[#1e518e] bg-gradient-to-r from-[#1e518e]/10 to-[#0061b0ee]/10 shadow-md"
@@ -425,7 +621,9 @@ const handleDeleteWishlist = async (wishlistId) => {
                   {list.items && list.items.length > 0
                     ? `${list.items.length} items`
                     : "No items"}
-                  <FiLock className="ml-2" size={14} />
+                  <span className="ml-2">
+                    {getPrivacyIcon(list.isPublic)}
+                  </span>
                 </div>
               </div>
             ))}
@@ -441,7 +639,7 @@ const handleDeleteWishlist = async (wishlistId) => {
           {activeList && (
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 p-4 bg-white rounded-lg shadow-sm relative">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800 lg:block hidden">
+                <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800">
                   {activeList.name}
                 </h2>
                 <div className="flex gap-1">
@@ -495,6 +693,7 @@ const handleDeleteWishlist = async (wishlistId) => {
                 <SeWishilistModal
                   isOpen={WishilistOpn}
                   onClose={() => setWishilistOpen(false)}
+                  wishlist={activeList}
                 />
 
                 {/* More Button with Dropdown */}
@@ -525,9 +724,9 @@ const handleDeleteWishlist = async (wishlistId) => {
               }
             `}
             >
-              {activeList.items.map((item) => (
+             {activeList.items.map((item, index) => (
                 <div
-                  key={item.id}
+                  key={item._id || item.productId?._id || index}
                   className={`
                     border border-gray-200 rounded-lg bg-white group relative transition-all duration-200
                     ${
@@ -565,8 +764,8 @@ const handleDeleteWishlist = async (wishlistId) => {
                   `}
                   >
                     <Image
-                      src={item.image || watch}
-                      alt={item.name}
+                      src={getItemImage(item)}
+                      alt="emty"
                       fill
                       className="object-contain rounded-lg"
                       sizes={
@@ -592,13 +791,7 @@ const handleDeleteWishlist = async (wishlistId) => {
                       {item.name}
                     </h3>
 
-                    <div className="flex items-center text-yellow-500 text-xs mb-1">
-                      ⭐ {item.rating || "4.5"}
-                      <span className="ml-1 text-gray-500">
-                        ({item.reviews || "0"})
-                      </span>
-                    </div>
-
+                   
                     <p
                       className={`
                       font-semibold text-gray-900
@@ -607,7 +800,7 @@ const handleDeleteWishlist = async (wishlistId) => {
                       }
                     `}
                     >
-                      AED{item.price || "0.00"}
+                      AED {item.salePrice}
                     </p>
 
                     {/* Action Buttons */}
@@ -697,6 +890,7 @@ const handleDeleteWishlist = async (wishlistId) => {
           <SeWishilistModal
             isOpen={WishilistOpn}
             onClose={() => setWishilistOpen(false)}
+            wishlist={activeList}
           />
 
           {/* Mobile More Button */}
@@ -732,10 +926,9 @@ const handleDeleteWishlist = async (wishlistId) => {
                     onClick={handleTogglePublicSharing}
                     className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                   >
-                    <FiGlobe className="mr-3 text-gray-500" size={16} />
-                    <span>
-                      {activeList?.isPublic ? "Disable" : "Enable"} Public
-                      Sharing
+                    {getPrivacyIcon(activeList?.isPublic)}
+                    <span className="ml-3">
+                      {activeList?.isPublic ? "Make Private" : "Make Public"}
                     </span>
                   </button>
 
@@ -755,7 +948,7 @@ const handleDeleteWishlist = async (wishlistId) => {
                   </button>
 
                   <button
-                    onClick={handleDeleteWishlist}
+                    onClick={() => handleDeleteWishlist(activeList?.id)}
                     disabled={activeList?.isDefault || wishlistData.length <= 1}
                     className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
                       activeList?.isDefault || wishlistData.length <= 1

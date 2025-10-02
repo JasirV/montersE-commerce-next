@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   FaShoppingCart,
@@ -16,13 +16,16 @@ import SubNavbar from "./SubNavabar";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import axios from "axios";
 
 const Navbar = ({ onSignUpClick }) => {
- const sessionData = useSession();
+  const sessionData = useSession();
   const session = sessionData?.data;
   const status = sessionData?.status;
-  const router = useRouter();
 
+  const router = useRouter();
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -30,15 +33,8 @@ const Navbar = ({ onSignUpClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [localUser, setLocalUser] = useState(null); // New state for localStorage user
-  const [authUpdateTrigger, setAuthUpdateTrigger] = useState(0); // Force re-renders
-
-  // Debug session data
-  useEffect(() => {
-    console.log("Session status:", status);
-    console.log("Session data:", session);
-    console.log("Local user data:", localUser);
-  }, [session, status, localUser]);
+  const [localUser, setLocalUser] = useState(null);
+  const [authUpdateTrigger, setAuthUpdateTrigger] = useState(0);
 
   // Get user data from both session and localStorage
   const getUserData = useCallback(() => {
@@ -48,18 +44,18 @@ const Navbar = ({ onSignUpClick }) => {
         name: session.user.name,
         email: session.user.email,
         image: session.user.image,
-        source: 'session'
+        source: "session",
       };
     }
-    
+
     // Then check localStorage (for custom login)
     if (isClient && localUser) {
       return {
         ...localUser,
-        source: 'localStorage'
+        source: "localStorage",
       };
     }
-    
+
     return null;
   }, [session, isClient, localUser]);
 
@@ -71,43 +67,46 @@ const Navbar = ({ onSignUpClick }) => {
     loadUserFromStorage();
   }, []);
 
-  // Listen for auth changes
+  // Listen for auth changes and wishlist updates
   useEffect(() => {
     const handleAuthChange = () => {
       console.log("Auth change event received");
       loadUserFromStorage();
-      setAuthUpdateTrigger(prev => prev + 1); // Force re-render
+      setAuthUpdateTrigger((prev) => prev + 1);
+    };
+
+    const handleWishlistChange = () => {
+      console.log("Wishlist change event received");
+      fetchWishlistCount();
     };
 
     const handleStorageChange = (e) => {
-      if (e.key === 'user') {
+      if (e.key === "user") {
         console.log("LocalStorage user changed");
         loadUserFromStorage();
       }
     };
 
-    // Set up global function for other components to trigger auth updates
+    // Set up event listeners
     window.triggerNavbarAuthUpdate = handleAuthChange;
-
-    // Listen for custom auth events
-    window.addEventListener('authChange', handleAuthChange);
-    // Listen for localStorage changes
-    window.addEventListener('storage', handleStorageChange);
-    // Listen for same-tab storage events (using custom event from LoginForm)
-    window.addEventListener('localStorageUpdated', handleStorageChange);
+    window.addEventListener("authChange", handleAuthChange);
+    window.addEventListener("wishlistUpdated", handleWishlistChange);
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("localStorageUpdated", handleStorageChange);
 
     return () => {
-      window.removeEventListener('authChange', handleAuthChange);
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('localStorageUpdated', handleStorageChange);
+      window.removeEventListener("authChange", handleAuthChange);
+      window.removeEventListener("wishlistUpdated", handleWishlistChange);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("localStorageUpdated", handleStorageChange);
       delete window.triggerNavbarAuthUpdate;
     };
   }, []);
 
   const loadUserFromStorage = () => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
-        const storedUser = localStorage.getItem('user');
+        const storedUser = localStorage.getItem("user");
         console.log("Loading user from storage:", storedUser);
         if (storedUser) {
           const userData = JSON.parse(storedUser);
@@ -116,16 +115,114 @@ const Navbar = ({ onSignUpClick }) => {
           setLocalUser(null);
         }
       } catch (error) {
-        console.error('Error reading user from localStorage:', error);
+        console.error("Error reading user from localStorage:", error);
         setLocalUser(null);
       }
     }
   };
 
+  // Fetch wishlist count function
+  const fetchWishlistCount = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setWishlistCount(0);
+        return;
+      }
+
+      const res = await axios.get(
+        "http://localhost:9000/api/products/wishlists/getAll",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data && res.data.wishlists) {
+        // sum all items in wishlists
+        const total = res.data.wishlists.reduce(
+          (sum, w) => sum + (w.items?.length || 0),
+          0
+        );
+        setWishlistCount(total);
+        console.log("Wishlist count updated:", total);
+      } else {
+        setWishlistCount(0);
+      }
+    } catch (error) {
+      console.error("Error fetching wishlist count:", error);
+      setWishlistCount(0);
+    }
+  }, []);
+
+  // Fetch wishlist count when user changes or auth updates
+  useEffect(() => {
+    if (user) {
+      fetchWishlistCount();
+    } else {
+      setWishlistCount(0);
+    }
+  }, [user, authUpdateTrigger, fetchWishlistCount]);
+
+  // Fetch wishlists when user changes
+  useEffect(() => {
+    const fetchWishlists = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.log("No token found");
+          setDefaultWishlistId(null);
+          return;
+        }
+
+        const res = await axios.get(
+          "http://localhost:9000/api/products/wishlists",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (res.data && res.data.wishlists?.length > 0) {
+          const defaultWishlist =
+            res.data.wishlists.find((w) => w.isDefault) ||
+            res.data.wishlists[0];
+          setDefaultWishlistId(defaultWishlist.id);
+          console.log("Default wishlist ID set:", defaultWishlist.id);
+        } else {
+          console.log("No wishlists found or empty response");
+          setDefaultWishlistId(null);
+        }
+      } catch (error) {
+        console.error("Error fetching wishlists:", error);
+        setDefaultWishlistId(null);
+      }
+    };
+
+    // Only fetch wishlists if user is logged in
+    if (user) {
+      fetchWishlists();
+    } else {
+      setDefaultWishlistId(null);
+    }
+  }, [user]);
+
+  // Listen for real-time wishlist updates
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      console.log("Wishlist update detected in Navbar");
+      fetchWishlistCount();
+    };
+
+    window.addEventListener("wishlistUpdated", handleWishlistUpdate);
+    
+    return () => {
+      window.removeEventListener("wishlistUpdated", handleWishlistUpdate);
+    };
+  }, [fetchWishlistCount]);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
-    
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
@@ -133,27 +230,45 @@ const Navbar = ({ onSignUpClick }) => {
 
   // Handle logout for both session and localStorage
   const handleLogout = useCallback(async () => {
-    if (user?.source === 'session') {
+    console.log("Logging out user...");
+    
+    // Clear wishlist data first
+    setWishlistCount(0);
+    setDefaultWishlistId(null);
+
+    if (user?.source === "session") {
       // NextAuth logout
-      await signOut({ 
+      await signOut({
         redirect: false,
-        callbackUrl: "/"
+        callbackUrl: "/",
       });
     } else {
       // localStorage logout
-      localStorage.removeItem('user');
+      localStorage.removeItem("user");
+      localStorage.removeItem("token"); // Also remove token on logout
       setLocalUser(null);
-      // Dispatch event to sync across tabs
-      window.dispatchEvent(new Event('authChange'));
     }
-    
+
+    // Clear any client-side wishlist/cart data
+    if (typeof window !== "undefined") {
+      // You can also clear any wishlist/cart related localStorage if needed
+      localStorage.removeItem("wishlistData");
+      localStorage.removeItem("cartData");
+    }
+
     setUserDropdownOpen(false);
-    router.push('/');
+    
+    // Dispatch events to sync across components
+    window.dispatchEvent(new Event("authChange"));
+    window.dispatchEvent(new Event("wishlistUpdated"));
+    window.dispatchEvent(new Event("cartUpdated"));
+    
+    router.push("/");
   }, [user, router]);
 
   // Handle user dashboard navigation
   const handleUserDashboard = useCallback(() => {
-    router.push('/UserProfile');
+    router.push("/UserProfile");
     setUserDropdownOpen(false);
   }, [router]);
 
@@ -178,10 +293,16 @@ const Navbar = ({ onSignUpClick }) => {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isMobileSearchOpen && !event.target.closest(".mobile-search-container")) {
+      if (
+        isMobileSearchOpen &&
+        !event.target.closest(".mobile-search-container")
+      ) {
         setIsMobileSearchOpen(false);
       }
-      if (userDropdownOpen && !event.target.closest(".user-dropdown-container")) {
+      if (
+        userDropdownOpen &&
+        !event.target.closest(".user-dropdown-container")
+      ) {
         setUserDropdownOpen(false);
       }
     };
@@ -191,14 +312,17 @@ const Navbar = ({ onSignUpClick }) => {
   }, [isMobileSearchOpen, userDropdownOpen]);
 
   // Handle search submission
-  const handleSearchSubmit = useCallback((e) => {
-    if (e) e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setIsSearchFocused(false);
-      setIsMobileSearchOpen(false);
-    }
-  }, [searchQuery, router]);
+  const handleSearchSubmit = useCallback(
+    (e) => {
+      if (e) e.preventDefault();
+      if (searchQuery.trim()) {
+        router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        setIsSearchFocused(false);
+        setIsMobileSearchOpen(false);
+      }
+    },
+    [searchQuery, router]
+  );
 
   const popularSearches = [
     { term: "Rolex Daytona", path: "/search?q=rolex+daytona" },
@@ -233,7 +357,7 @@ const Navbar = ({ onSignUpClick }) => {
         className={`w-full bg-white sticky top-0 z-50 transition-all duration-300 ${
           scrolled ? "shadow-md" : "shadow-sm"
         }`}
-        key={authUpdateTrigger} // Force re-render when auth changes
+        key={authUpdateTrigger}
       >
         <div className="container mx-auto px-4 md:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 md:h-16 lg:h-18">
@@ -267,7 +391,7 @@ const Navbar = ({ onSignUpClick }) => {
 
             {/* Search Bar - Desktop */}
             <div className="hidden md:flex flex-1 max-w-xl mx-4 relative">
-              <form 
+              <form
                 onSubmit={handleSearchSubmit}
                 className={`flex w-full border border-gray-300 rounded-full overflow-hidden bg-white shadow-sm transition-all duration-300 ring-1 ${
                   isSearchFocused ? "ring-[#1e518e]" : "ring-transparent"
@@ -283,8 +407,8 @@ const Navbar = ({ onSignUpClick }) => {
                   onFocus={handleSearchFocus}
                   onBlur={handleSearchBlur}
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 md:px-5 flex items-center justify-center hover:opacity-90 transition-opacity"
                 >
                   <FaSearch className="text-sm md:text-base" />
@@ -313,11 +437,29 @@ const Navbar = ({ onSignUpClick }) => {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-4 lg:gap-5 text-gray-700">
               <Link
-                href="/wishlist"
-                className="hover:text-[#1e518e] transition-colors p-2 rounded-full hover:bg-gray-100"
+                href={
+                  user && defaultWishlistId
+                    ? `/wishlist/${defaultWishlistId}`
+                    : "/wishlist"
+                }
+                className={`hover:text-[#1e518e] transition-colors p-2 rounded-full relative ${
+                  user ? "hover:bg-gray-100" : "cursor-not-allowed opacity-50"
+                }`}
                 aria-label="Wishlist"
+                onClick={(e) => {
+                  if (!user) {
+                    e.preventDefault();
+                    onSignUpClick();
+                  }
+                }}
               >
                 <FaHeart className="text-lg md:text-xl" />
+
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
               </Link>
 
               <Link
@@ -339,22 +481,24 @@ const Navbar = ({ onSignUpClick }) => {
                     {user.image ? (
                       <Image
                         src={user.image}
-                        alt={user.name || 'User'}
+                        alt={user.name || "User"}
                         className="w-8 h-8 rounded-full"
                         width={32}
                         height={32}
                       />
                     ) : (
                       <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm font-medium">
-                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                       </div>
                     )}
                     <span className="text-sm font-medium max-w-[100px] truncate">
-                      {user.name ? user.name.split(' ')[0] : 'User'}
+                      {user.name ? user.name.split(" ")[0] : "User"}
                     </span>
-                    <FaChevronDown 
-                      size={12} 
-                      className={`transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`}
+                    <FaChevronDown
+                      size={12}
+                      className={`transition-transform duration-200 ${
+                        userDropdownOpen ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
 
@@ -362,16 +506,18 @@ const Navbar = ({ onSignUpClick }) => {
                     <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                       <div className="px-4 py-2 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900 truncate">
-                          {user.name || 'User'}
+                          {user.name || "User"}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
-                          {user.email || ''}
+                          {user.email || ""}
                         </p>
                         <p className="text-xs text-gray-400">
-                          {user.source === 'session' ? 'NextAuth' : 'Local Storage'}
+                          {user.source === "session"
+                            ? "NextAuth"
+                            : "Local Storage"}
                         </p>
                       </div>
-                      
+
                       <button
                         onClick={handleUserDashboard}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
@@ -379,7 +525,7 @@ const Navbar = ({ onSignUpClick }) => {
                         <FaUser size={14} />
                         My Dashboard
                       </button>
-                      
+
                       <button
                         onClick={handleLogout}
                         className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
@@ -412,12 +558,31 @@ const Navbar = ({ onSignUpClick }) => {
                 <FaSearch size={18} />
               </button>
 
+              {/* Mobile Wishlist Link - Fixed */}
               <Link
-                href="/wishlist"
-                className="p-2.5 rounded-full hover:bg-gray-100 transition-colors"
+                href={
+                  user && defaultWishlistId
+                    ? `/wishlist/${defaultWishlistId}`
+                    : "/wishlist"
+                }
+                className={`p-2.5 rounded-full hover:bg-gray-100 transition-colors relative ${
+                  user ? "" : "cursor-not-allowed opacity-50"
+                }`}
                 aria-label="Wishlist"
+                onClick={(e) => {
+                  if (!user) {
+                    e.preventDefault();
+                    onSignUpClick();
+                  }
+                }}
               >
                 <FaHeart size={18} className="text-gray-700" />
+
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
               </Link>
 
               <Link
@@ -439,14 +604,14 @@ const Navbar = ({ onSignUpClick }) => {
                     {user.image ? (
                       <Image
                         src={user.image}
-                        alt={user.name || 'User'}
+                        alt={user.name || "User"}
                         className="w-6 h-6 rounded-full"
                         width={24}
                         height={24}
                       />
                     ) : (
                       <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                       </div>
                     )}
                   </button>
@@ -455,13 +620,13 @@ const Navbar = ({ onSignUpClick }) => {
                     <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                       <div className="px-4 py-2 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900 truncate">
-                          {user.name || 'User'}
+                          {user.name || "User"}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
-                          {user.email || ''}
+                          {user.email || ""}
                         </p>
                       </div>
-                      
+
                       <button
                         onClick={handleUserDashboard}
                         className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-b border-gray-100"
@@ -469,7 +634,7 @@ const Navbar = ({ onSignUpClick }) => {
                         <FaUser size={14} />
                         My Dashboard
                       </button>
-                      
+
                       <button
                         onClick={handleLogout}
                         className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
@@ -495,7 +660,7 @@ const Navbar = ({ onSignUpClick }) => {
           {/* Mobile Search - Full Width */}
           {isMobileSearchOpen && (
             <div className="md:hidden mb-2 relative mobile-search-container">
-              <form 
+              <form
                 onSubmit={handleSearchSubmit}
                 className="flex w-full border border-gray-300 rounded-full overflow-hidden bg-white shadow-sm mb-1"
               >
@@ -531,7 +696,7 @@ const Navbar = ({ onSignUpClick }) => {
                   ))}
                 </div>
               )}
-            </div>   
+            </div>
           )}
         </div>
       </header>

@@ -458,7 +458,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     const data = megaMenuData[megaMenuKey];
 
     return (
-      <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-0 w-screen max-w-6xl bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden">
+      <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-0 w-screen max-w-5xl bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden">
         <div className="p-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Column 1: Categories */}
