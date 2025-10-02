@@ -16,17 +16,21 @@ import SubNavbar from "./SubNavabar";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import axios from "axios";
-
+import { useWishlist } from "../../components/shared/context/WishlistContext";
 
 const Navbar = ({ onSignUpClick }) => {
   const sessionData = useSession();
   const session = sessionData?.data;
   const status = sessionData?.status;
-
   const router = useRouter();
-  const [wishlistCount, setWishlistCount] = useState(0);
-  const [defaultWishlistId, setDefaultWishlistId] = useState(null);
+
+  // Use wishlist context
+  const { 
+    wishlistCount, 
+    defaultWishlistId, 
+    refreshWishlist 
+  } = useWishlist();
+
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -39,7 +43,6 @@ const Navbar = ({ onSignUpClick }) => {
 
   // Get user data from both session and localStorage
   const getUserData = useCallback(() => {
-    // First check NextAuth session
     if (session?.user) {
       return {
         name: session.user.name,
@@ -49,7 +52,6 @@ const Navbar = ({ onSignUpClick }) => {
       };
     }
 
-    // Then check localStorage (for custom login)
     if (isClient && localUser) {
       return {
         ...localUser,
@@ -68,41 +70,34 @@ const Navbar = ({ onSignUpClick }) => {
     loadUserFromStorage();
   }, []);
 
-  // Listen for auth changes and wishlist updates
+  // Listen for auth changes
   useEffect(() => {
     const handleAuthChange = () => {
-      console.log("Auth change event received");
+      console.log("Auth change event received in Navbar");
       loadUserFromStorage();
       setAuthUpdateTrigger((prev) => prev + 1);
-    };
-
-    const handleWishlistChange = () => {
-      console.log("Wishlist change event received");
-      fetchWishlistCount();
+      refreshWishlist();
     };
 
     const handleStorageChange = (e) => {
-      if (e.key === "user") {
-        console.log("LocalStorage user changed");
+      if (e.key === "user" || e.key === "token") {
+        console.log("User/token changed in localStorage");
         loadUserFromStorage();
+        refreshWishlist();
       }
     };
 
     // Set up event listeners
-    window.triggerNavbarAuthUpdate = handleAuthChange;
     window.addEventListener("authChange", handleAuthChange);
-    window.addEventListener("wishlistUpdated", handleWishlistChange);
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("localStorageUpdated", handleStorageChange);
 
     return () => {
       window.removeEventListener("authChange", handleAuthChange);
-      window.removeEventListener("wishlistUpdated", handleWishlistChange);
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("localStorageUpdated", handleStorageChange);
-      delete window.triggerNavbarAuthUpdate;
     };
-  }, []);
+  }, [refreshWishlist]);
 
   const loadUserFromStorage = () => {
     if (typeof window !== "undefined") {
@@ -122,95 +117,11 @@ const Navbar = ({ onSignUpClick }) => {
     }
   };
 
-  // Fetch wishlist count function
-  const fetchWishlistCount = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setWishlistCount(0);
-        return;
-      }
-
-      const res = await axios.get(
-        "http://localhost:9000/api/products/wishlists/getAll",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (res.data && res.data.wishlists) {
-        // sum all items in wishlists
-        const total = res.data.wishlists.reduce(
-          (sum, w) => sum + (w.items?.length || 0),
-          0
-        );
-        setWishlistCount(total);
-        console.log("Wishlist count updated:", total);
-      } else {
-        setWishlistCount(0);
-      }
-    } catch (error) {
-      console.error("Error fetching wishlist count:", error);
-      setWishlistCount(0);
-    }
-  }, []);
-
-  // Fetch wishlist count when user changes or auth updates
-  useEffect(() => {
-    if (user) {
-      fetchWishlistCount();
-    } else {
-      setWishlistCount(0);
-    }
-  }, [user, authUpdateTrigger, fetchWishlistCount]);
-
-  // Fetch wishlists when user changes
-  useEffect(() => {
-    const fetchWishlists = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.log("No token found");
-          setDefaultWishlistId(null);
-          return;
-        }
-
-        const res = await axios.get(
-          "http://localhost:9000/api/products/wishlists",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        if (res.data && res.data.wishlists?.length > 0) {
-          const defaultWishlist =
-            res.data.wishlists.find((w) => w.isDefault) ||
-            res.data.wishlists[0];
-          setDefaultWishlistId(defaultWishlist.id);
-          console.log("Default wishlist ID set:", defaultWishlist.id);
-        } else {
-          console.log("No wishlists found or empty response");
-          setDefaultWishlistId(null);
-        }
-      } catch (error) {
-        console.error("Error fetching wishlists:", error);
-        setDefaultWishlistId(null);
-      }
-    };
-
-    // Only fetch wishlists if user is logged in
-    if (user) {
-      fetchWishlists();
-    } else {
-      setDefaultWishlistId(null);
-    }
-  }, [user]);
-
-  // Listen for real-time wishlist updates
+  // Listen for wishlist updates from other components
   useEffect(() => {
     const handleWishlistUpdate = () => {
-      console.log("Wishlist update detected in Navbar");
-      fetchWishlistCount();
+      console.log("Wishlist update event received in Navbar");
+      refreshWishlist();
     };
 
     window.addEventListener("wishlistUpdated", handleWishlistUpdate);
@@ -218,43 +129,28 @@ const Navbar = ({ onSignUpClick }) => {
     return () => {
       window.removeEventListener("wishlistUpdated", handleWishlistUpdate);
     };
-  }, [fetchWishlistCount]);
+  }, [refreshWishlist]);
 
+  // Scroll effect
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Handle logout for both session and localStorage
+  // Handle logout
   const handleLogout = useCallback(async () => {
     console.log("Logging out user...");
     
-    // Clear wishlist data first
-    setWishlistCount(0);
-    setDefaultWishlistId(null);
-
     if (user?.source === "session") {
-      // NextAuth logout
       await signOut({
         redirect: false,
         callbackUrl: "/",
       });
     } else {
-      // localStorage logout
       localStorage.removeItem("user");
-      localStorage.removeItem("token"); // Also remove token on logout
+      localStorage.removeItem("token");
       setLocalUser(null);
-    }
-
-    // Clear any client-side wishlist/cart data
-    if (typeof window !== "undefined") {
-      // You can also clear any wishlist/cart related localStorage if needed
-      localStorage.removeItem("wishlistData");
-      localStorage.removeItem("cartData");
     }
 
     setUserDropdownOpen(false);
@@ -437,6 +333,7 @@ const Navbar = ({ onSignUpClick }) => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-4 lg:gap-5 text-gray-700">
+              {/* Wishlist Link - Using Context */}
               <Link
                 href={
                   user && defaultWishlistId
@@ -559,7 +456,7 @@ const Navbar = ({ onSignUpClick }) => {
                 <FaSearch size={18} />
               </button>
 
-              {/* Mobile Wishlist Link - Fixed */}
+              {/* Mobile Wishlist Link - Using Context */}
               <Link
                 href={
                   user && defaultWishlistId

@@ -79,7 +79,7 @@ const ProductCard = ({ product }) => {
           }
         );
 
-        console.log("Wishlist API response:", res);
+        // console.log("Wishlist API response:", res);
 
         // Correct way to access response data
         if (res.data && res.data.wishlists?.length > 0) {
@@ -87,7 +87,7 @@ const ProductCard = ({ product }) => {
             res.data.wishlists.find((w) => w.isDefault) ||
             res.data.wishlists[0];
           setDefaultWishlistId(defaultWishlist._id || defaultWishlist.id);
-          console.log("Default wishlist ID set:", defaultWishlist._id || defaultWishlist.id);
+         
         } else {
           console.log("No wishlists found or empty response");
           setDefaultWishlistId(null);
@@ -110,76 +110,76 @@ const ProductCard = ({ product }) => {
   };
 
   // Toggle Wishlist (Add/Remove)
-  const handleToggleWishlist = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+ // Toggle Wishlist (Add/Remove)
+const handleToggleWishlist = async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
 
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.log("User not authenticated");
-        toast.error("Please login to manage wishlist");
-        // You might want to redirect to login page here
-        return;
-      }
-
-      if (!defaultWishlistId) {
-        console.log("No default wishlist found");
-        toast.error("No wishlist available");
-        return;
-      }
-
-      setIsLoading(true);
-      
-      if (isWishlisted) {
-        // Remove from wishlist
-        const response = await axios.delete(
-          "http://localhost:9000/api/products/wishlist/remove",
-          {
-            wishlistId: defaultWishlistId,
-            productId: product._id,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.status === 200) {
-          setIsWishlisted(false);
-          toast.success("Removed from wishlist!");
-        }
-      } else {
-        // Add to wishlist
-        const response = await axios.post(
-          "http://localhost:9000/api/products/wishlist/add",
-          {
-            wishlistId: defaultWishlistId,
-            productId: product._id,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.status === 200) {
-          setIsWishlisted(true);
-          toast.success("Added to wishlist!");
-        }
-      }
-    } catch (error) {
-      console.error("Error toggling wishlist:", error);
-      const message = error.response?.data?.message || 
-        (isWishlisted ? "Failed to remove from wishlist" : "Failed to add to wishlist");
-      console.log(message);
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to manage wishlist");
+      return;
     }
-  };
+
+    if (!defaultWishlistId) {
+      toast.error("No wishlist available");
+      return;
+    }
+
+    setIsLoading(true);
+
+    if (isWishlisted) {
+      // ✅ Remove from wishlist API call
+      const response = await axios.delete(
+        "http://localhost:9000/api/products/wishlist/remove",
+        {
+          data: {
+            wishlistId: defaultWishlistId,
+            productId: product._id,
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setIsWishlisted(false);
+        // toast.success("Removed from wishlist!");
+      }
+    } else {
+      // ✅ Add to wishlist API call
+      const response = await axios.post(
+        "http://localhost:9000/api/products/wishlist/add",
+        {
+          wishlistId: defaultWishlistId,
+          productId: product._id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setIsWishlisted(true);
+        toast.success("Added to wishlist!");
+      }
+    }
+  } catch (error) {
+    console.error("Error toggling wishlist:", error);
+    const message =
+      error.response?.data?.message ||
+      (isWishlisted
+        ? "Failed to remove from wishlist"
+        : "Failed to add to wishlist");
+    toast.error(message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -222,15 +222,7 @@ const ProductCard = ({ product }) => {
           className={isLoading ? "opacity-50 cursor-not-allowed" : ""}
         />
         
-        {/* Quick Add to Cart Icon (optional) */}
-        <button
-          onClick={handleAddToCart}
-          className="absolute bottom-2 right-2 bg-white rounded-full p-1.5 xs:p-2 shadow-md hover:shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 text-gray-600 hover:text-[#1e518e]"
-          aria-label="Add to cart"
-          disabled={isLoading}
-        >
-          <FiShoppingBag className="w-3 h-3 xs:w-4 xs:h-4" />
-        </button>
+      
 
         {product.badge && <ProductBadge badge={product.badge} />}
       </div>
@@ -254,15 +246,7 @@ const ProductCard = ({ product }) => {
             View Details
           </button>
           
-          {/* Mobile-only add to cart button */}
-          <button
-            onClick={handleAddToCart}
-            className="xs:hidden bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Add to cart"
-            disabled={isLoading}
-          >
-            <FiShoppingBag className="w-4 h-4" />
-          </button>
+       
         </div>
       </div>
     </div>

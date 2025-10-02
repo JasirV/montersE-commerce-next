@@ -175,7 +175,7 @@ const fetchWishlists = async () => {
         }
       );
 
-      toast.success("Item removed from wishlist successfully!");
+      // toast.success("Item removed from wishlist successfully!");
       // Refresh wishlists after deleting item
       fetchWishlists();
     } catch (error) {
