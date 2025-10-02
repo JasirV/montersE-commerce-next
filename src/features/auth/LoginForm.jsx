@@ -33,7 +33,7 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
     if (response.status === 201 || response.status === 200) {
       // ✅ Extract token + user data
       const { token, userId, name } = response.data;
-
+      
       const userData = {
         id: userId,
         name: name || email.split("@")[0],

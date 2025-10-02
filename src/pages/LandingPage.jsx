@@ -1,10 +1,9 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Navbar from "@/components/shared/Navbar";
 import AuthModal from "@/features/auth/AuthModal";
 import Landing from "@/components/shared/Landing";
-import Home from "@/pages/Home"; 
+import Home from "@/pages/Home";
 import AddSection from "@/layouts/addsSection";
 import WatchBrand from "@/layouts/WatchBrand";
 import Form from "@/components/ui/WatheForm";
@@ -13,41 +12,18 @@ import PremiumBrands from "@/layouts/PremiumBrands";
 import Services from "@/components/ui/Services";
 import Footer from "@/components/shared/Footer";
 import ChatRobot from "@/components/ui/ChatRobot";
-import { LandingPageProduct } from "@/service/productService";
 import Watch from "@/layouts/Watch";
 import "../Mobile/responsive.css";
-
 
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [authAction, setAuthAction] = useState("login");
-   const [products, setProducts] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function loadProducts() {
-      setLoading(true);
-      const { data, error } = await LandingPageProduct();
-      if (error) {
-        setError(error.message || "Failed to fetch products");
-      } else {
-        setProducts(data);
-      }
-      setLoading(false);
-    }
-    loadProducts();
-  }, []);
-
-  // if (loading) return <p className="text-center py-10">⏳ Loading products...</p>;
-  // if (error) return <p className="text-center text-red-500">❌ {error}</p>;
-
-  // Function to open modal with specific action      
   const handleAuthAction = (action) => {
     setAuthAction(action);
     setModalIsOpen(true);
   };
-LandingPageProduct()
+
 
   return (
     <div>
@@ -64,11 +40,11 @@ LandingPageProduct()
       <Landing />
       <Home />
       <AddSection />
-      <WatchBrand/>
+      <WatchBrand />
       <Form />
-      <JustforyouWatch/>
+      <JustforyouWatch />
       <PremiumBrands />
-      <Watch/>
+      <Watch />
       <Services />
       <Footer />
     </div>
