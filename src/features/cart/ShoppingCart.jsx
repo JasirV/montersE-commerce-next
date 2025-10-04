@@ -52,7 +52,8 @@ useEffect(() => {
 
   const handleRemove = async (productId) => {
     setCartItems((prev) => prev.filter((item) => item.productId._id !== productId));
-
+    const token=localStorage.getItem('token')
+    removeFromCart(token,productId)
     // Debounced sync with backend
     if (syncTimeout.current) clearTimeout(syncTimeout.current);
     syncTimeout.current = setTimeout(syncCartWithBackend, 1000);

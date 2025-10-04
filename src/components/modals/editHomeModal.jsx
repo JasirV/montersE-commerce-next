@@ -1,37 +1,57 @@
 "use client";
-import { fetchProduct } from "@/service/productService";
+import { fetchProductAll } from "@/service/productService";
 import { useEffect, useState } from "react";
 
-const EditHomeModal = ({ isOpen, onClose, onSelectProduct }) => {
+const EditHomeModal = ({
+  isOpen,
+  onClose,
+  onSelectProduct,
+  heading,
+  index,
+  onSave,
+  selectedProduct,
+  mockProducts = [], // optional: pass mock products
+}) => {
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
+  // ✅ Load products (backend or mock)
+  const loadProducts = async (searchValue) => {
+    try {
+      setLoading(true);
+
+      if (mockProducts.length > 0) {
+        // Filter mock products by search
+        const filtered = mockProducts.filter((p) =>
+          p.name.toLowerCase().includes(searchValue.toLowerCase())
+        );
+        setItems(filtered);
+      } else {
+        const res = await fetchProductAll({ search: searchValue });
+        setItems(res.data?.products || []);
+      }
+    } catch (error) {
+      console.error("Failed to load products:", error);
+      setItems(mockProducts); // fallback
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Debounced search effect
   useEffect(() => {
     if (!isOpen) return;
 
-    const fetchProducts = async () => {
-      try {
-        const res = await fetchProduct();
-        setItems(res.data.products || []);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const delay = setTimeout(() => {
+      loadProducts(search);
+    }, 300);
 
-    fetchProducts();
-  }, [isOpen]);
-
-  // Filter products based on search
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
-  );
+    return () => clearTimeout(delay);
+  }, [isOpen, search]);
 
   if (!isOpen) return null;
-  console.log(items,'res'
-  )
+
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 w-96 max-h-[80vh] overflow-y-auto relative">
@@ -41,8 +61,13 @@ const EditHomeModal = ({ isOpen, onClose, onSelectProduct }) => {
         >
           ✕
         </button>
-        <h3 className="text-lg font-semibold mb-4">Select Product</h3>
 
+        <h3 className="text-lg font-semibold mb-2">Select Product</h3>
+        <h4 className="text-md font-medium mb-4">
+          {heading} - Item {index + 1}
+        </h4>
+
+        {/* Search */}
         <input
           type="text"
           value={search}
@@ -51,15 +76,19 @@ const EditHomeModal = ({ isOpen, onClose, onSelectProduct }) => {
           className="w-full p-2 border rounded mb-4"
         />
 
-        {loading ? (
-          <p>Loading products...</p>
-        ) : filteredItems.length === 0 ? (
-          <p>No products found.</p>
-        ) : (
-          filteredItems.map((product) => (
+        {/* Product list */}
+        {loading && <p className="text-center py-2">Loading...</p>}
+
+        {!loading && items.length === 0 && <p>No products found.</p>}
+
+        {!loading &&
+          items.map((product) => (
             <div
               key={product._id}
-              className="flex items-center justify-between border-b py-2"
+              className={`flex items-center justify-between border-b py-2 px-1 cursor-pointer rounded ${
+                selectedProduct?._id === product._id ? "bg-gray-100" : ""
+              }`}
+              onClick={() => onSelectProduct(product)}
             >
               <div className="flex items-center gap-2">
                 <img
@@ -67,17 +96,24 @@ const EditHomeModal = ({ isOpen, onClose, onSelectProduct }) => {
                   alt={product.name}
                   className="w-10 h-10 object-cover rounded"
                 />
-                <span>{product.name}</span>
+                <span className="text-sm">{product.name}</span>
               </div>
-              <button
-                onClick={() => onSelectProduct(product)}
-                className="px-3 py-1 text-white bg-[#6B46C1] rounded hover:bg-[#5a37a1]"
-              >
-                Select
-              </button>
+              {selectedProduct?._id === product._id && (
+                <span className="px-2 py-1 text-white bg-green-600 rounded text-xs">Selected</span>
+              )}
             </div>
-          ))
-        )}
+          ))}
+
+        {/* Save button */}
+        <button
+          onClick={onSave}
+          disabled={!selectedProduct}
+          className={`mt-4 w-full px-4 py-2 text-white rounded ${
+            selectedProduct ? "bg-[#6B46C1] hover:bg-[#5a37a1]" : "bg-gray-400 cursor-not-allowed"
+          }`}
+        >
+          Save
+        </button>
       </div>
     </div>
   );
