@@ -242,7 +242,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
     try {
       const res = await axios.get(
-        `http://localhost:9000/api/Auth/convert-price`,
+        `https://montres-ecommerce-backend-1.onrender.com/api/Auth/convert-price`,
         {
           params: {
             amount: 1,

@@ -23,7 +23,7 @@ const CreateWishlistModal = ({ isOpen, onClose, onWishlistCreated }) => {
       
 
       const { data } = await axios.post(
-        "http://localhost:9000/api/products/wishlist/create",
+        "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/create",
         { name: wishlistName, isDefault },
         {
           headers: {

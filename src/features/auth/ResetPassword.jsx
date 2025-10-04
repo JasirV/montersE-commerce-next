@@ -93,7 +93,7 @@ const ResetPassword = () => {
       setIsLoading(true);
       try {
         const response = await axios.post(
-          `http://localhost:9000/api/Auth/reset-password/${id}/${token}`,
+          `https://montres-ecommerce-backend-1.onrender.com/api/Auth/reset-password/${id}/${token}`,
           { newPassword, confirmPassword }
         );
 

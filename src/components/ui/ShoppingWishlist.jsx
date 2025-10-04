@@ -67,7 +67,7 @@ const ShoppingWishlist = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:9000/api/products/cart/add",
+        "https://montres-ecommerce-backend-1.onrender.com/api/products/cart/add",
         {
           productId: item.id,
           quantity: 1 // Default quantity, you can make this dynamic if needed
@@ -125,7 +125,7 @@ const ShoppingWishlist = () => {
       setError(null);
 
       const response = await axios.get(
-        "http://localhost:9000/api/products/wishlists/getAll",
+        "hhttps://montres-ecommerce-backend-1.onrender.com/api/products/wishlists/getAll",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -247,7 +247,7 @@ const ShoppingWishlist = () => {
 
     try {
       const response = await axios.delete(
-        `http://localhost:9000/api/products/wishlist/remove`,
+        `https://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/remove`,
         {
           headers: { Authorization: `Bearer ${token}` },
           data: {
@@ -271,8 +271,7 @@ const ShoppingWishlist = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/default`,
-        {},
+        `https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists/${activeWishlist.id}/default`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -317,7 +316,7 @@ const ShoppingWishlist = () => {
       );
 
       const response = await axios.put(
-        `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/visibility`,
+        `https://montres-ecommerce-backend-1.onrender.com/api/wishlists/${activeWishlist.id}/visibility`,
         {
           isPublic: newPublicStatus,
         },
@@ -397,7 +396,7 @@ const ShoppingWishlist = () => {
 
     try {
       const response = await axios.delete(
-        `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/items`,
+        `https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists/${activeWishlist.id}/items`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -421,7 +420,7 @@ const ShoppingWishlist = () => {
 
     try {
       const response = await axios.delete(
-        `http://localhost:9000/api/products/wishlists/${wishlistId}`,
+        `https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists/${wishlistId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

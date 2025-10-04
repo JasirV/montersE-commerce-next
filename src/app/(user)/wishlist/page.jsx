@@ -31,7 +31,7 @@ export default function WishlistBasePage() {
         setLoading(true);
 
         const response = await axios.get(
-          "http://localhost:9000/api/products/wishlists",
+          "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists",
           {
             headers: {
               Authorization: `Bearer ${token}`,

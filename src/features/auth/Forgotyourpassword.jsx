@@ -18,7 +18,7 @@ const ForgotPasswordForm = ({ setActiveTab }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:9000/api/Auth/forgot-password",
+        "https://montres-ecommerce-backend-1.onrender.com/api/Auth/forgot-password",
         { email: resetEmail }
       );
 
@@ -44,7 +44,7 @@ const ForgotPasswordForm = ({ setActiveTab }) => {
     if (!submittedEmail) return;
 
     try {
-      await axios.post("http://localhost:9000/api/Auth/forgot-password", {
+      await axios.post("https://montres-ecommerce-backend-1.onrender.com/api/Auth/forgot-password", {
         email: submittedEmail,
       });
 

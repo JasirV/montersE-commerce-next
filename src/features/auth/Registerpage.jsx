@@ -35,7 +35,7 @@ const handleSubmit = async (e) => {
 
   try {
     const response = await axios.post(
-      "http://localhost:9000/api/Auth/register",
+      "https://montres-ecommerce-backend-1.onrender.com/api/Auth/register",
       {
         name,
         email,

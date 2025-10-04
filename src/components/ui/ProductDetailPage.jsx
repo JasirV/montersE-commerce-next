@@ -101,7 +101,7 @@ const ProductDetailPage = () => {
         
         // Fetch wishlists
         const res = await axios.get(
-          "http://localhost:9000/api/products/wishlists",
+          "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -162,7 +162,7 @@ const ProductDetailPage = () => {
       if (isWishlisted) {
         // Remove from wishlist
         await axios.delete(
-          "http://localhost:9000/api/products/wishlist/remove",
+          "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/remove",
           {
             headers: { 
               Authorization: `Bearer ${token}`,
@@ -179,7 +179,7 @@ const ProductDetailPage = () => {
       } else {
         // Add to wishlist
         await axios.post(
-          "http://localhost:9000/api/products/wishlist/add",
+          "hhttps://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/add",
           {
             wishlistId: defaultWishlistId,
             productId: product._id || id,
