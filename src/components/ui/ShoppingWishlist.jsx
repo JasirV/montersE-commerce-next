@@ -1,95 +1,220 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FiLock, FiShare2, FiMoreHorizontal, FiPlus, FiTrash2, FiChevronLeft, FiGrid, FiList, FiStar, FiGlobe, FiUser, FiShoppingCart, FiEye } from "react-icons/fi";
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
+import {
+  FiLock,
+  FiShare2,
+  FiMoreHorizontal,
+  FiPlus,
+  FiTrash2,
+  FiChevronLeft,
+  FiGrid,
+  FiList,
+  FiStar,
+  FiGlobe,
+  FiShoppingCart,
+} from "react-icons/fi";
 import Image from "next/image";
-import watch from '../../assets/Watche/elegant-watch-with-silver-golden-chain-isolated.jpg'
+import watch from "../../assets/Watche/elegant-watch-with-silver-golden-chain-isolated.jpg";
 import CreateWishlistModal from "../ui/createWishilist";
-import SeWishilistModal from '../ui/seeWishilist'
-import axios from 'axios';
-
-// API base URL
-const API_BASE_URL = 'http://localhost:9000/api';
+import SeWishilistModal from "../ui/seeWishilist";
+import axios from "axios";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import newCurrency from "../../assets/newSymbole.png";
 
 const ShoppingWishlist = () => {
+  const router = useRouter();
+  const params = useParams();
   const [activeWishlist, setActiveWishlist] = useState(null);
   const [wishlistData, setWishlistData] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [showWishlistSidebar, setShowWishlistSidebar] = useState(false);
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState("grid");
   const [open, setOpen] = useState(false);
   const [WishilistOpn, setWishilistOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [token, setToken] = useState(null);
+  const [addingToCart, setAddingToCart] = useState({}); // Track loading state for each product
   const dropdownRef = useRef(null);
 
-  // ✅ Get token only in browser
   useEffect(() => {
+    // Get token from localStorage
     const storedToken = localStorage.getItem("token");
     if (storedToken) setToken(storedToken);
   }, []);
 
-  // Axios instance with interceptor for auth
-  const api = axios.create({
-    baseURL: API_BASE_URL,
-  });
+  // Add to Cart Function - COMPLETE IMPLEMENTATION
+  const handleAddToCart = async (item) => {
+    if (!token) {
+      toast.error("Please login to add items to cart");
+      router.push("/");
+      return;
+    }
 
-  // Add token to requests
-  useEffect(() => {
-    const requestInterceptor = api.interceptors.request.use(
-      (config) => {
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+    if (!item || !item.id) {
+      toast.error("Invalid product information");
+      return;
+    }
+
+    // Set loading state for this specific product
+    setAddingToCart(prev => ({
+      ...prev,
+      [item.id]: true
+    }));
+
+    try {
+      const response = await axios.post(
+        "http://localhost:9000/api/products/cart/add",
+        {
+          productId: item.id,
+          quantity: 1 // Default quantity, you can make this dynamic if needed
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
         }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
+      );
 
-    return () => {
-      api.interceptors.request.eject(requestInterceptor);
-    };
-  }, [token]);
+      if (response.data.success) {
+        toast.success("Item added to cart successfully! 🛒")    
+      } else {
+        throw new Error(response.data.message || "Failed to add item to cart");
+      }
+    } catch (error) {
+      console.log("Error adding to cart:", error);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          "Failed to add item to cart";
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        router.push("/");
+      } else if (error.response?.status === 404) {
+        toast.error("Product not found");
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      // Clear loading state for this product
+      setAddingToCart(prev => ({
+        ...prev,
+        [item.id]: false
+      }));
+    }
+  };
 
-  // Fetch wishlists with useCallback to prevent unnecessary re-renders
-  const fetchWishlists = useCallback(async () => {
+  // View Product Details Function
+  const handleViewProduct = (item) => {
+    if (item.id) {
+      // Navigate to product detail page
+      router.push(`/products/${item.id}`);
+    } else {
+      toast.error("Product details not available");
+    }
+  };
+
+  const fetchWishlists = async () => {
     if (!token) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get('/products/wishlists');
+
+      const response = await axios.get(
+        "http://localhost:9000/api/products/wishlists/getAll",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          // Add cache busting to ensure fresh data
+          params: {
+            _t: Date.now(),
+          },
+        }
+      );
+
+      console.log();
+
+      console.log("📥 Fetch wishlists response:", response.data);
       const wishlists = response.data.wishlists || [];
-      setWishlistData(wishlists);
-      
-      if (wishlists.length > 0) {
-        const defaultWishlist = wishlists.find(w => w.isDefault) || wishlists[0];
-        setActiveWishlist(defaultWishlist);
+
+      // Enhanced processing with better boolean conversion
+      const processedWishlists = wishlists.map((wishlist) => ({
+        ...wishlist,
+        // Ensure proper boolean conversion
+        isPublic: wishlist.isPublic === true || wishlist.isPublic === "true",
+        isDefault: Boolean(wishlist.isDefault),
+      }));
+
+      console.log(
+        "✅ Processed wishlists with public status:",
+        processedWishlists.map((w) => ({
+          name: w.name,
+          isPublic: w.isPublic,
+          type: typeof w.isPublic,
+        }))
+      );
+
+      setWishlistData(processedWishlists);
+
+      // Sync with URL parameter - IMPROVED LOGIC
+      const wishlistId = params.id;
+
+      if (processedWishlists.length > 0) {
+        let targetWishlist = null;
+
+        // First, try to find wishlist by URL ID
+        if (wishlistId) {
+          targetWishlist = processedWishlists.find((w) => w.id === wishlistId);
+          console.log(
+            `🎯 Looking for wishlist by ID ${wishlistId}:`,
+            targetWishlist
+          );
+        }
+
+        // If not found or no ID in URL, use default or first wishlist
+        if (!targetWishlist) {
+          targetWishlist =
+            processedWishlists.find((w) => w.isDefault) ||
+            processedWishlists[0];
+          console.log(`🎯 Using default/first wishlist:`, targetWishlist);
+
+          // Update URL to reflect the actual wishlist being shown
+          if (targetWishlist && targetWishlist.id !== wishlistId) {
+            router.replace(`/wishlist/${targetWishlist.id}`);
+          }
+        }
+
+        setActiveWishlist(targetWishlist);
       } else {
         setActiveWishlist(null);
       }
     } catch (err) {
-      console.error('Error fetching wishlists:', err);
-      setError(err.response?.data?.message || 'Failed to load wishlists');
+      console.error("❌ Error fetching wishlists:", err);
+      setError(err.response?.data?.message || "Failed to load wishlists");
       setWishlistData([]);
       setActiveWishlist(null);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  };
 
-  // Fetch wishlists once token is available
   useEffect(() => {
-    if (token) fetchWishlists();
-  }, [token, fetchWishlists]);
+    fetchWishlists();
+  }, [token, params.id]);
 
   // Detect mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Close dropdown outside
@@ -99,177 +224,254 @@ const ShoppingWishlist = () => {
         setMoreDropdownOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // API Functions
-  const handleDeleteItem = async (wishlistId, itemId) => {
+  // Handle wishlist selection
+  const handleWishlistSelect = (wishlist) => {
+    setActiveWishlist(wishlist);
+    setMoreDropdownOpen(false);
+    router.push(`/wishlist/${wishlist.id}`);
+  };
+
+  // Update wishlist selection for mobile
+  const updateWishlistSelection = (list) => {
+    setActiveWishlist(list);
+    setShowWishlistSidebar(false);
+    setMoreDropdownOpen(false);
+    router.push(`/wishlist/${list.id}`);
+  };
+
+  // Delete item from wishlist
+  const handleDeleteItem = async (wishlistId, productId) => {
+    if (!token || !wishlistId || !productId) return;
+
     try {
-      await api.delete(`/products/wishlists/${wishlistId}/items/${itemId}`);
-      
-      // Update local state
-      setWishlistData(prevData => 
-        prevData.map(wishlist => 
-          wishlist.id === wishlistId 
-            ? {
-                ...wishlist,
-                items: wishlist.items.filter(item => item.id !== itemId)
-              }
-            : wishlist
-        )
+      const response = await axios.delete(
+        `http://localhost:9000/api/products/wishlist/remove`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          data: {
+            wishlistId: wishlistId,
+            productId: productId,
+          },
+        }
       );
 
-      // Update active wishlist if needed
-      if (activeWishlist?.id === wishlistId) {
-        setActiveWishlist(prev => ({
-          ...prev,
-          items: prev.items.filter(item => item.id !== itemId)
-        }));
-      }
-    } catch (err) {
-      console.error('Error deleting item:', err);
-      setError('Failed to delete item from wishlist');
+      toast.success("Item removed from wishlist successfully!");
+      // Refresh wishlists after deleting item
+      fetchWishlists();
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast.error(error.response?.data?.message || "Failed to delete item");
     }
   };
 
   const handleMakeDefault = async () => {
-    if (!activeWishlist) return;
-    
+    if (!activeWishlist || activeWishlist.isDefault || !token) return;
+
     try {
-      await api.put(`/products/wishlists/${activeWishlist.id}/default`);
-      
-      // Update local state
-      setWishlistData(prevData =>
-        prevData.map(wishlist => ({
-          ...wishlist,
-          isDefault: wishlist.id === activeWishlist.id
-        }))
+      const response = await axios.put(
+        `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/default`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setActiveWishlist(prev => ({ ...prev, isDefault: true }));
-    } catch (err) {
-      console.error('Error setting default wishlist:', err);
-      setError(err.response?.data?.message || 'Failed to update default wishlist');
-    } finally {
+      toast.success("Wishlist set as default successfully!");
+      fetchWishlists();
       setMoreDropdownOpen(false);
+    } catch (error) {
+      console.error("Error making wishlist default:", error);
+      toast.error(error.response?.data?.message || "Failed to update wishlist");
     }
   };
 
+  // Toggle Public Sharing with API integration - IMPROVED STATE SYNC
   const handleTogglePublicSharing = async () => {
-    if (!activeWishlist) return;
-    
+    if (!activeWishlist || !token) return;
+
     try {
-      const newSharingStatus = !activeWishlist.isPublic;
-      await api.put(`/products/wishlists/${activeWishlist.id}/sharing`, {
-        isPublic: newSharingStatus
-      });
-      
-      // Update local state
-      setWishlistData(prevData =>
-        prevData.map(wishlist =>
+      const newPublicStatus = !activeWishlist.isPublic;
+
+      // Optimistically update UI
+      const optimisticWishlist = {
+        ...activeWishlist,
+        isPublic: newPublicStatus,
+      };
+      setActiveWishlist(optimisticWishlist);
+
+      // Update wishlistData array optimistically
+      setWishlistData((prev) =>
+        prev.map((wishlist) =>
           wishlist.id === activeWishlist.id
-            ? { ...wishlist, isPublic: newSharingStatus }
+            ? { ...wishlist, isPublic: newPublicStatus }
             : wishlist
         )
       );
 
-      setActiveWishlist(prev => ({ ...prev, isPublic: newSharingStatus }));
-    } catch (err) {
-      console.error('Error toggling public sharing:', err);
-      setError(err.response?.data?.message || 'Failed to update sharing settings');
-    } finally {
-      setMoreDropdownOpen(false);
+      const response = await axios.put(
+        `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/visibility`,
+        {
+          isPublic: newPublicStatus,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // console.log("📥 API Response:", response.data);
+
+      if (response.data.success) {
+        toast.success(
+          response.data.message ||
+            `Wishlist is now ${newPublicStatus ? "public" : "private"}`
+        );
+
+        // Update with actual server response to ensure consistency
+        if (response.data.wishlist) {
+          const serverWishlist = {
+            ...activeWishlist,
+            isPublic: response.data.wishlist.isPublic,
+            publicSlug: response.data.wishlist.publicSlug,
+          };
+
+          console.log("🔄 Server wishlist data:", serverWishlist);
+          setActiveWishlist(serverWishlist);
+
+          setWishlistData((prev) =>
+            prev.map((wishlist) =>
+              wishlist.id === activeWishlist.id
+                ? { ...wishlist, isPublic: response.data.wishlist.isPublic }
+                : wishlist
+            )
+          );
+        }
+
+        setMoreDropdownOpen(false);
+      } else {
+        // Revert optimistic update if API call failed
+        setActiveWishlist(activeWishlist);
+        setWishlistData((prev) =>
+          prev.map((wishlist) =>
+            wishlist.id === activeWishlist.id
+              ? { ...wishlist, isPublic: activeWishlist.isPublic }
+              : wishlist
+          )
+        );
+        throw new Error(response.data.message || "Failed to update visibility");
+      }
+    } catch (error) {
+      console.error("❌ Error updating wishlist visibility:", error);
+
+      // Revert optimistic updates on error
+      setActiveWishlist(activeWishlist);
+      setWishlistData((prev) =>
+        prev.map((wishlist) =>
+          wishlist.id === activeWishlist.id
+            ? { ...wishlist, isPublic: activeWishlist.isPublic }
+            : wishlist
+        )
+      );
+
+      const errorMessage =
+        error.response?.data?.message || "Failed to update wishlist visibility";
+      toast.error(errorMessage);
     }
   };
 
   const handleEmptyWishlist = async () => {
-    if (!activeWishlist) return;
-    
+    if (
+      !activeWishlist ||
+      !activeWishlist.items ||
+      activeWishlist.items.length === 0 ||
+      !token
+    )
+      return;
+
     try {
-      await api.delete(`/products/wishlists/${activeWishlist.id}/items`);
-      
-      // Update local state
-      setWishlistData(prevData =>
-        prevData.map(wishlist =>
-          wishlist.id === activeWishlist.id
-            ? { ...wishlist, items: [] }
-            : wishlist
-        )
+      const response = await axios.delete(
+        `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/items`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setActiveWishlist(prev => ({ ...prev, items: [] }));
-    } catch (err) {
-      console.error('Error emptying wishlist:', err);
-      setError(err.response?.data?.message || 'Failed to empty wishlist');
-    } finally {
+      toast.success("Wishlist emptied successfully!");
+      fetchWishlists();
       setMoreDropdownOpen(false);
+    } catch (error) {
+      console.error("Error emptying wishlist:", error);
+      toast.error(error.response?.data?.message || "Failed to empty wishlist");
     }
   };
 
-  const handleDeleteWishlist = async () => {
-    if (!activeWishlist || wishlistData.length <= 1 || activeWishlist.isDefault) return;
-    
+  // Delete entire wishlist
+  const handleDeleteWishlist = async (wishlistId) => {
+    console.log(wishlistId, "wishlistId");
+
+    if (!wishlistId || !token) {
+      toast.error("Wishlist ID or token is missing");
+      return;
+    }
+
     try {
-      await api.delete(`/products/wishlists/${activeWishlist.id}`);
-      
-      // Update local state
-      const newWishlistData = wishlistData.filter(wishlist => wishlist.id !== activeWishlist.id);
-      setWishlistData(newWishlistData);
-      
-      if (newWishlistData.length > 0) {
-        const defaultWishlist = newWishlistData.find(w => w.isDefault) || newWishlistData[0];
-        setActiveWishlist(defaultWishlist);
-      } else {
-        setActiveWishlist(null);
-      }
-    } catch (err) {
-      console.error('Error deleting wishlist:', err);
-      setError(err.response?.data?.message || 'Failed to delete wishlist');
-    } finally {
+      const response = await axios.delete(
+        `http://localhost:9000/api/products/wishlists/${wishlistId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      toast.success("Wishlist deleted successfully!");
+      // Refresh the wishlists after deletion
+      fetchWishlists();
       setMoreDropdownOpen(false);
+    } catch (error) {
+      console.error("Error deleting wishlist:", error);
+      toast.error(error.response?.data?.message || "Failed to delete wishlist");
     }
-  };
-
-  const handleAddToCart = async (item) => {
-    try {
-      await api.post('/cart/items', {
-        productId: item.productId || item.id,
-        quantity: 1
-      });
-      
-      // Optional: Show success message or update cart count
-      console.log('Item added to cart:', item.name);
-      
-      // You can add a toast notification here
-      // toast.success('Item added to cart!');
-      
-    } catch (err) {
-      console.error('Error adding item to cart:', err);
-      setError(err.response?.data?.message || 'Failed to add item to cart');
-    }
-  };
-
-  const handleViewProduct = (item) => {
-    // Navigate to product page
-    // router.push(`/products/${item.productId || item.id}`);
-    console.log('View product:', item);
   };
 
   // Handle wishlist creation success
-  const handleWishlistCreated = () => {
+  const handleWishlistCreated = (newWishlist) => {
     fetchWishlists();
     setOpen(false);
+
+    // Navigate to the new wishlist
+    if (newWishlist && newWishlist.id) {
+      router.push(`/wishlist/${newWishlist.id}`);
+    }
+  };
+
+  // Helper function to get item image
+  const getItemImage = (item) => {
+    if (item.image && item.image.url) {
+      return item.image.url;
+    }
+    return watch; // fallback image
+  };
+
+  // Get the appropriate icon for public/private status
+  const getPrivacyIcon = (isPublic) => {
+    return isPublic ? (
+      <FiGlobe className="text-green-500" size={16} />
+    ) : (
+      <FiLock className="text-gray-500" size={16} />
+    );
+  };
+
+  // Get privacy status text
+  const getPrivacyStatusText = (isPublic) => {
+    return isPublic ? "Public" : "Private";
   };
 
   const activeList = activeWishlist || wishlistData[0] || { items: [] };
 
   // More Options Dropdown Component
   const MoreOptionsDropdown = () => (
-    <div 
+    <div
       ref={dropdownRef}
       className={`absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 transition-all duration-200 ${
-        moreDropdownOpen ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform -translate-y-2 pointer-events-none'
+        moreDropdownOpen
+          ? "opacity-100 transform translate-y-0"
+          : "opacity-0 transform -translate-y-2 pointer-events-none"
       }`}
     >
       <div className="p-2">
@@ -279,8 +481,8 @@ const ShoppingWishlist = () => {
           disabled={activeList?.isDefault}
           className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
             activeList?.isDefault
-              ? 'text-gray-400 cursor-not-allowed'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-gray-700 hover:bg-gray-100"
           }`}
         >
           <FiStar className="mr-3 text-gray-500" size={16} />
@@ -292,8 +494,10 @@ const ShoppingWishlist = () => {
           onClick={handleTogglePublicSharing}
           className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
         >
-          <FiGlobe className="mr-3 text-gray-500" size={16} />
-          <span>{activeList?.isPublic ? 'Disable' : 'Enable'} Public Sharing</span>
+          {getPrivacyIcon(activeList?.isPublic)}
+          <span className="ml-3">
+            {activeList?.isPublic ? "Make Private" : "Make Public"}
+          </span>
         </button>
 
         {/* Empty Wishlist */}
@@ -302,22 +506,21 @@ const ShoppingWishlist = () => {
           disabled={!activeList?.items || activeList.items.length === 0}
           className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
             !activeList?.items || activeList.items.length === 0
-              ? 'text-gray-400 cursor-not-allowed'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-gray-700 hover:bg-gray-100"
           }`}
         >
           <FiTrash2 className="mr-3" size={16} />
           <span>Empty Wishlist</span>
         </button>
 
-        {/* Delete Wishlist */}
         <button
-          onClick={handleDeleteWishlist}
+          onClick={() => handleDeleteWishlist(activeList?.id)}
           disabled={activeList?.isDefault || wishlistData.length <= 1}
           className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
             activeList?.isDefault || wishlistData.length <= 1
-              ? 'text-gray-400 cursor-not-allowed'
-              : 'text-red-600 hover:bg-red-50'
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-red-600 hover:bg-red-50"
           }`}
         >
           <FiTrash2 className="mr-3" size={16} />
@@ -332,11 +535,13 @@ const ShoppingWishlist = () => {
     <div className="lg:hidden mb-4">
       <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => setShowWishlistSidebar(true)}
             className="flex items-center gap-2 text-gray-700 font-medium"
           >
-            <span className="capitalize">{activeList?.name || 'No wishlists'}</span>
+            <span className="capitalize">
+              {activeList?.name || "No wishlists"}
+            </span>
             {activeList?.isDefault && (
               <span className="text-xs bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-2 py-1 rounded">
                 Default
@@ -359,7 +564,7 @@ const ShoppingWishlist = () => {
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Your Wishlists</h2>
-                <button 
+                <button
                   onClick={() => setShowWishlistSidebar(false)}
                   className="p-2 rounded-full hover:bg-gray-100"
                 >
@@ -367,15 +572,12 @@ const ShoppingWishlist = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-4 space-y-2">
               {wishlistData.map((list) => (
                 <div
                   key={list.id}
-                  onClick={() => {
-                    setActiveWishlist(list);
-                    setShowWishlistSidebar(false);
-                  }}
+                  onClick={() => updateWishlistSelection(list)}
                   className={`p-3 border rounded-lg cursor-pointer ${
                     activeWishlist?.id === list.id
                       ? "border-[#1e518e] bg-gradient-to-r from-[#1e518e]/10 to-[#0061b0ee]/10"
@@ -403,7 +605,9 @@ const ShoppingWishlist = () => {
                     {list.items && list.items.length > 0
                       ? `${list.items.length} items`
                       : "No items"}
-                    <FiLock className="ml-2" size={14} />
+                    <span className="ml-2">
+                      {getPrivacyIcon(list.isPublic)}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -436,7 +640,7 @@ const ShoppingWishlist = () => {
           <div className="text-center">
             <div className="text-red-500 text-lg mb-2">Error</div>
             <p className="text-gray-600 mb-4">{error}</p>
-            <button 
+            <button
               onClick={fetchWishlists}
               className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg font-medium"
             >
@@ -455,7 +659,10 @@ const ShoppingWishlist = () => {
         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
           <div className="flex justify-between items-center">
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="text-red-700 font-bold">
+            <button
+              onClick={() => setError(null)}
+              className="text-red-700 font-bold"
+            >
               ×
             </button>
           </div>
@@ -464,15 +671,18 @@ const ShoppingWishlist = () => {
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-800">Wishlist</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+          Wishlist
+        </h1>
         <button
           onClick={() => setOpen(true)}
-          className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg font-medium text-sm md:text-base w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
+          className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg font-medium text-sm md:text-base w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+        >
           <FiPlus size={18} />
           CREATE NEW WISHLIST
         </button>
-        <CreateWishlistModal 
-          isOpen={open} 
+        <CreateWishlistModal
+          isOpen={open}
           onClose={() => setOpen(false)}
           onWishlistCreated={handleWishlistCreated}
         />
@@ -482,10 +692,10 @@ const ShoppingWishlist = () => {
         {/* Left Side - Wishlists (Desktop only) */}
         <div className="hidden lg:block lg:w-1/4">
           <div className="flex flex-col gap-2">
-            {wishlistData.map((list) => (
+            {wishlistData.map((list, index) => (
               <div
-                key={list.id}
-                onClick={() => setActiveWishlist(list)}
+                key={list.id || index}
+                onClick={() => handleWishlistSelect(list)}
                 className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
                   activeWishlist?.id === list.id
                     ? "border-[#1e518e] bg-gradient-to-r from-[#1e518e]/10 to-[#0061b0ee]/10 shadow-md"
@@ -513,7 +723,7 @@ const ShoppingWishlist = () => {
                   {list.items && list.items.length > 0
                     ? `${list.items.length} items`
                     : "No items"}
-                  <FiLock className="ml-2" size={14} />
+                  <span className="ml-2">{getPrivacyIcon(list.isPublic)}</span>
                 </div>
               </div>
             ))}
@@ -529,7 +739,7 @@ const ShoppingWishlist = () => {
           {activeList && (
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 p-4 bg-white rounded-lg shadow-sm relative">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800 lg:block hidden">
+                <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800">
                   {activeList.name}
                 </h2>
                 <div className="flex gap-1">
@@ -545,43 +755,57 @@ const ShoppingWishlist = () => {
                   )}
                 </div>
               </div>
-              
+
               {/* View Mode Toggle */}
               {activeList.items && activeList.items.length > 0 && (
                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                  <button 
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={`p-2 rounded-md ${
+                      viewMode === "grid"
+                        ? "bg-white shadow-sm"
+                        : "text-gray-500"
+                    }`}
                   >
                     <FiGrid size={16} />
                   </button>
-                  <button 
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`p-2 rounded-md ${
+                      viewMode === "list"
+                        ? "bg-white shadow-sm"
+                        : "text-gray-500"
+                    }`}
                   >
                     <FiList size={16} />
                   </button>
                 </div>
               )}
-              
+
               <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                <button 
-                  className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors"  
+                <button
+                  className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors"
                   onClick={() => setWishilistOpen(true)}
                 >
-                  <FiShare2 size={16} /> <span className="hidden xs:inline">Share</span>
+                  <FiShare2 size={16} />{" "}
+                  <span className="hidden xs:inline">Share</span>
                 </button>
-                <SeWishilistModal isOpen={WishilistOpn} onClose={() => setWishilistOpen(false)}/>
-                
+                <SeWishilistModal
+                  isOpen={WishilistOpn}
+                  onClose={() => setWishilistOpen(false)}
+                  wishlist={activeList}
+                />
+
                 {/* More Button with Dropdown */}
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
                     className="flex items-center gap-1 border border-gray-300 px-3 py-2 rounded-lg text-sm flex-1 sm:flex-none justify-center hover:bg-gray-50 transition-colors"
                   >
-                    <FiMoreHorizontal size={16} /> <span className="hidden xs:inline">More</span>
+                    <FiMoreHorizontal size={16} />{" "}
+                    <span className="hidden xs:inline">More</span>
                   </button>
-                  
+
                   {/* Dropdown Menu */}
                   <MoreOptionsDropdown />
                 </div>
@@ -591,98 +815,148 @@ const ShoppingWishlist = () => {
 
           {/* Wishlist Items */}
           {activeList && activeList.items && activeList.items.length > 0 ? (
-            <div className={`
-              ${viewMode === 'grid' 
-                ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4' 
-                : 'flex flex-col gap-3'
+            <div
+              className={`
+              ${
+                viewMode === "grid"
+                  ? "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
+                  : "flex flex-col gap-3"
               }
-            `}>
-              {activeList.items.map((item) => (
+            `}
+            >
+              {activeList.items.map((item, index) => (
                 <div
-                  key={item.id}
+                  key={item._id || item.productId?._id || index}
                   className={`
                     border border-gray-200 rounded-lg bg-white group relative transition-all duration-200
-                    ${viewMode === 'grid' 
-                      ? 'p-3 hover:shadow-lg' 
-                      : 'flex gap-3 p-3 hover:shadow-md'
+                    ${
+                      viewMode === "grid"
+                        ? "p-3 hover:shadow-lg"
+                        : "flex gap-3 p-3 hover:shadow-md"
                     }
                   `}
                 >
                   {/* Delete Button */}
-                  <button 
+                  <button
                     onClick={() => handleDeleteItem(activeList.id, item.id)}
                     className={`
                       absolute bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10
-                      ${viewMode === 'grid' 
-                        ? '-top-2 -right-2' 
-                        : '-top-1 -right-1'
+                      ${
+                        viewMode === "grid"
+                          ? "-top-2 -right-2"
+                          : "-top-1 -right-1"
                       }
                     `}
                     title="Remove item"
                   >
                     <FiTrash2 size={12} />
                   </button>
-                  
+
                   {/* Image Container */}
-                  <div className={`
+                  <div
+                    className={`
                     relative mb-3
-                    ${viewMode === 'grid' 
-                      ? 'w-full h-28 sm:h-32 md:h-36' 
-                      : 'w-20 h-20 flex-shrink-0 mb-0'
+                    ${
+                      viewMode === "grid"
+                        ? "w-full h-28 sm:h-32 md:h-36"
+                        : "w-20 h-20 flex-shrink-0 mb-0"
                     }
-                  `}>
+                  `}
+                  >
                     <Image
-                      src={item.image || watch}
-                      alt={item.name}
+                      src={getItemImage(item)}
+                      alt={item.name || "Product image"}
                       fill
                       className="object-contain rounded-lg"
-                      sizes={viewMode === 'grid' ? "(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw" : "80px"}
+                      sizes={
+                        viewMode === "grid"
+                          ? "(max-width: 640px) 50vw, (max-width: 800px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                          : "80px"
+                      }
                     />
                   </div>
-                  
+
                   {/* Product Info */}
-                  <div className={viewMode === 'list' ? 'flex-1 min-w-0' : ''}>
-                    <h3 className={`
+                  <div className={viewMode === "list" ? "flex-1 min-w-0" : ""}>
+                    <h3
+                      className={`
                       font-medium line-clamp-2 text-gray-800
-                      ${viewMode === 'grid' 
-                        ? 'text-xs sm:text-sm min-h-[2.5rem] mb-2' 
-                        : 'text-sm mb-1'
+                      ${
+                        viewMode === "grid"
+                          ? "text-xs sm:text-sm min-h-[2.5rem] mb-2"
+                          : "text-sm mb-1"
                       }
-                    `}>
+                    `}
+                    >
                       {item.name}
                     </h3>
-                    
-                    <div className="flex items-center text-yellow-500 text-xs mb-1">
-                      ⭐ {item.rating || '4.5'} 
-                      <span className="ml-1 text-gray-500">({item.reviews || '0'})</span>
-                    </div>
-                    
-                    <p className={`
+
+                    {/* Sale Price with currency image */}
+                    <p
+                      className={`
                       font-semibold text-gray-900
-                      ${viewMode === 'grid' ? 'text-base md:text-lg' : 'text-lg'}
-                    `}>
-                      AED{item.price || '0.00'}
+                      ${viewMode === "grid" ? "text-base md:text-lg" : "text-lg"}
+                      flex items-center gap-1
+                    `}
+                    >
+                      <Image
+                        src={newCurrency}
+                        alt="AED"
+                        width={16}
+                        height={16}
+                        className="inline-block"
+                      />
+                      {item.salePrice}
+
+                      {/* Optional: show regular price if available */}
+                      {item.regularPrice && item.regularPrice !== item.salePrice && (
+                        <span className="line-through text-gray-500 ml-2 flex items-center gap-1">
+                          <Image
+                            src={newCurrency}
+                            alt="AED"
+                            width={14}
+                            height={14}
+                            className="inline-block"
+                          />
+                          {item.regularPrice}
+                        </span>
+                      )}
                     </p>
-                    
+
                     {/* Action Buttons */}
-                    <div className={`
+                    <div
+                      className={`
                       flex gap-2
-                      ${viewMode === 'grid' ? 'mt-3' : 'mt-2'}
-                    `}>
-                      <button 
+                      ${viewMode === "grid" ? "mt-3" : "mt-2"}
+                    `}
+                    >
+                      <button
                         onClick={() => handleAddToCart(item)}
+                        disabled={addingToCart[item.id]}
                         className={`
-                          bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2 rounded font-medium hover:from-[#1e518e]/90 hover:to-[#0061b0ee]/90 transition-all duration-200 shadow hover:shadow-md
-                          ${viewMode === 'grid' ? 'flex-1 text-xs' : 'px-3 text-sm'}
+                          bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2 rounded font-medium hover:from-[#1e518e]/90 hover:to-[#0061b0ee]/90 transition-all duration-200 shadow hover:shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2
+                          ${viewMode === "grid" ? "flex-1 text-xs" : "px-3 text-sm"}
                         `}
                       >
-                        Add to Cart
+                        {addingToCart[item.id] ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                            Adding...
+                          </>
+                        ) : (
+                          <>
+                            <FiShoppingCart size={14} />
+                            Add to Cart
+                          </>
+                        )}
                       </button>
-                      
-                      <button 
+
+                      <button
                         onClick={() => handleViewProduct(item)}
                         className={`border border-gray-300 text-gray-700 py-2 rounded font-medium hover:bg-gray-50 transition-colors ${
-                          viewMode === 'grid' ? 'flex-1 text-xs' : 'px-3 text-sm'
+                          viewMode === "grid"
+                            ? "flex-1 text-xs"
+                            : "px-3 text-sm"
                         }`}
                       >
                         View
@@ -697,9 +971,16 @@ const ShoppingWishlist = () => {
               <div className="text-gray-400 mb-3">
                 <FiLock size={48} className="mx-auto" />
               </div>
-              <h3 className="text-lg font-medium text-gray-700">No items yet</h3>
-              <p className="text-gray-500 text-sm mt-1">Start adding items to your wishlist</p>
-              <button className="mt-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300">
+              <h3 className="text-lg font-medium text-gray-700">
+                No items yet
+              </h3>
+              <p className="text-gray-500 text-sm mt-1">
+                Start adding items to your wishlist
+              </p>
+              <button 
+                onClick={() => router.push('/products')}
+                className="mt-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+              >
                 Browse Products
               </button>
             </div>
@@ -716,8 +997,8 @@ const ShoppingWishlist = () => {
             </div>
             <span className="mt-1">Wishlists</span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setOpen(true)}
             className="flex flex-col items-center text-xs text-gray-600"
           >
@@ -726,9 +1007,9 @@ const ShoppingWishlist = () => {
             </div>
             <span className="mt-1">New</span>
           </button>
-          
-          <button 
-            className="flex flex-col items-center text-xs text-gray-600"  
+
+          <button
+            className="flex flex-col items-center text-xs text-gray-600"
             onClick={() => setWishilistOpen(true)}
           >
             <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shadow">
@@ -736,11 +1017,15 @@ const ShoppingWishlist = () => {
             </div>
             <span className="mt-1">Share</span>
           </button>
-          <SeWishilistModal isOpen={WishilistOpn} onClose={() => setWishilistOpen(false)}/>
-          
+          <SeWishilistModal
+            isOpen={WishilistOpn}
+            onClose={() => setWishilistOpen(false)}
+            wishlist={activeList}
+          />
+
           {/* Mobile More Button */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
               className="flex flex-col items-center text-xs text-gray-600"
             >
@@ -749,7 +1034,7 @@ const ShoppingWishlist = () => {
               </div>
               <span className="mt-1">More</span>
             </button>
-            
+
             {/* Mobile Dropdown - Positioned above the navigation */}
             {moreDropdownOpen && (
               <div className="absolute bottom-full right-0 mb-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
@@ -759,8 +1044,8 @@ const ShoppingWishlist = () => {
                     disabled={activeList?.isDefault}
                     className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
                       activeList?.isDefault
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     <FiStar className="mr-3 text-gray-500" size={16} />
@@ -771,17 +1056,21 @@ const ShoppingWishlist = () => {
                     onClick={handleTogglePublicSharing}
                     className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                   >
-                    <FiGlobe className="mr-3 text-gray-500" size={16} />
-                    <span>{activeList?.isPublic ? 'Disable' : 'Enable'} Public Sharing</span>
+                    {getPrivacyIcon(activeList?.isPublic)}
+                    <span className="ml-3">
+                      {activeList?.isPublic ? "Make Private" : "Make Public"}
+                    </span>
                   </button>
 
                   <button
                     onClick={handleEmptyWishlist}
-                    disabled={!activeList?.items || activeList.items.length === 0}
+                    disabled={
+                      !activeList?.items || activeList.items.length === 0
+                    }
                     className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
                       !activeList?.items || activeList.items.length === 0
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     <FiTrash2 className="mr-3" size={16} />
@@ -789,12 +1078,12 @@ const ShoppingWishlist = () => {
                   </button>
 
                   <button
-                    onClick={handleDeleteWishlist}
+                    onClick={() => handleDeleteWishlist(activeList?.id)}
                     disabled={activeList?.isDefault || wishlistData.length <= 1}
                     className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
                       activeList?.isDefault || wishlistData.length <= 1
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-red-600 hover:bg-red-50'
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-red-600 hover:bg-red-50"
                     }`}
                   >
                     <FiTrash2 className="mr-3" size={16} />
@@ -811,3 +1100,4 @@ const ShoppingWishlist = () => {
 };
 
 export default ShoppingWishlist;
+

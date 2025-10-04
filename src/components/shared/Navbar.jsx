@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   FaShoppingCart,
@@ -11,17 +11,17 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 import Link from "next/link";
+import Image from "next/image";
 import logo from "../../assets/montreslogo.png";
 import SubNavbar from "./SubNavabar";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-
+import { fetchProductAll } from "@/service/productService";
 
 const Navbar = ({ onSignUpClick }) => {
- const sessionData = useSession();
-  const session = sessionData?.data;
-  const status = sessionData?.status;
+
+ const { data: session, status } = useSession() || {};
+
   const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);
@@ -31,175 +31,143 @@ const Navbar = ({ onSignUpClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [localUser, setLocalUser] = useState(null); // New state for localStorage user
-  const [authUpdateTrigger, setAuthUpdateTrigger] = useState(0); // Force re-renders
+  const [localUser, setLocalUser] = useState(null);
+  const [authUpdateTrigger, setAuthUpdateTrigger] = useState(0);
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Debug session data
-  useEffect(() => {
-    console.log("Session status:", status);
-    console.log("Session data:", session);
-    console.log("Local user data:", localUser);
-  }, [session, status, localUser]);
+  // Load user from localStorage
+  const loadUserFromStorage = useCallback(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("user");
+      setLocalUser(storedUser ? JSON.parse(storedUser) : null);
+    }
+  }, []);
 
-  // Get user data from both session and localStorage
+  // Get combined user data
   const getUserData = useCallback(() => {
-    // First check NextAuth session
-    if (session?.user) {
-      return {
-        name: session.user.name,
-        email: session.user.email,
-        image: session.user.image,
-        source: 'session'
-      };
-    }
-    
-    // Then check localStorage (for custom login)
-    if (isClient && localUser) {
-      return {
-        ...localUser,
-        source: 'localStorage'
-      };
-    }
-    
+    if (session?.user) return { ...session.user, source: "session" };
+    if (isClient && localUser) return { ...localUser, source: "localStorage" };
     return null;
   }, [session, isClient, localUser]);
 
   const user = getUserData();
 
-  // Load user from localStorage on client side
+  // Initialize client & load user
   useEffect(() => {
     setIsClient(true);
     loadUserFromStorage();
-  }, []);
+  }, [loadUserFromStorage]);
 
-  // Listen for auth changes
+  // Auth update listener
   useEffect(() => {
     const handleAuthChange = () => {
-      console.log("Auth change event received");
       loadUserFromStorage();
-      setAuthUpdateTrigger(prev => prev + 1); // Force re-render
+      setAuthUpdateTrigger((prev) => prev + 1);
     };
 
     const handleStorageChange = (e) => {
-      if (e.key === 'user') {
-        console.log("LocalStorage user changed");
-        loadUserFromStorage();
-      }
+      if (e.key === "user") handleAuthChange();
     };
 
-    // Set up global function for other components to trigger auth updates
     window.triggerNavbarAuthUpdate = handleAuthChange;
-
-    // Listen for custom auth events
-    window.addEventListener('authChange', handleAuthChange);
-    // Listen for localStorage changes
-    window.addEventListener('storage', handleStorageChange);
-    // Listen for same-tab storage events (using custom event from LoginForm)
-    window.addEventListener('localStorageUpdated', handleStorageChange);
+    window.addEventListener("authChange", handleAuthChange);
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("localStorageUpdated", handleStorageChange);
 
     return () => {
-      window.removeEventListener('authChange', handleAuthChange);
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('localStorageUpdated', handleStorageChange);
+      window.removeEventListener("authChange", handleAuthChange);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("localStorageUpdated", handleStorageChange);
       delete window.triggerNavbarAuthUpdate;
     };
-  }, []);
+  }, [loadUserFromStorage]);
 
-  const loadUserFromStorage = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        const storedUser = localStorage.getItem('user');
-        console.log("Loading user from storage:", storedUser);
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          setLocalUser(userData);
-        } else {
-          setLocalUser(null);
-        }
-      } catch (error) {
-        console.error('Error reading user from localStorage:', error);
-        setLocalUser(null);
-      }
-    }
-  };
-
+  // Scroll shadow
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
-    
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Handle logout for both session and localStorage
-  const handleLogout = useCallback(async () => {
-    if (user?.source === 'session') {
-      // NextAuth logout
-      await signOut({ 
-        redirect: false,
-        callbackUrl: "/"
-      });
-    } else {
-      // localStorage logout
-      localStorage.removeItem('user');
-      setLocalUser(null);
-      // Dispatch event to sync across tabs
-      window.dispatchEvent(new Event('authChange'));
-    }
-    
-    setUserDropdownOpen(false);
-    router.push('/');
-  }, [user, router]);
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery.trim()) return setResults([]);
 
-  // Handle user dashboard navigation
-  const handleUserDashboard = useCallback(() => {
-    router.push('/UserProfile');
-    setUserDropdownOpen(false);
-  }, [router]);
+    const delayDebounce = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetchProductAll({ search: searchQuery });
+        console.log(res, "res");
+        setResults(res.data.products || []);
+      } catch (err) {
+        console.error("Search failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
 
-  const handleSearchFocus = useCallback(() => setIsSearchFocused(true), []);
-  const handleSearchBlur = useCallback(
-    () => setTimeout(() => setIsSearchFocused(false), 200),
-    []
-  );
-  const toggleMobileMenu = useCallback(
-    () => setIsMobileMenuOpen((prev) => !prev),
-    []
-  );
-  const toggleMobileSearch = useCallback(
-    () => setIsMobileSearchOpen((prev) => !prev),
-    []
-  );
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
 
-  const toggleUserDropdown = useCallback(() => {
-    setUserDropdownOpen((prev) => !prev);
-  }, []);
-
-  // Close dropdowns when clicking outside
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isMobileSearchOpen && !event.target.closest(".mobile-search-container")) {
+      if (
+        isMobileSearchOpen &&
+        !event.target.closest(".mobile-search-container")
+      ) {
         setIsMobileSearchOpen(false);
       }
-      if (userDropdownOpen && !event.target.closest(".user-dropdown-container")) {
+      if (
+        userDropdownOpen &&
+        !event.target.closest(".user-dropdown-container")
+      ) {
         setUserDropdownOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileSearchOpen, userDropdownOpen]);
 
-  // Handle search submission
-  const handleSearchSubmit = useCallback((e) => {
-    if (e) e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setIsSearchFocused(false);
-      setIsMobileSearchOpen(false);
+  const handleLogout = useCallback(async () => {
+    if (user?.source === "session") {
+      await signOut({ redirect: false, callbackUrl: "/" });
+    } else {
+      localStorage.removeItem("user");
+      setLocalUser(null);
+      window.dispatchEvent(new Event("authChange"));
     }
-  }, [searchQuery, router]);
+    setUserDropdownOpen(false);
+    router.push("/");
+  }, [user, router]);
+
+  const handleUserDashboard = useCallback(() => {
+    router.push("/UserProfile");
+    setUserDropdownOpen(false);
+  }, [router]);
+
+  const handleSearchSubmit = useCallback(
+    (e) => {
+      e?.preventDefault();
+      if (searchQuery.trim()) {
+        router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        setIsSearchFocused(false);
+        setIsMobileSearchOpen(false);
+      }
+    },
+    [searchQuery, router]
+  );
+
+  const handleSelect = (productId) => {
+    router.push(`/ProductDetailPage/${productId}`);
+    setSearchQuery("");
+    setResults([]);
+  };
+
+  const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
+  const toggleMobileSearch = () => setIsMobileSearchOpen((prev) => !prev);
+  const toggleUserDropdown = () => setUserDropdownOpen((prev) => !prev);
 
   const popularSearches = [
     { term: "Rolex Daytona", path: "/search?q=rolex+daytona" },
@@ -209,18 +177,13 @@ const Navbar = ({ onSignUpClick }) => {
     { term: "Luxury Watches for Men", path: "/search?q=luxury+watches+men" },
   ];
 
-  // Show loading state while checking authentication
   if (status === "loading") {
     return (
       <header className="w-full bg-white sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 md:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-4">
-              <div className="h-8 w-32 bg-gray-200 animate-pulse rounded"></div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="h-8 w-8 bg-gray-200 animate-pulse rounded-full"></div>
-            </div>
+            <div className="h-8 w-32 bg-gray-200 animate-pulse rounded" />
+            <div className="h-8 w-8 bg-gray-200 animate-pulse rounded-full" />
           </div>
         </div>
       </header>
@@ -229,21 +192,19 @@ const Navbar = ({ onSignUpClick }) => {
 
   return (
     <>
-      {/* Main Header */}
       <header
         className={`w-full bg-white sticky top-0 z-50 transition-all duration-300 ${
           scrolled ? "shadow-md" : "shadow-sm"
         }`}
-        key={authUpdateTrigger} // Force re-render when auth changes
+        key={authUpdateTrigger}
       >
         <div className="container mx-auto px-4 md:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14 md:h-16 lg:h-18">
+          <div className="flex justify-between items-center h-16">
             {/* Logo & Mobile Menu */}
             <div className="flex items-center gap-3 md:gap-4">
               <button
                 className="md:hidden text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
                 onClick={toggleMobileMenu}
-                aria-label="Toggle menu"
               >
                 {isMobileMenuOpen ? (
                   <FaTimes size={20} />
@@ -251,57 +212,330 @@ const Navbar = ({ onSignUpClick }) => {
                   <FaBars size={20} />
                 )}
               </button>
-
-              <Link
-                href="/"
-                className="flex items-center"
-                aria-label="Montres Home"
-              >
+              <Link href="/" className="flex items-center">
                 <Image
                   src={logo}
-                  alt="Montres - Luxury Watches Dubai"
-                  className="h-8 md:h-10 lg:h-12 w-auto object-contain"
+                  alt="Montres"
+                  className="h-8 md:h-10 w-auto"
                   priority
                 />
               </Link>
             </div>
 
-            {/* Search Bar - Desktop */}
+            {/* Desktop Search */}
             <div className="hidden md:flex flex-1 max-w-xl mx-4 relative">
-              <form 
+              <form
                 onSubmit={handleSearchSubmit}
-                className={`flex w-full border border-gray-300 rounded-full overflow-hidden bg-white shadow-sm transition-all duration-300 ring-1 ${
-                  isSearchFocused ? "ring-[#1e518e]" : "ring-transparent"
+                className={`flex w-full border border-gray-300 rounded-full overflow-hidden bg-white shadow-sm ${
+                  isSearchFocused ? "ring-1 ring-[#1e518e]" : "ring-transparent"
                 }`}
-                role="search"
               >
                 <input
                   type="search"
                   placeholder="Search Rolex, Omega, Patek Philippe..."
-                  className="flex-grow px-4 md:px-5 py-2 md:py-2.5 text-sm md:text-base outline-none rounded-l-full"
+                  className="flex-grow px-4 py-2 outline-none rounded-l-full"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={handleSearchFocus}
-                  onBlur={handleSearchBlur}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() =>
+                    setTimeout(() => setIsSearchFocused(false), 200)
+                  }
                 />
-                <button 
-                  type="submit" 
-                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 md:px-5 flex items-center justify-center hover:opacity-90 transition-opacity"
+                <button
+                  type="submit"
+                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 flex items-center justify-center"
                 >
-                  <FaSearch className="text-sm md:text-base" />
+                  <FaSearch />
                 </button>
               </form>
-
               {searchQuery && isSearchFocused && (
-                <div className="absolute top-full mt-1 w-full bg-white shadow-lg rounded-md py-2 z-30 border border-gray-200">
-                  <div className="px-4 py-1.5 text-xs md:text-sm text-gray-500 font-medium">
+                <div className="absolute top-full mt-1 w-full bg-white shadow-lg rounded-xl py-2 z-50 border max-h-80 overflow-y-auto">
+                  {/* Live Search Results */}
+                  <div className="px-4 py-1.5 text-xs text-gray-500 font-medium border-b">
+                    Search Results
+                  </div>
+
+                  {loading ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      Loading...
+                    </div>
+                  ) : results.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      No results found
+                    </div>
+                  ) : (
+                    results.map((product) => (
+                      <div
+                        key={product._id}
+                        onClick={() => handleSelect(product._id)}
+                        className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 border-b last:border-b-0"
+                      >
+                        {product.images?.[0]?.url ? (
+                          <img
+                            src={product.images[0].url}
+                            alt={product.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-200 rounded" />
+                        )}
+                        <div className="text-sm text-gray-700 truncate">
+                          {product.name}
+                        </div>
+                      </div>
+                    ))
+                  )}
+
+                  {/* Popular Searches Section */}
+                  <div className="px-4 py-1.5 text-xs text-gray-500 font-medium border-t mt-2">
                     Popular in UAE
                   </div>
                   {popularSearches.map((search) => (
                     <Link
                       key={search.term}
                       href={search.path}
-                      className="block px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                      className="block px-4 py-2 text-sm hover:bg-gray-50"
+                      onClick={() => setIsSearchFocused(false)}
+                    >
+                      {search.term}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>   
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-4">
+              <Link
+                href="/wishlist"
+                className="hover:text-[#1e518e] p-2 rounded-full hover:bg-gray-100"
+              >
+                <FaHeart />
+              </Link>
+              <Link
+                href="/cart"
+                className="flex items-center justify-center rounded-full bg-gradient-to-br p-2.5 hover:shadow-md"
+              >
+                <FaShoppingCart />
+              </Link>
+
+              {user ? (
+                <div className="relative user-dropdown-container">
+                  <button
+                    onClick={toggleUserDropdown}
+                    className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-full"
+                  >
+                    {user.image ? (
+                      <Image
+                        src={user.image}
+                        alt={user.name || "User"}
+                        className="w-8 h-8 rounded-full"
+                        width={32}
+                        height={32}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm">
+                        {user.name ? user.name.charAt(0) : "U"}
+                      </div>
+                    )}
+                    <span className="text-sm font-medium truncate">
+                      {user.name?.split(" ")[0] || "User"}
+                    </span>
+                    <FaChevronDown
+                      className={`transition-transform ${
+                        userDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {userDropdownOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-2 z-50">
+                      <div className="px-4 py-2 border-b">
+                        <p className="text-sm font-medium">
+                          {user.name || "User"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {user.email || ""}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {user.source === "session"
+                            ? "NextAuth"
+                            : "Local Storage"}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleUserDashboard}
+                        className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50"
+                      >
+                        <FaUser size={14} />
+                        My Dashboard
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 flex items-center gap-2 hover:bg-gray-50"
+                      >
+                        <FaSignOutAlt size={14} />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={onSignUpClick}
+                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-full flex items-center gap-2"
+                >
+                  <FaUser />
+                  Sign In
+                </button>
+              )}
+            </nav>
+
+            {/* Mobile Icons */}
+            <div className="md:hidden flex items-center gap-2">
+              <button
+                onClick={toggleMobileSearch}
+                className="p-2.5 rounded-full hover:bg-gray-100"
+              >
+                <FaSearch />
+              </button>
+              <Link
+                href="/wishlist"
+                className="p-2.5 rounded-full hover:bg-gray-100"
+              >
+                <FaHeart />
+              </Link>
+              <Link
+                href="/cart"
+                className="p-2.5 rounded-full hover:bg-gray-100"
+              >
+                <FaShoppingCart />
+              </Link>
+
+              {user ? (
+                <div className="relative user-dropdown-container">
+                  <button
+                    onClick={toggleUserDropdown}
+                    className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center"
+                  >
+                    {user.image ? (
+                      <Image
+                        src={user.image}
+                        alt={user.name || "User"}
+                        className="w-6 h-6 rounded-full"
+                        width={24}
+                        height={24}
+                      />
+                    ) : (
+                      <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs">
+                        {user.name?.charAt(0) || "U"}
+                      </div>
+                    )}
+                  </button>
+                  {userDropdownOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border py-2 z-50">
+                      <div className="px-4 py-2 border-b">
+                        <p className="text-sm font-medium">
+                          {user.name || "User"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {user.email || ""}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleUserDashboard}
+                        className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 border-b"
+                      >
+                        <FaUser size={14} />
+                        My Dashboard
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-3 text-sm text-red-600 flex items-center gap-2"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={onSignUpClick}
+                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center"
+                >
+                  <FaUser />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile Search */}
+          {isMobileSearchOpen && (
+            <div className="md:hidden mb-2 relative mobile-search-container">
+              <form
+                onSubmit={handleSearchSubmit}
+                className="flex w-full border border-gray-300 rounded-full overflow-hidden bg-white shadow-sm mb-1"
+              >
+                <input
+                  type="search"
+                  placeholder="Search luxury watches..."
+                  className="flex-grow px-4 py-3 outline-none"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="bg-[#1e518e] text-white px-4 flex items-center justify-center"
+                >
+                  <FaSearch />
+                </button>
+              </form>
+              {searchQuery && isSearchFocused && (
+                <div className="absolute top-full mt-1 w-full bg-white shadow-lg rounded-xl py-2 z-50 border max-h-80 overflow-y-auto">
+                  <div className="px-4 py-2 text-xs text-gray-500 font-medium border-b">
+                    Search Results
+                  </div>
+
+                  {loading ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      Loading...
+                    </div>
+                  ) : results.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      No results found
+                    </div>
+                  ) : (
+                    results.map((product) => (
+                      <div
+                        key={product._id}
+                        onClick={() => handleSelect(product._id)}
+                        className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 border-b last:border-b-0"
+                      >
+                        {product.images?.[0]?.url ? (
+                          <img
+                            src={product.images[0].url}
+                            alt={product.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-200 rounded" />
+                        )}
+                        <div className="text-sm text-gray-700 truncate">
+                          {product.name}
+                        </div>
+                      </div>
+                    ))
+                  )}
+
+                  {/* Optional: Popular searches below */}
+                  <div className="px-4 py-2 text-xs text-gray-500 font-medium border-t mt-2">
+                    Popular Searches
+                  </div>
+                  {popularSearches.map((search) => (
+                    <Link
+                      key={search.term}
+                      href={search.path}
+                      className="block px-4 py-2 text-sm hover:bg-gray-50"
                       onClick={() => setIsSearchFocused(false)}
                     >
                       {search.term}
@@ -310,246 +544,35 @@ const Navbar = ({ onSignUpClick }) => {
                 </div>
               )}
             </div>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-4 lg:gap-5 text-gray-700">
-              <Link
-                href="/wishlist"
-                className="hover:text-[#1e518e] transition-colors p-2 rounded-full hover:bg-gray-100"
-                aria-label="Wishlist"
-              >
-                <FaHeart className="text-lg md:text-xl" />
-              </Link>
-
-              <Link
-                href="/cart"
-                className="flex items-center justify-center rounded-full bg-gradient-to-br text-gray-700 hover:text-[#1e518e] p-2.5 hover:shadow-md transition-all hover:scale-105"
-                aria-label="Shopping cart"
-              >
-                <FaShoppingCart className="text-lg md:text-xl" />
-              </Link>
-
-              {/* User Account Section */}
-              {user ? (
-                <div className="relative user-dropdown-container">
-                  <button
-                    onClick={toggleUserDropdown}
-                    className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-full transition-all duration-200"
-                    aria-label="User account menu"
-                  >
-                    {user.image ? (
-                      <Image
-                        src={user.image}
-                        alt={user.name || 'User'}
-                        className="w-8 h-8 rounded-full"
-                        width={32}
-                        height={32}
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm font-medium">
-                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                      </div>
-                    )}
-                    <span className="text-sm font-medium max-w-[100px] truncate">
-                      {user.name ? user.name.split(' ')[0] : 'User'}
-                    </span>
-                    <FaChevronDown 
-                      size={12} 
-                      className={`transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-
-                  {userDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {user.name || 'User'}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {user.email || ''}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {user.source === 'session' ? 'NextAuth' : 'Local Storage'}
-                        </p>
-                      </div>
-                      
-                      <button
-                        onClick={handleUserDashboard}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                      >
-                        <FaUser size={14} />
-                        My Dashboard
-                      </button>
-                      
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                      >
-                        <FaSignOutAlt size={14} />
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <button
-                  onClick={onSignUpClick}
-                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 md:px-4 py-2 md:py-1.5 rounded-full flex items-center gap-2 text-sm md:text-base hover:shadow-lg transition-all hover:scale-105"
-                  aria-label="Sign in or register"
-                >
-                  <FaUser />
-                  <span>Sign In</span>
-                </button>
-              )}
-            </nav>
-
-            {/* Mobile Icons */}
-            <div className="md:hidden flex items-center gap-1">
-              <button
-                onClick={toggleMobileSearch}
-                className="text-gray-700 p-2.5 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Search"
-              >
-                <FaSearch size={18} />
-              </button>
-
-              <Link
-                href="/wishlist"
-                className="p-2.5 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Wishlist"
-              >
-                <FaHeart size={18} className="text-gray-700" />
-              </Link>
-
-              <Link
-                href="/cart"
-                className="p-2.5 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Shopping cart"
-              >
-                <FaShoppingCart size={18} className="text-gray-700" />
-              </Link>
-
-              {/* Mobile User Account */}
-              {user ? (
-                <div className="relative user-dropdown-container">
-                  <button
-                    onClick={toggleUserDropdown}
-                    className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center shadow hover:shadow-md transition-all"
-                    aria-label="User account menu"
-                  >
-                    {user.image ? (
-                      <Image
-                        src={user.image}
-                        alt={user.name || 'User'}
-                        className="w-6 h-6 rounded-full"
-                        width={24}
-                        height={24}
-                      />
-                    ) : (
-                      <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                      </div>
-                    )}
-                  </button>
-
-                  {userDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {user.name || 'User'}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {user.email || ''}
-                        </p>
-                      </div>
-                      
-                      <button
-                        onClick={handleUserDashboard}
-                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-b border-gray-100"
-                      >
-                        <FaUser size={14} />
-                        My Dashboard
-                      </button>
-                      
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                      >
-                        <FaSignOutAlt size={14} />
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <button
-                  onClick={onSignUpClick}
-                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center shadow hover:shadow-md transition-all"
-                  aria-label="Sign in"
-                >
-                  <FaUser className="text-sm" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Mobile Search - Full Width */}
-          {isMobileSearchOpen && (
-            <div className="md:hidden mb-2 relative mobile-search-container">
-              <form 
-                onSubmit={handleSearchSubmit}
-                className="flex w-full border border-gray-300 rounded-full overflow-hidden bg-white shadow-sm mb-1"
-              >
-                <input
-                  type="search"
-                  placeholder="Search luxury watches..."
-                  className="flex-grow px-4 py-3 text-base outline-none"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  className="bg-[#1e518e] text-white px-4 flex items-center justify-center hover:opacity-90 transition-opacity"
-                >
-                  <FaSearch size={16} />
-                </button>
-              </form>
-              {searchQuery && (
-                <div className="absolute w-full bg-white shadow-lg rounded-xl py-2 z-20 border border-gray-200 mt-1">
-                  <div className="px-4 py-2 text-xs text-gray-500 font-medium border-b">
-                    Popular Searches
-                  </div>
-                  {popularSearches.map((search) => (
-                    <Link
-                      key={search.term}
-                      href={search.path}
-                      className="block px-4 py-3 text-sm hover:bg-gray-50 transition-colors border-b last:border-b-0"
-                      onClick={() => setIsMobileSearchOpen(false)}
-                    >
-                      {search.term}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>   
           )}
         </div>
       </header>
 
-      {/* Sub Navbar */}
       <SubNavbar
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
 
-      {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
+
+      {/* Search results dropdown */}
+      {/* {searchQuery && (
+        <div className="absolute w-full bg-white shadow-lg rounded-xl py-2 z-50 border mt-1 max-h-80 overflow-y-auto">
+          {loading ? <div className="px-4 py-3 text-sm text-gray-500">Loading...</div> :
+            results.length === 0 ? <div className="px-4 py-3 text-sm text-gray-500">No results found</div> :
+              results.map(product => (
+                <div key={product._id} onClick={() => handleSelect(product._id)} className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-50">
+                  {product.images?.[0]?.url ? <img src={product.images[0].url} alt={product.name} className="w-10 h-10 object-cover rounded" /> : <div className="w-10 h-10 bg-gray-200 rounded" />}
+                  <div className="text-sm text-gray-700 truncate">{product.name}</div>
+                </div>
+              ))}
+        </div>
+      )} */}
     </>
   );
 };

@@ -24,6 +24,7 @@ import SilverCufflinks from "../../assets/Silver Cufflinks.jpg";
 import FountainPen from "../../assets/Fountain Pen.jpg";
 import AccessoryDeals from "../../assets/Accessory Deals.jpg";
 import { useCurrency } from "@/app/CurrencyContext";
+import newCurrency from '../../assets/newSymbole.png'
 import Image from "next/image";
 
 import axios from "axios";
@@ -128,14 +129,12 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         { name: "luxury Watches", path: "/watches/luxury" },
         { name: "Sports Watches", path: "/watches/sports" },
         { name: "Classic Watches", path: "/watches/classic" },
-        // { name: "Smart Watches", path: "/watches/smart" },
-        // { name: "Limited Edition", path: "/watches/limited-edition" },
       ],
       featuredProducts: [
         {
           id: 1,
           name: "Rolex Submariner",
-          price: "AED8,500",
+          price: "8,500",
           image: Rolex,
           width: 80,
           height: 80,
@@ -143,7 +142,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         {
           id: 2,
           name: "Omega Seamaster",
-          price: "AED4,200",
+          price: "4,200",
           image: Omega,
           width: 80,
           height: 80,
@@ -170,7 +169,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         {
           id: 3,
           name: "Premium Leather Bag",
-          price: "AED299",
+          price: "299",
           image: LeatherBag,
           width: 80,
           height: 80,
@@ -178,7 +177,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         {
           id: 4,
           name: "Genuine Leather Wallet",
-          price: "AED89",
+          price: "89",
           image: LeatherWallet,
           width: 80,
           height: 80,
@@ -205,7 +204,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         {
           id: 5,
           name: "Premium Fountain Pen",
-          price: "AED199",
+          price: "199",
           image: FountainPen,
           width: 80,
           height: 80,
@@ -213,7 +212,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         {
           id: 6,
           name: "Silver Cufflinks",
-          price: "AED129",
+          price: "129",
           image: SilverCufflinks,
           width: 80,
           height: 80,
@@ -323,25 +322,31 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     setIsCurrencyOpen(false);
   }, []);
 
-  // Function to get currency icon
-  const getCurrencyIcon = (code) => {
-    switch (code) {
-      case "USD":
-        return <FaDollarSign className="text-green-600" />;
-      case "EUR":
-        return <FaEuroSign className="text-blue-600" />;
-      case "GBP":
-        return <FaPoundSign className="text-red-600" />;
-      case "INR":
-        return <FaRupeeSign className="text-orange-600" />;
-      default:
-        return (
-          <span className="text-amber-600 font-bold">
-            {selectedCurrency.symbol}
-          </span>
-        );
-    }
-  };
+const getCurrencyIcon = (code) => {
+  switch (code) {
+    case "USD":
+      return <FaDollarSign className="text-green-600" />;
+    case "EUR":
+      return <FaEuroSign className="text-blue-600" />;
+    case "GBP":
+      return <FaPoundSign className="text-red-600" />;
+    case "INR":
+      return <FaRupeeSign className="text-orange-600" />;
+    case "AED":
+      return (
+        <Image
+          src={newCurrency}
+          alt="AED"
+          width={16}
+          height={16}
+          className="inline-block"
+        />
+      );
+    default:
+      return <span className="text-amber-600 font-bold">{selectedCurrency.symbol}</span>;
+  }
+};
+
 
   // Function to render currency selector for desktop
   const renderDesktopCurrencySelector = () => (
@@ -458,7 +463,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     const data = megaMenuData[megaMenuKey];
 
     return (
-      <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-0 w-screen max-w-6xl bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden">
+      <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-0 w-screen max-w-5xl bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden">
         <div className="p-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Column 1: Categories */}
@@ -503,6 +508,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                       <h4 className="font-medium text-gray-900 group-hover:text-amber-600 transition-colors">
                         {product.name}
                       </h4>
+                      <Image src={newCurrency} alt="AED" width={14} height={14} className="inline-block" />
                       <p className="text-amber-600 font-semibold">
                         {product.price}
                       </p>
@@ -657,6 +663,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 <div>
                   <p className="font-medium text-sm">{product.name}</p>
                   <p className="text-amber-600 text-sm font-semibold">
+                  <Image src={newCurrency} alt="AED" width={14} height={14} className="inline-block" />
                     {product.price}
                   </p>
                 </div>

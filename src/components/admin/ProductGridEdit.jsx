@@ -3,166 +3,130 @@ import Link from "next/link";
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import { useCurrency } from "@/app/CurrencyContext";
-import { getProducts, updateProduct } from "@/service/productService";
-import { FiEdit2 } from "react-icons/fi"; // Edit icon
+import { getHomeProductGrid } from "@/service/productService";
+import { FiEdit2 } from "react-icons/fi";
 import EditHomeModal from "../modals/editHomeModal";
 
 const ProductGridEdit = () => {
-  const [products, setProducts] = useState([]);
+  const [homeProducts, setHomeProducts] = useState([]); 
   const [loading, setLoading] = useState(true);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [editName, setEditName] = useState("");
-  const [editPrice, setEditPrice] = useState("");
-  const { currency, rate } = useCurrency();
+  const [editingProduct, setEditingProduct] = useState(null); 
+  const [editingHeading, setEditingHeading] = useState(""); 
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [selectedModalProduct, setSelectedModalProduct] = useState(null);
 
-  const categoryHeadings = [
-    "Jewelry",
-    "Watches",
-    "Bags,wallets&Pens",
-    "Colcks&Pocket Watch",
-    "Personal Accessories& Cufflinks",
-    "Home Accessories",
-  ];
-
-  const dummyProducts = {
-    Jewelry: [
-      { _id: "dummy-jewel-1", name: "Cartier Diamond Ring", salePrice: "12,500", images: [] },
-      { _id: "dummy-jewel-2", name: "Tiffany & Co. Necklace", salePrice: "15,700", images: [] },
-      { _id: "dummy-jewel-3", name: "Diamond Earrings", salePrice: "11,200", images: [] },
-    ],
-    Watches: [
-      { _id: "dummy-watch-1", name: "Rolex Luxury Watch", salePrice: "25,000", images: [] },
-      { _id: "dummy-watch-2", name: "Omega Seamaster", salePrice: "18,500", images: [] },
-      { _id: "dummy-watch-3", name: "Cartier Tank Watch", salePrice: "22,000", images: [] },
-    ],
-    "Bags,wallets&Pens": [
-      { _id: "dummy-bag-1", name: "Designer Leather Bag", salePrice: "7,500", images: [] },
-      { _id: "dummy-bag-2", name: "Luxury Wallet", salePrice: "2,800", images: [] },
-      { _id: "dummy-bag-3", name: "Premium Fountain Pen", salePrice: "1,500", images: [] },
-    ],
-    "Colcks&Pocket Watch": [
-      { _id: "dummy-clock-1", name: "Vintage Pocket Watch", salePrice: "9,800", images: [] },
-      { _id: "dummy-clock-2", name: "Antique Wall Clock", salePrice: "12,300", images: [] },
-      { _id: "dummy-clock-3", name: "Modern Desk Clock", salePrice: "4,500", images: [] },
-    ],
-    "Personal Accessories& Cufflinks": [
-      { _id: "dummy-accessory-1", name: "Designer Cufflinks", salePrice: "3,200", images: [] },
-      { _id: "dummy-accessory-2", name: "Silver Tie Clip", salePrice: "1,800", images: [] },
-      { _id: "dummy-accessory-3", name: "Gold Money Clip", salePrice: "2,500", images: [] },
-    ],
-    "Home Accessories": [
-      { _id: "dummy-home-1", name: "Luxury Home Clock", salePrice: "6,500", images: [] },
-      { _id: "dummy-home-2", name: "Crystal Vase", salePrice: "3,800", images: [] },
-      { _id: "dummy-home-3", name: "Silver Photo Frame", salePrice: "2,200", images: [] },
-    ],
-  };
+  const { currency, rate } = useCurrency(); // Make sure this provides currency conversion
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchHomeProducts = async () => {
       try {
-        const result = await getProducts();
-        setProducts(result || []);
+        const res = await getHomeProductGrid();
+        console.log(res)
+        const homeProductsData = res.data || [];
+        setHomeProducts(homeProductsData);
       } catch (err) {
-        console.error("Failed to fetch products:", err);
+        console.error("Failed to fetch home products:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
+    fetchHomeProducts();
   }, []);
 
-  const openEditModal = (product) => {
+  const openEditModal = (product, headingTitle, index) => {
     setEditingProduct(product);
-    setEditName(product.name);
-    setEditPrice(product.salePrice);
+    setEditingHeading(headingTitle);
+    setEditingIndex(index);
+    setSelectedModalProduct(product);
   };
 
   const handleSave = async () => {
-    try {
-      await updateProduct(editingProduct._id, { name: editName, salePrice: editPrice });
-      setProducts((prev) =>
-        prev.map((p) =>
-          p._id === editingProduct._id ? { ...p, name: editName, salePrice: editPrice } : p
-        )
-      );
-      setEditingProduct(null);
-    } catch (err) {
-      console.error("Failed to update product:", err);
-    }
+    if (!selectedModalProduct) return;
+    console.log("Saving product:", selectedModalProduct);
+
+    // Backend update logic (uncomment when ready)
+    // try {
+    //   await updateHomeProductGrid(editingHeading, editingIndex, selectedModalProduct._id);
+    //   setHomeProducts((prev) =>
+    //     prev.map((heading) =>
+    //       heading.title === editingHeading
+    //         ? {
+    //             ...heading,
+    //             products: heading.products.map((p, idx) =>
+    //               idx === editingIndex ? selectedModalProduct : p
+    //             ),
+    //           }
+    //         : heading
+    //     )
+    //   );
+    //   setEditingProduct(null);
+    //   setEditingHeading("");
+    //   setEditingIndex(null);
+    //   setSelectedModalProduct(null);
+    // } catch (err) {
+    //   console.error("Failed to save product:", err);
+    // }
   };
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-xl">Loading products...</div>
+        Loading products...
       </div>
     );
-  }
 
   return (
     <div className="bg-gray-50 min-h-[100px] p-4 sm:p-6 lg:p-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categoryHeadings.map((category, index) => {
-          const categoryProducts = products.filter((p) => p.category === category);
-          const displayProducts =
-            categoryProducts.length > 0 ? categoryProducts.slice(0, 3) : dummyProducts[category];
+      {homeProducts.homeProducts.map((heading) => (
+        <div key={heading._id} className="mb-8">
+          <h2 className="text-xl font-bold mb-4">{heading.title}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {heading.products.map((product, i) => (
+              <div
+                key={product._id || i}
+                className="bg-white rounded-xl shadow-md p-5 relative"
+              >
+                <button
+                  onClick={() => openEditModal(product, heading.title, i)}
+                  className="absolute top-2 right-2 text-white p-1 rounded-full bg-[#6B46C1] hover:bg-[#5a37a1] z-10"
+                >
+                  <FiEdit2 size={16} />
+                </button>
 
-          return (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-5 relative"
-            >
-              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
-                {category}
-              </h2>
+                <Link href={`/ProductDetailPage/${product._id}`}>
+                  <Image
+                    src={
+                      product.images?.[0]?.url ||
+                      "https://via.placeholder.com/300x300?text=No+Image"
+                    }
+                    alt={product.name}
+                    className="w-full h-64 object-cover rounded-lg"
+                    width={300}
+                    height={300}
+                  />
+                </Link>
 
-              <div className="grid grid-cols-3 gap-4">
-                {displayProducts.map((product) => (
-                  <div
-                    key={product._id}
-                    className="flex flex-col items-center text-center group relative"
-                  >
-                    <button
-                      onClick={() => openEditModal(product)}
-                      className="absolute top-2 right-2 text-white p-1 rounded-full bg-[#6B46C1] hover:bg-[#5a37a1] z-10"
-                    >
-                      <FiEdit2 size={16} />
-                    </button>
-
-                    <div className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200">
-                      <Link href={`/ProductDetailPage/${product._id}`}>
-                        <Image
-                          src={
-                            product.images?.[0]?.url ||
-                            "https://via.placeholder.com/300x300?text=No+Image"
-                          }
-                          alt={product.name}
-                          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                          width={300}
-                          height={300}
-                          loading="lazy"
-                        />
-                      </Link>
-                    </div>
-
-                    <p className="mt-2 text-sm font-semibold text-gray-800">
-                      {product.salePrice
-                        ? `${(parseFloat(product.salePrice.replace(/,/g, "")) * rate).toFixed(2)} ${currency}`
-                        : "Price not available"}
-                    </p>
-                    <p className="text-xs text-gray-500 line-clamp-2">{product.name}</p>
-                  </div>
-                ))}
+                <p className="mt-2 text-sm font-semibold text-gray-800">
+                  {product.salePrice
+                    ? `${(parseFloat(product.salePrice) * rate).toFixed(2)} ${currency}`
+                    : "Price not available"}
+                </p>
+                <p className="text-xs text-gray-500 line-clamp-2">{product.name}</p>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            ))}
+          </div>
+        </div>
+      ))}
 
-      {/* Modal */}
-      <EditHomeModal isOpen={!!editingProduct} onClose={() => setEditingProduct(null)}>
-  
-</EditHomeModal>
+      <EditHomeModal
+        isOpen={!!editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onSelectProduct={setSelectedModalProduct}
+        heading={editingHeading}
+        index={editingIndex}
+        onSave={handleSave}
+        selectedProduct={selectedModalProduct}
+      />
     </div>
   );
 };
