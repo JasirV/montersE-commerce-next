@@ -12,6 +12,7 @@ import {
   FiList,
   FiStar,
   FiGlobe,
+  FiShoppingCart,
 } from "react-icons/fi";
 import Image from "next/image";
 import watch from "../../assets/Watche/elegant-watch-with-silver-golden-chain-isolated.jpg";
@@ -20,6 +21,7 @@ import SeWishilistModal from "../ui/seeWishilist";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import newCurrency from "../../assets/newSymbole.png";
 
 const ShoppingWishlist = () => {
   const router = useRouter();
@@ -35,6 +37,7 @@ const ShoppingWishlist = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [token, setToken] = useState(null);
+  const [addingToCart, setAddingToCart] = useState({}); // Track loading state for each product
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -43,83 +46,164 @@ const ShoppingWishlist = () => {
     if (storedToken) setToken(storedToken);
   }, []);
 
-
-
-const fetchWishlists = async () => {
-  if (!token) return;
-
-  try {
-    setLoading(true);
-    setError(null);
-
-    const response = await axios.get(
-      "http://localhost:9000/api/products/wishlists/getAll",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        // Add cache busting to ensure fresh data
-        params: {
-          _t: Date.now()
-        }
-      }
-    );
-
-    console.log("📥 Fetch wishlists response:", response.data);
-    const wishlists = response.data.wishlists || [];
-    
-    // Enhanced processing with better boolean conversion
-    const processedWishlists = wishlists.map(wishlist => ({
-      ...wishlist,
-      // Ensure proper boolean conversion
-      isPublic: wishlist.isPublic === true || wishlist.isPublic === 'true',
-      isDefault: Boolean(wishlist.isDefault)
-    }));
-    
-    console.log("✅ Processed wishlists with public status:", processedWishlists.map(w => ({
-      name: w.name,
-      isPublic: w.isPublic,
-      type: typeof w.isPublic
-    })));
-    
-    setWishlistData(processedWishlists);
-
-    // Sync with URL parameter - IMPROVED LOGIC
-    const wishlistId = params.id;
-    
-    if (processedWishlists.length > 0) {
-      let targetWishlist = null;
-      
-      // First, try to find wishlist by URL ID
-      if (wishlistId) {
-        targetWishlist = processedWishlists.find(w => w.id === wishlistId);
-        console.log(`🎯 Looking for wishlist by ID ${wishlistId}:`, targetWishlist);
-      }
-      
-      // If not found or no ID in URL, use default or first wishlist
-      if (!targetWishlist) {
-        targetWishlist = processedWishlists.find(w => w.isDefault) || processedWishlists[0];
-        console.log(`🎯 Using default/first wishlist:`, targetWishlist);
-        
-        // Update URL to reflect the actual wishlist being shown
-        if (targetWishlist && targetWishlist.id !== wishlistId) {
-          router.replace(`/wishlist/${targetWishlist.id}`);
-        }
-      }
-      
-      setActiveWishlist(targetWishlist);
-    } else {
-      setActiveWishlist(null);
+  // Add to Cart Function - COMPLETE IMPLEMENTATION
+  const handleAddToCart = async (item) => {
+    if (!token) {
+      toast.error("Please login to add items to cart");
+      router.push("/");
+      return;
     }
-  } catch (err) {
-    console.error("❌ Error fetching wishlists:", err);
-    setError(err.response?.data?.message || "Failed to load wishlists");
-    setWishlistData([]);
-    setActiveWishlist(null);
-  } finally {
-    setLoading(false);
-  }
-};
+
+    if (!item || !item.id) {
+      toast.error("Invalid product information");
+      return;
+    }
+
+    // Set loading state for this specific product
+    setAddingToCart(prev => ({
+      ...prev,
+      [item.id]: true
+    }));
+
+    try {
+      const response = await axios.post(
+        "http://localhost:9000/api/products/cart/add",
+        {
+          productId: item.id,
+          quantity: 1 // Default quantity, you can make this dynamic if needed
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Item added to cart successfully! 🛒")    
+      } else {
+        throw new Error(response.data.message || "Failed to add item to cart");
+      }
+    } catch (error) {
+      console.log("Error adding to cart:", error);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          "Failed to add item to cart";
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        router.push("/");
+      } else if (error.response?.status === 404) {
+        toast.error("Product not found");
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      // Clear loading state for this product
+      setAddingToCart(prev => ({
+        ...prev,
+        [item.id]: false
+      }));
+    }
+  };
+
+  // View Product Details Function
+  const handleViewProduct = (item) => {
+    if (item.id) {
+      // Navigate to product detail page
+      router.push(`/products/${item.id}`);
+    } else {
+      toast.error("Product details not available");
+    }
+  };
+
+  const fetchWishlists = async () => {
+    if (!token) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await axios.get(
+        "http://localhost:9000/api/products/wishlists/getAll",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          // Add cache busting to ensure fresh data
+          params: {
+            _t: Date.now(),
+          },
+        }
+      );
+
+      console.log();
+
+      console.log("📥 Fetch wishlists response:", response.data);
+      const wishlists = response.data.wishlists || [];
+
+      // Enhanced processing with better boolean conversion
+      const processedWishlists = wishlists.map((wishlist) => ({
+        ...wishlist,
+        // Ensure proper boolean conversion
+        isPublic: wishlist.isPublic === true || wishlist.isPublic === "true",
+        isDefault: Boolean(wishlist.isDefault),
+      }));
+
+      console.log(
+        "✅ Processed wishlists with public status:",
+        processedWishlists.map((w) => ({
+          name: w.name,
+          isPublic: w.isPublic,
+          type: typeof w.isPublic,
+        }))
+      );
+
+      setWishlistData(processedWishlists);
+
+      // Sync with URL parameter - IMPROVED LOGIC
+      const wishlistId = params.id;
+
+      if (processedWishlists.length > 0) {
+        let targetWishlist = null;
+
+        // First, try to find wishlist by URL ID
+        if (wishlistId) {
+          targetWishlist = processedWishlists.find((w) => w.id === wishlistId);
+          console.log(
+            `🎯 Looking for wishlist by ID ${wishlistId}:`,
+            targetWishlist
+          );
+        }
+
+        // If not found or no ID in URL, use default or first wishlist
+        if (!targetWishlist) {
+          targetWishlist =
+            processedWishlists.find((w) => w.isDefault) ||
+            processedWishlists[0];
+          console.log(`🎯 Using default/first wishlist:`, targetWishlist);
+
+          // Update URL to reflect the actual wishlist being shown
+          if (targetWishlist && targetWishlist.id !== wishlistId) {
+            router.replace(`/wishlist/${targetWishlist.id}`);
+          }
+        }
+
+        setActiveWishlist(targetWishlist);
+      } else {
+        setActiveWishlist(null);
+      }
+    } catch (err) {
+      console.error("❌ Error fetching wishlists:", err);
+      setError(err.response?.data?.message || "Failed to load wishlists");
+      setWishlistData([]);
+      setActiveWishlist(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchWishlists();
@@ -162,20 +246,20 @@ const fetchWishlists = async () => {
   // Delete item from wishlist
   const handleDeleteItem = async (wishlistId, productId) => {
     if (!token || !wishlistId || !productId) return;
-    
+
     try {
       const response = await axios.delete(
         `http://localhost:9000/api/products/wishlist/remove`,
-        { 
+        {
           headers: { Authorization: `Bearer ${token}` },
           data: {
             wishlistId: wishlistId,
-            productId: productId
-          }
+            productId: productId,
+          },
         }
       );
 
-      // toast.success("Item removed from wishlist successfully!");
+      toast.success("Item removed from wishlist successfully!");
       // Refresh wishlists after deleting item
       fetchWishlists();
     } catch (error) {
@@ -186,14 +270,14 @@ const fetchWishlists = async () => {
 
   const handleMakeDefault = async () => {
     if (!activeWishlist || activeWishlist.isDefault || !token) return;
-    
+
     try {
       const response = await axios.put(
         `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/default`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       toast.success("Wishlist set as default successfully!");
       fetchWishlists();
       setMoreDropdownOpen(false);
@@ -203,98 +287,114 @@ const fetchWishlists = async () => {
     }
   };
 
-// Toggle Public Sharing with API integration - IMPROVED STATE SYNC
-const handleTogglePublicSharing = async () => {
-  if (!activeWishlist || !token) return;
-  
-  try {
-    const newPublicStatus = !activeWishlist.isPublic;
+  // Toggle Public Sharing with API integration - IMPROVED STATE SYNC
+  const handleTogglePublicSharing = async () => {
+    if (!activeWishlist || !token) return;
 
-    // Optimistically update UI
-    const optimisticWishlist = {
-      ...activeWishlist,
-      isPublic: newPublicStatus
-    };
-    setActiveWishlist(optimisticWishlist);
-    
-    // Update wishlistData array optimistically
-    setWishlistData(prev => prev.map(wishlist => 
-      wishlist.id === activeWishlist.id 
-        ? { ...wishlist, isPublic: newPublicStatus }
-        : wishlist
-    ));
+    try {
+      const newPublicStatus = !activeWishlist.isPublic;
 
-    const response = await axios.put(
-      `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/visibility`,
-      { 
-        isPublic: newPublicStatus 
-      },
-      { 
-        headers: { Authorization: `Bearer ${token}` } 
-      }
-    );
+      // Optimistically update UI
+      const optimisticWishlist = {
+        ...activeWishlist,
+        isPublic: newPublicStatus,
+      };
+      setActiveWishlist(optimisticWishlist);
 
-    // console.log("📥 API Response:", response.data);
-    
-    if (response.data.success) {
-      toast.success(response.data.message || `Wishlist is now ${newPublicStatus ? "public" : "private"}`);
-      
-      // Update with actual server response to ensure consistency
-      if (response.data.wishlist) {
-        const serverWishlist = {
-          ...activeWishlist,
-          isPublic: response.data.wishlist.isPublic,
-          publicSlug: response.data.wishlist.publicSlug
-        };
-        
-        console.log("🔄 Server wishlist data:", serverWishlist);
-        setActiveWishlist(serverWishlist);
-        
-        setWishlistData(prev => prev.map(wishlist => 
-          wishlist.id === activeWishlist.id 
-            ? { ...wishlist, isPublic: response.data.wishlist.isPublic }
+      // Update wishlistData array optimistically
+      setWishlistData((prev) =>
+        prev.map((wishlist) =>
+          wishlist.id === activeWishlist.id
+            ? { ...wishlist, isPublic: newPublicStatus }
             : wishlist
-        ));
+        )
+      );
+
+      const response = await axios.put(
+        `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/visibility`,
+        {
+          isPublic: newPublicStatus,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // console.log("📥 API Response:", response.data);
+
+      if (response.data.success) {
+        toast.success(
+          response.data.message ||
+            `Wishlist is now ${newPublicStatus ? "public" : "private"}`
+        );
+
+        // Update with actual server response to ensure consistency
+        if (response.data.wishlist) {
+          const serverWishlist = {
+            ...activeWishlist,
+            isPublic: response.data.wishlist.isPublic,
+            publicSlug: response.data.wishlist.publicSlug,
+          };
+
+          console.log("🔄 Server wishlist data:", serverWishlist);
+          setActiveWishlist(serverWishlist);
+
+          setWishlistData((prev) =>
+            prev.map((wishlist) =>
+              wishlist.id === activeWishlist.id
+                ? { ...wishlist, isPublic: response.data.wishlist.isPublic }
+                : wishlist
+            )
+          );
+        }
+
+        setMoreDropdownOpen(false);
+      } else {
+        // Revert optimistic update if API call failed
+        setActiveWishlist(activeWishlist);
+        setWishlistData((prev) =>
+          prev.map((wishlist) =>
+            wishlist.id === activeWishlist.id
+              ? { ...wishlist, isPublic: activeWishlist.isPublic }
+              : wishlist
+          )
+        );
+        throw new Error(response.data.message || "Failed to update visibility");
       }
-      
-      setMoreDropdownOpen(false);
-      
-    } else {
-      // Revert optimistic update if API call failed
+    } catch (error) {
+      console.error("❌ Error updating wishlist visibility:", error);
+
+      // Revert optimistic updates on error
       setActiveWishlist(activeWishlist);
-      setWishlistData(prev => prev.map(wishlist => 
-        wishlist.id === activeWishlist.id 
-          ? { ...wishlist, isPublic: activeWishlist.isPublic }
-          : wishlist
-      ));
-      throw new Error(response.data.message || "Failed to update visibility");
+      setWishlistData((prev) =>
+        prev.map((wishlist) =>
+          wishlist.id === activeWishlist.id
+            ? { ...wishlist, isPublic: activeWishlist.isPublic }
+            : wishlist
+        )
+      );
+
+      const errorMessage =
+        error.response?.data?.message || "Failed to update wishlist visibility";
+      toast.error(errorMessage);
     }
-    
-  } catch (error) {
-    console.error("❌ Error updating wishlist visibility:", error);
-    
-    // Revert optimistic updates on error
-    setActiveWishlist(activeWishlist);
-    setWishlistData(prev => prev.map(wishlist => 
-      wishlist.id === activeWishlist.id 
-        ? { ...wishlist, isPublic: activeWishlist.isPublic }
-        : wishlist
-    ));
-    
-    const errorMessage = error.response?.data?.message || "Failed to update wishlist visibility";
-    toast.error(errorMessage);
-  }
-};
+  };
 
   const handleEmptyWishlist = async () => {
-    if (!activeWishlist || !activeWishlist.items || activeWishlist.items.length === 0 || !token) return;
-    
+    if (
+      !activeWishlist ||
+      !activeWishlist.items ||
+      activeWishlist.items.length === 0 ||
+      !token
+    )
+      return;
+
     try {
       const response = await axios.delete(
         `http://localhost:9000/api/products/wishlists/${activeWishlist.id}/items`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       toast.success("Wishlist emptied successfully!");
       fetchWishlists();
       setMoreDropdownOpen(false);
@@ -307,7 +407,7 @@ const handleTogglePublicSharing = async () => {
   // Delete entire wishlist
   const handleDeleteWishlist = async (wishlistId) => {
     console.log(wishlistId, "wishlistId");
-    
+
     if (!wishlistId || !token) {
       toast.error("Wishlist ID or token is missing");
       return;
@@ -350,9 +450,11 @@ const handleTogglePublicSharing = async () => {
 
   // Get the appropriate icon for public/private status
   const getPrivacyIcon = (isPublic) => {
-    return isPublic ? 
-      <FiGlobe className="text-green-500" size={16} /> : 
-      <FiLock className="text-gray-500" size={16} />;
+    return isPublic ? (
+      <FiGlobe className="text-green-500" size={16} />
+    ) : (
+      <FiLock className="text-gray-500" size={16} />
+    );
   };
 
   // Get privacy status text
@@ -621,9 +723,7 @@ const handleTogglePublicSharing = async () => {
                   {list.items && list.items.length > 0
                     ? `${list.items.length} items`
                     : "No items"}
-                  <span className="ml-2">
-                    {getPrivacyIcon(list.isPublic)}
-                  </span>
+                  <span className="ml-2">{getPrivacyIcon(list.isPublic)}</span>
                 </div>
               </div>
             ))}
@@ -724,7 +824,7 @@ const handleTogglePublicSharing = async () => {
               }
             `}
             >
-             {activeList.items.map((item, index) => (
+              {activeList.items.map((item, index) => (
                 <div
                   key={item._id || item.productId?._id || index}
                   className={`
@@ -765,12 +865,12 @@ const handleTogglePublicSharing = async () => {
                   >
                     <Image
                       src={getItemImage(item)}
-                      alt="emty"
+                      alt={item.name || "Product image"}
                       fill
                       className="object-contain rounded-lg"
                       sizes={
                         viewMode === "grid"
-                          ? "(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                          ? "(max-width: 640px) 50vw, (max-width: 800px) 33vw, (max-width: 1024px) 25vw, 20vw"
                           : "80px"
                       }
                     />
@@ -791,16 +891,36 @@ const handleTogglePublicSharing = async () => {
                       {item.name}
                     </h3>
 
-                   
+                    {/* Sale Price with currency image */}
                     <p
                       className={`
                       font-semibold text-gray-900
-                      ${
-                        viewMode === "grid" ? "text-base md:text-lg" : "text-lg"
-                      }
+                      ${viewMode === "grid" ? "text-base md:text-lg" : "text-lg"}
+                      flex items-center gap-1
                     `}
                     >
-                      AED {item.salePrice}
+                      <Image
+                        src={newCurrency}
+                        alt="AED"
+                        width={16}
+                        height={16}
+                        className="inline-block"
+                      />
+                      {item.salePrice}
+
+                      {/* Optional: show regular price if available */}
+                      {item.regularPrice && item.regularPrice !== item.salePrice && (
+                        <span className="line-through text-gray-500 ml-2 flex items-center gap-1">
+                          <Image
+                            src={newCurrency}
+                            alt="AED"
+                            width={14}
+                            height={14}
+                            className="inline-block"
+                          />
+                          {item.regularPrice}
+                        </span>
+                      )}
                     </p>
 
                     {/* Action Buttons */}
@@ -812,16 +932,23 @@ const handleTogglePublicSharing = async () => {
                     >
                       <button
                         onClick={() => handleAddToCart(item)}
+                        disabled={addingToCart[item.id]}
                         className={`
-                          bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2 rounded font-medium hover:from-[#1e518e]/90 hover:to-[#0061b0ee]/90 transition-all duration-200 shadow hover:shadow-md
-                          ${
-                            viewMode === "grid"
-                              ? "flex-1 text-xs"
-                              : "px-3 text-sm"
-                          }
+                          bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2 rounded font-medium hover:from-[#1e518e]/90 hover:to-[#0061b0ee]/90 transition-all duration-200 shadow hover:shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2
+                          ${viewMode === "grid" ? "flex-1 text-xs" : "px-3 text-sm"}
                         `}
                       >
-                        Add to Cart
+                        {addingToCart[item.id] ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                            Adding...
+                          </>
+                        ) : (
+                          <>
+                            <FiShoppingCart size={14} />
+                            Add to Cart
+                          </>
+                        )}
                       </button>
 
                       <button
@@ -850,7 +977,10 @@ const handleTogglePublicSharing = async () => {
               <p className="text-gray-500 text-sm mt-1">
                 Start adding items to your wishlist
               </p>
-              <button className="mt-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300">
+              <button 
+                onClick={() => router.push('/products')}
+                className="mt-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+              >
                 Browse Products
               </button>
             </div>
@@ -970,3 +1100,4 @@ const handleTogglePublicSharing = async () => {
 };
 
 export default ShoppingWishlist;
+

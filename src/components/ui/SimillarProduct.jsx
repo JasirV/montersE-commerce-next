@@ -1,131 +1,197 @@
 import Image from "next/image";
-import React, { useMemo, memo, lazy, Suspense } from "react";
+import React, { Suspense } from "react";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
+import Dummy1 from "../../assets/Omega Seamaster.jpg";
+import newCurrency from "../../assets/newSymbole.png";
 
-// Lazy load the Services component
-const Services = lazy(() => import("./Services"));
-
-// Memoized product data to prevent unnecessary re-renders
+// Product data
 const productsData = [
   {
     id: 1,
     name: "Hermès Kelly Red Watch 20mm",
-    price: "4000.0 AED",
-    moq: "MOQ: 100 Pieces",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop"
+    price: "4000.0",
+    originalPrice: "4800.0",
+    image: Dummy1,
+    badge: "Bestseller",
+    discount: 17,
   },
   {
     id: 2,
-    name: "Hermès Kelly Red Watch 20mm",
-    price: "4000.0 AED",
-    moq: "MOQ: 35 Pieces",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop"
+    name: "Hermès Kelly Gold Watch 22mm",
+    price: "4200.0",
+    originalPrice: "5000.0",
+    image: Dummy1,
+    badge: "Popular",
+    discount: 16,
   },
   {
     id: 3,
-    name: "Hermès Kelly Red Watch 20mm",
-    price: "4000.0 AED",
-    moq: "MOQ: 80 Pieces",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop"
+    name: "Hermès Kelly Silver Watch 20mm",
+    price: "3800.0",
+    originalPrice: "4500.0",
+    image: Dummy1,
+    badge: "Limited",
+    discount: 15,
   },
   {
     id: 4,
-    name: "Hermès Kelly Red Watch 20mm",
-    price: "4000.0 AED",
-    moq: "MOQ: 50 Pieces",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop"
-  }
+    name: "Hermès Kelly Rose Gold Watch 18mm",
+    price: "4500.0",
+    originalPrice: "5200.0",
+    image: Dummy1,
+    badge: "New",
+    discount: 13,
+  },
 ];
 
-// Single product card component to prevent re-renders
-const ProductCard = memo(({ product }) => {
-  // console.log(product,'product lin 42');
-  
+// Single product card component
+const ProductCard = ({ product }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-      {/* Product Image */}
-      <div className="relative h-48 xs:h-56 sm:h-64 bg-gray-100">
+    <div className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 mx-2 my-2">
+      {/* Product Image Container */}
+      <div className="relative h-52 bg-gray-50">
         <Image
           src={product.image}
           alt={product.name}
           fill
-          className="object-contain p-3 xs:p-4"
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
+
+        {/* Single Badge */}
+        <div className="absolute top-3 left-3">
+          <div
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${
+              product.badge === "Bestseller"
+                ? "bg-gradient-to-r from-red-500 to-red-600"
+                : product.badge === "Popular"
+                ? "bg-gradient-to-r from-blue-500 to-blue-600"
+                : product.badge === "Limited"
+                ? "bg-gradient-to-r from-orange-500 to-orange-600"
+                : "bg-gradient-to-r from-green-500 to-green-600"
+            }`}
+          >
+            {product.badge}
+          </div>
+        </div>
+
+        {/* Discount Badge */}
+        {product.discount && (
+          <div className="absolute top-3 right-12 bg-emerald-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+            -{product.discount}%
+          </div>
+        )}
+
         {/* Wishlist Button */}
-        <button 
-          className="absolute top-2 right-2 xs:top-3 xs:right-3 p-1.5 xs:p-2 bg-white rounded-full shadow-sm hover:bg-gray-50 transition-colors"
+        <button
+          className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 group/wishlist"
           aria-label="Add to wishlist"
         >
-          <FaHeart className="text-sm xs:text-base text-gray-400 hover:text-red-500" />
+          <FaHeart className="text-gray-600 group-hover/wishlist:text-red-500 text-sm transition-colors" />
         </button>
       </div>
-      
+
       {/* Product Details */}
-      <div className="p-3 xs:p-4">
-        <h3 className="text-gray-700 font-medium text-xs xs:text-sm mb-1 xs:mb-2 line-clamp-2" style={{ minHeight: '2.5rem' }}>
+      <div className="p-5">
+        {/* Product Name */}
+        <h3 className="text-gray-800 font-semibold text-[15px] mb-3 line-clamp-2 leading-tight min-h-[2.8rem]">
           {product.name}
         </h3>
-        <div className="flex items-baseline justify-between mb-1">
-          <span className="text-base xs:text-lg font-bold text-gray-900">{product.price}</span>
+
+        {/* Price Section */}
+        <div className="flex items-baseline gap-2 mb-3">
+          <div className="flex items-center">
+            <Image
+              src={newCurrency}
+              alt="Currency"
+              className="w-4 h-4 mr-1.5"
+            />
+            <span className="text-xl font-bold text-gray-900">
+              {product.price}
+            </span>
+          </div>
+          {product.originalPrice && (
+            <span className="text-sm text-gray-500 line-through ml-1">
+              {product.originalPrice}
+            </span>
+          )}
         </div>
-        <p className="text-xs xs:text-sm text-gray-500 mb-2 xs:mb-4">{product.moq}</p>
-        
+
         {/* Add to Cart Button */}
-        <button className="w-full flex items-center justify-center gap-1 xs:gap-2 bg-gray-900 hover:bg-gray-800 text-white py-1.5 xs:py-2 px-2 xs:px-4 rounded text-xs xs:text-sm transition-colors">
-          <FaShoppingCart className="text-xs xs:text-sm" />
+        <button className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#0061b0ee] hover:to-[#1e518e] text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-300 hover:shadow-lg active:scale-95 group/cart">
+          <FaShoppingCart className="text-sm group-hover/cart:scale-110 transition-transform" />
           <span>Add to Cart</span>
         </button>
       </div>
     </div>
   );
-});
-
-ProductCard.displayName = 'ProductCard';
+};
 
 const SimilarProduct = () => {
-  // Memoize the products data
-  const products = useMemo(() => productsData, []);
-
   return (
-    <div className="bg-gray-50 py-4 xs:py-6 sm:py-8 px-3 xs:px-4">
+    <div className="bg-gray-50/80 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <h2 className="text-xl xs:text-2xl font-bold text-gray-800 mb-4 xs:mb-6 sm:mb-8 text-center">Similar Products</h2>
-        
-        {/* Products Grid - Responsive columns */}
-        <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 md:gap-6">
-          {products.map((product) => (
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            Similar Products
+          </h2>
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
+            Discover more premium products that match your exquisite style and preferences
+          </p>
+        </div>
+
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {productsData.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
-        
+
         {/* View More Button */}
-        <div className="mt-6 xs:mt-8 sm:mt-10 text-center">
-          <button className="inline-flex items-center px-4 xs:px-5 py-2 xs:py-2.5 border border-gray-300 rounded-md shadow-sm text-xs xs:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+        <div className="mt-12 text-center">
+          <button className="inline-flex items-center px-8 py-4 border-2 border-gray-300 rounded-xl text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-300">
             View More Products
+            <svg
+              className="ml-3 w-5 h-5 transition-transform group-hover:translate-y-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
           </button>
         </div>
       </div>
-      
-      {/* Lazy load Services with a loading fallback */}
-      <Suspense fallback={
-        <div className="max-w-7xl mx-auto mt-6 xs:mt-8 sm:mt-10 bg-white rounded-lg shadow-md p-4 xs:p-6">
-          <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 xs:gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex flex-col items-center text-center">
-                <div className="h-8 xs:h-10 sm:h-12 w-8 xs:w-10 sm:w-12 bg-gray-200 rounded-full animate-pulse mb-2 xs:mb-3 sm:mb-4"></div>
-                <div className="h-3 xs:h-4 bg-gray-200 rounded animate-pulse w-3/4 mb-1 xs:mb-2"></div>
-                <div className="h-2 xs:h-3 bg-gray-200 rounded animate-pulse w-full"></div>
-              </div>
-            ))}
+
+      {/* Services Section Fallback */}
+      <Suspense
+        fallback={
+          <div className="max-w-7xl mx-auto mt-12 bg-white rounded-xl shadow-sm p-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col items-center text-center"
+                >
+                  <div className="h-12 w-12 bg-gray-200 rounded-full animate-pulse mb-3"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded animate-pulse w-full"></div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      }>
-        <Services />
+        }
+      >
+       
       </Suspense>
     </div>
   );
 };
 
-export default memo(SimilarProduct);
+export default SimilarProduct;

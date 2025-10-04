@@ -16,20 +16,10 @@ import SubNavbar from "./SubNavabar";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useWishlist } from "../../components/shared/context/WishlistContext";
 
 const Navbar = ({ onSignUpClick }) => {
-  const sessionData = useSession();
-  const session = sessionData?.data;
-  const status = sessionData?.status;
+  const { data: session, status, update } = useSession();
   const router = useRouter();
-
-  // Use wishlist context
-  const { 
-    wishlistCount, 
-    defaultWishlistId, 
-    refreshWishlist 
-  } = useWishlist();
 
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,11 +29,22 @@ const Navbar = ({ onSignUpClick }) => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [localUser, setLocalUser] = useState(null);
-  const [authUpdateTrigger, setAuthUpdateTrigger] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const [defaultWishlistId, setDefaultWishlistId] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted to true after component mounts
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Get user data from both session and localStorage
   const getUserData = useCallback(() => {
+    // Don't return user data until component is mounted
+    if (!mounted) return null;
+
     if (session?.user) {
+      console.log("Using session user:", session.user);
       return {
         name: session.user.name,
         email: session.user.email,
@@ -53,6 +54,7 @@ const Navbar = ({ onSignUpClick }) => {
     }
 
     if (isClient && localUser) {
+      console.log("Using local user:", localUser);
       return {
         ...localUser,
         source: "localStorage",
@@ -60,44 +62,229 @@ const Navbar = ({ onSignUpClick }) => {
     }
 
     return null;
-  }, [session, isClient, localUser]);
+  }, [session, isClient, localUser, mounted]);
 
   const user = getUserData();
 
-  // Load user from localStorage on client side
+  // Load user from localStorage on client side and force session check
   useEffect(() => {
     setIsClient(true);
     loadUserFromStorage();
-  }, []);
+    
+    // Force session update on mount
+    const checkSession = async () => {
+      try {
+        await update();
+      } catch (error) {
+        console.error("Error updating session:", error);
+      }
+    };
+    
+    checkSession();
+  }, [update]);
 
-  // Listen for auth changes
+  // Listen for auth changes from other components
   useEffect(() => {
     const handleAuthChange = () => {
-      console.log("Auth change event received in Navbar");
+      console.log("Auth change detected, reloading user data...");
       loadUserFromStorage();
-      setAuthUpdateTrigger((prev) => prev + 1);
-      refreshWishlist();
+      // Force session update
+      update();
     };
 
-    const handleStorageChange = (e) => {
-      if (e.key === "user" || e.key === "token") {
-        console.log("User/token changed in localStorage");
-        loadUserFromStorage();
-        refreshWishlist();
+    window.addEventListener("authChange", handleAuthChange);
+    return () => window.removeEventListener("authChange", handleAuthChange);
+  }, [update]);
+
+  // Enhanced session synchronization
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      console.log("Session authenticated:", session.user);
+      // Clear local storage when session is active to avoid conflicts
+      if (typeof window !== "undefined") {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          console.log("Clearing local storage due to active session");
+          // Don't clear, just use session data
+        }
+      }
+    }
+  }, [status, session]);
+
+  // Fetch wishlist data when user is authenticated
+  useEffect(() => {
+    const fetchWishlistData = async () => {
+      if (!user) {
+        setWishlistCount(0);
+        setDefaultWishlistId(null);
+        return;
+      }
+
+      try {
+        const token = user.source === "session" 
+          ? null // NextAuth handles tokens automatically
+          : localStorage.getItem("token");
+
+        const headers = {
+          "Content-Type": "application/json",
+        };
+
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        console.log("Fetching wishlists for user:", user);
+        const response = await fetch("http://localhost:9000/api/products/wishlists/getAll", {
+          method: "GET",
+          headers: headers,
+          credentials: user.source === "session" ? "include" : "omit",
+        });
+
+        console.log("Wishlist response status:", response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Wishlist API response:", data);
+          
+          // Handle different response formats
+          let wishlists = [];
+          let totalCount = 0;
+          let wishlistId = null;
+
+          // Case 1: Response is an array of wishlists
+          if (Array.isArray(data)) {
+            wishlists = data;
+            totalCount = data.reduce((total, wishlist) => {
+              return total + (wishlist.items?.length || 0);
+            }, 0);
+            if (data.length > 0) {
+              wishlistId = data[0]._id || data[0].id;
+            }
+          }
+          // Case 2: Response has a wishlists array property
+          else if (data.wishlists && Array.isArray(data.wishlists)) {
+            wishlists = data.wishlists;
+            totalCount = data.wishlists.reduce((total, wishlist) => {
+              return total + (wishlist.items?.length || 0);
+            }, 0);
+            if (data.wishlists.length > 0) {
+              wishlistId = data.wishlists[0]._id || data.wishlists[0].id;
+            }
+          }
+          // Case 3: Response is a single wishlist object
+          else if (data && typeof data === 'object') {
+            wishlists = [data];
+            totalCount = data.items?.length || 0;
+            wishlistId = data._id || data.id;
+          }
+          // Case 4: Response has data property
+          else if (data.data) {
+            if (Array.isArray(data.data)) {
+              wishlists = data.data;
+              totalCount = data.data.reduce((total, wishlist) => {
+                return total + (wishlist.items?.length || 0);
+              }, 0);
+              if (data.data.length > 0) {
+                wishlistId = data.data[0]._id || data.data[0].id;
+              }
+            } else if (data.data.items) {
+              totalCount = data.data.items.length || 0;
+              wishlistId = data.data._id || data.data.id;
+            }
+          }
+
+          console.log("Processed wishlist data:", { totalCount, wishlistId, wishlists });
+          
+          setWishlistCount(totalCount);
+          setDefaultWishlistId(wishlistId);
+        } else {
+          console.error("Failed to fetch wishlists, status:", response.status);
+          setWishlistCount(0);
+          setDefaultWishlistId(null);
+        }
+      } catch (error) {
+        console.error("Error fetching wishlists:", error);
+        setWishlistCount(0);
+        setDefaultWishlistId(null);
       }
     };
 
-    // Set up event listeners
-    window.addEventListener("authChange", handleAuthChange);
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("localStorageUpdated", handleStorageChange);
+    if (mounted) {
+      fetchWishlistData();
+    }
+  }, [user, mounted]);
 
-    return () => {
-      window.removeEventListener("authChange", handleAuthChange);
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("localStorageUpdated", handleStorageChange);
+  // Listen for wishlist updates
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      if (!mounted) return;
+      
+      // Re-fetch wishlist data when updates occur
+      const fetchWishlistData = async () => {
+        if (!user) {
+          setWishlistCount(0);
+          return;
+        }
+
+        try {
+          const token = user.source === "session" 
+            ? null 
+            : localStorage.getItem("token");
+
+          const headers = {
+            "Content-Type": "application/json",
+          };
+
+          if (token) {
+            headers.Authorization = `Bearer ${token}`;
+          }
+
+          const response = await fetch("http://localhost:9000/api/products/wishlists/getAll", {
+            method: "GET",
+            headers: headers,
+            credentials: user.source === "session" ? "include" : "omit",
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            let totalCount = 0;
+
+            // Handle different response formats
+            if (Array.isArray(data)) {
+              totalCount = data.reduce((total, wishlist) => {
+                return total + (wishlist.items?.length || 0);
+              }, 0);
+            } else if (data.wishlists && Array.isArray(data.wishlists)) {
+              totalCount = data.wishlists.reduce((total, wishlist) => {
+                return total + (wishlist.items?.length || 0);
+              }, 0);
+            } else if (data && typeof data === 'object') {
+              totalCount = data.items?.length || 0;
+            } else if (data.data) {
+              if (Array.isArray(data.data)) {
+                totalCount = data.data.reduce((total, wishlist) => {
+                  return total + (wishlist.items?.length || 0);
+                }, 0);
+              } else if (data.data.items) {
+                totalCount = data.data.items.length || 0;
+              }
+            }
+
+            setWishlistCount(totalCount);
+          }
+        } catch (error) {
+          console.error("Error fetching wishlists on update:", error);
+        }
+      };
+
+      fetchWishlistData();
     };
-  }, [refreshWishlist]);
+
+    if (mounted) {
+      window.addEventListener("wishlistUpdated", handleWishlistUpdate);
+      return () => window.removeEventListener("wishlistUpdated", handleWishlistUpdate);
+    }
+  }, [user, mounted]);
 
   const loadUserFromStorage = () => {
     if (typeof window !== "undefined") {
@@ -116,20 +303,6 @@ const Navbar = ({ onSignUpClick }) => {
       }
     }
   };
-
-  // Listen for wishlist updates from other components
-  useEffect(() => {
-    const handleWishlistUpdate = () => {
-      console.log("Wishlist update event received in Navbar");
-      refreshWishlist();
-    };
-
-    window.addEventListener("wishlistUpdated", handleWishlistUpdate);
-    
-    return () => {
-      window.removeEventListener("wishlistUpdated", handleWishlistUpdate);
-    };
-  }, [refreshWishlist]);
 
   // Scroll effect
   useEffect(() => {
@@ -154,6 +327,8 @@ const Navbar = ({ onSignUpClick }) => {
     }
 
     setUserDropdownOpen(false);
+    setWishlistCount(0);
+    setDefaultWishlistId(null);
     
     // Dispatch events to sync across components
     window.dispatchEvent(new Event("authChange"));
@@ -230,7 +405,7 @@ const Navbar = ({ onSignUpClick }) => {
   ];
 
   // Show loading state while checking authentication
-  if (status === "loading") {
+  if (status === "loading" || !mounted) {
     return (
       <header className="w-full bg-white sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 md:px-6 lg:px-8">
@@ -254,7 +429,6 @@ const Navbar = ({ onSignUpClick }) => {
         className={`w-full bg-white sticky top-0 z-50 transition-all duration-300 ${
           scrolled ? "shadow-md" : "shadow-sm"
         }`}
-        key={authUpdateTrigger}
       >
         <div className="container mx-auto px-4 md:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 md:h-16 lg:h-18">
@@ -333,7 +507,7 @@ const Navbar = ({ onSignUpClick }) => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-4 lg:gap-5 text-gray-700">
-              {/* Wishlist Link - Using Context */}
+              {/* Wishlist Link */}
               <Link
                 href={
                   user && defaultWishlistId
@@ -352,10 +526,9 @@ const Navbar = ({ onSignUpClick }) => {
                 }}
               >
                 <FaHeart className="text-lg md:text-xl" />
-
                 {wishlistCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {wishlistCount}
+                    {wishlistCount > 99 ? "99+" : wishlistCount}
                   </span>
                 )}
               </Link>
@@ -456,7 +629,7 @@ const Navbar = ({ onSignUpClick }) => {
                 <FaSearch size={18} />
               </button>
 
-              {/* Mobile Wishlist Link - Using Context */}
+              {/* Mobile Wishlist Link */}
               <Link
                 href={
                   user && defaultWishlistId
@@ -475,10 +648,9 @@ const Navbar = ({ onSignUpClick }) => {
                 }}
               >
                 <FaHeart size={18} className="text-gray-700" />
-
                 {wishlistCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {wishlistCount}
+                    {wishlistCount > 99 ? "99+" : wishlistCount}
                   </span>
                 )}
               </Link>

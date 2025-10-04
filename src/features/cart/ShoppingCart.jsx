@@ -3,9 +3,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { FiTrash2, FiHeart, FiShoppingCart } from "react-icons/fi";
 import Image from "next/image";
 import Link from "next/link";
-
-import Item1 from "../../assets/Watche/rendering-smart-home-device.jpg";
-import Item2 from "../../assets/Watche/ChatGPT Image Aug 10, 2025, 10_35_04 PM.png";
+import newCurrency from '../../assets/newSymbole.png'
 import { getCart, Recommendations, removeFromCart, updateCart } from "@/service/productService";
 
 const ShoppingCart = () => {
@@ -52,8 +50,7 @@ useEffect(() => {
 
   const handleRemove = async (productId) => {
     setCartItems((prev) => prev.filter((item) => item.productId._id !== productId));
-
-    // Debounced sync with backend
+  // Debounced sync with backend
     if (syncTimeout.current) clearTimeout(syncTimeout.current);
     syncTimeout.current = setTimeout(syncCartWithBackend, 1000);
   };
@@ -136,6 +133,21 @@ useEffect(() => {
       }, 0),
     [cartItems]
   );
+
+  // Helper component to display price with currency symbol
+  const PriceWithCurrency = ({ amount, className = "" }) => (
+    <div className={`flex items-center gap-1 ${className}`}>
+      <Image 
+        src={newCurrency} 
+        alt="Currency" 
+        width={16} 
+        height={16}
+        className="w-4 h-4"
+      />
+      <span>{amount.toFixed(2)}</span>
+    </div>
+  );
+
   return (
     <div className="bg-gray-50 min-h-screen py-4 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -199,11 +211,7 @@ useEffect(() => {
                         Sold by {item.seller}
                       </p>
 
-                      {/* Offer */}
-                      <p className="text-xs text-green-700 mt-2 border border-green-500 px-2 py-1 rounded-md inline-block">
-                        Buy 5 Get 10% Cashback - CODE: B5G10
-                      </p>
-
+                    
                       {/* Actions */}
                       <div className="flex gap-3 mt-3 flex-wrap">
                         <button
@@ -225,10 +233,11 @@ useEffect(() => {
                   {/* Price & Quantity */}
                   <div className="flex sm:flex-col justify-between items-end sm:items-center w-full sm:w-auto gap-2 sm:gap-0">
                     <div className="text-right sm:text-center">
-                      <p className="text-lg font-bold text-gray-800">
-                        AED{" "}
-                        {(item.productId.salePrice * item.quantity).toFixed(2)}
-                      </p>
+                      <div className="text-lg font-bold text-gray-800 flex items-center justify-end sm:justify-center gap-1">
+                        <PriceWithCurrency 
+                          amount={item.productId.salePrice * item.quantity} 
+                        />
+                      </div>
                       {item.originalPrice && (
                         <>
                           <p className="text-sm text-green-600">
@@ -237,8 +246,15 @@ useEffect(() => {
                             )}
                             % OFF
                           </p>
-                          <p className="text-xs text-gray-500 line-through">
-                            ฿{item.originalPrice.toFixed(2)}
+                          <p className="text-xs text-gray-500 line-through flex items-center gap-1 justify-end sm:justify-center">
+                            <Image 
+                              src={newCurrency} 
+                              alt="Currency" 
+                              width={12} 
+                              height={12}
+                              className="w-3 h-3"
+                            />
+                            {item.originalPrice.toFixed(2)}
                           </p>
                         </>
                       )}
@@ -304,9 +320,16 @@ useEffect(() => {
                       <h4 className="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2 mb-1">
                         {product.name}
                       </h4>
-                      <p className="text-sm font-bold text-gray-900">
-                        ฿{product.salePrice}
-                      </p>
+                      <div className="text-sm font-bold text-gray-900 flex items-center gap-1">
+                        <Image 
+                          src={newCurrency} 
+                          alt="Currency" 
+                          width={16} 
+                          height={16}
+                          className="w-4 h-4"
+                        />
+                        {product.salePrice}
+                      </div>
                       <button
                         onClick={() => addToCart(product)}
                         className="w-full mt-2 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white text-xs sm:text-sm py-2 rounded hover:opacity-90 transition-opacity"
@@ -348,7 +371,16 @@ useEffect(() => {
               <span>
                 Subtotal ({totalItems} {totalItems === 1 ? "item" : "items"})
               </span>
-              <span>฿{subtotal.toFixed(2)}</span>
+              <span className="flex items-center gap-1">
+                <Image 
+                  src={newCurrency} 
+                  alt="Currency" 
+                  width={16} 
+                  height={16}
+                  className="w-4 h-4"
+                />
+                {subtotal.toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>Shipping Fee</span>
@@ -358,7 +390,16 @@ useEffect(() => {
 
           <div className="flex justify-between font-bold text-gray-800 text-lg mb-4 border-t pt-4">
             <span>Total (Inclusive of VAT)</span>
-            <span>฿{subtotal.toFixed(2)}</span>
+            <span className="flex items-center gap-1">
+              <Image 
+                src={newCurrency} 
+                alt="Currency" 
+                width={20} 
+                height={20}
+                className="w-5 h-5"
+              />
+              {subtotal.toFixed(2)}
+            </span>
           </div>
 
           <Link href="/checkout">
@@ -371,41 +412,35 @@ useEffect(() => {
             </button>
           </Link>
 
-          {/* Extra Info */}
-          <p className="text-xs sm:text-sm text-yellow-600 mt-3">
-            Monthly payment plans from ฿250.{" "}
-            <span className="underline cursor-pointer">View more details</span>
-          </p>
+       
 
           <div className="mt-4 space-y-2">
-            <p className="text-xs sm:text-sm">
-              Earn <span className="font-bold">5% cashback</span> with Mashreq
-              noon Credit Card.{" "}
-              <a href="#" className="text-blue-600 underline">
-                T&C apply
-              </a>
-            </p>
+            
             <div className="border rounded-lg p-2 text-xs sm:text-sm">
               <span className="font-bold text-green-600">tabby</span> - Pay in 4
-              interest-free payments on orders over ฿100.{" "}
+              interest-free payments on orders over{" "}
+              <span className="flex items-center gap-1 inline-flex">
+                <Image 
+                  src={newCurrency} 
+                  alt="Currency" 
+                  width={12} 
+                  height={12}
+                  className="w-3 h-3"
+                />
+                100
+              </span>
+              .{" "}
               <a href="#" className="text-blue-600 underline">
                 Learn more
               </a>
             </div>
-            <div className="border rounded-lg p-2 text-xs sm:text-sm">
-              <span className="font-bold text-red-500">tamara</span> - Pay in 4
-              interest-free payments on orders over ฿100.{" "}
-              <a href="#" className="text-blue-600 underline">
-                Learn more
-              </a>
-            </div>
+            
           </div>
         </div>
       </div>
     </div>
   );
 };
-
 
 const RecommendedSkeleton = ({ count = 4 }) => {
   return (
@@ -432,4 +467,4 @@ const RecommendedSkeleton = ({ count = 4 }) => {
   );
 };
 
-  export default ShoppingCart;
+export default ShoppingCart;

@@ -3,8 +3,10 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
-import { FiShoppingCart, FiStar, FiHeart, FiShoppingBag } from "react-icons/fi";
+import {  FiHeart } from "react-icons/fi";
 import { toast } from "react-toastify";
+import newCurrency from '../../assets/newSymbole.png'
+import { useCurrency } from "@/app/CurrencyContext";
 
 // Wishlist icon component with filled and outline states
 const WishlistIcon = ({ isWishlisted, onClick, className = "" }) => {
@@ -38,24 +40,52 @@ const ProductBadge = ({ badge }) => {
 
 // Price display component
 const PriceDisplay = ({ price, mrp }) => {
+  const { currency, rate } = useCurrency();
+
+  const formatPrice = (value) => {
+    if (!value) return null;
+    const converted = (parseFloat(value.toString().replace(/,/g, "")) * rate).toFixed(2);
+    return converted;
+  };
+
   return (
     <div className="mt-1 xs:mt-1.5 sm:mt-2 flex justify-between items-center">
-      <span className="text-xs xs:text-sm md:text-base font-bold text-[#1a1a1a]">
-        {price} AED
-      </span>
+      {price ? (
+        <span className="text-xs xs:text-sm md:text-base font-bold text-[#1a1a1a] flex items-center gap-1">
+          <Image 
+            src={newCurrency} 
+            alt={currency} 
+            width={14} 
+            height={14} 
+            className="inline-block"
+          />
+          {formatPrice(price)}{currency} 
+        </span>
+      ) : (
+        <span className="text-xs text-gray-500">Price not available</span>
+      )}
+
       {mrp && (
-        <span className="text-[10px] xs:text-xs text-gray-500 line-through">
-          {mrp} AED
+        <span className="text-[10px] xs:text-xs text-gray-500 line-through flex items-center gap-1">
+          <Image 
+            src={newCurrency} 
+            alt={currency} 
+            width={12} 
+            height={12} 
+            className="inline-block"
+          />
+          {formatPrice(mrp)} 
         </span>
       )}
     </div>
   );
 };
 
+
 const ProductCard = ({ product }) => {
   const imageUrl = product?.images?.[0]?.url;
   const router = useRouter();
-  
+  const { currency, rate } = useCurrency();
   // State for wishlist
   const [isWishlisted, setIsWishlisted] = useState(product.isWishlisted || false);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);

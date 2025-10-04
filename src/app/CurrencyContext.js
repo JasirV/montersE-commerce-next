@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState } from "react";
 
+
 // Add default values here
 const CurrencyContext = createContext({
   currency: "AED",
