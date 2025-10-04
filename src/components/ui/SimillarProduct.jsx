@@ -1,93 +1,257 @@
 import Image from "next/image";
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import Dummy1 from "../../assets/Omega Seamaster.jpg";
 import newCurrency from "../../assets/newSymbole.png";
-
-// Product data
-const productsData = [
-  {
-    id: 1,
-    name: "Hermès Kelly Red Watch 20mm",
-    price: "4000.0",
-    originalPrice: "4800.0",
-    image: Dummy1,
-    badge: "Bestseller",
-    discount: 17,
-  },
-  {
-    id: 2,
-    name: "Hermès Kelly Gold Watch 22mm",
-    price: "4200.0",
-    originalPrice: "5000.0",
-    image: Dummy1,
-    badge: "Popular",
-    discount: 16,
-  },
-  {
-    id: 3,
-    name: "Hermès Kelly Silver Watch 20mm",
-    price: "3800.0",
-    originalPrice: "4500.0",
-    image: Dummy1,
-    badge: "Limited",
-    discount: 15,
-  },
-  {
-    id: 4,
-    name: "Hermès Kelly Rose Gold Watch 18mm",
-    price: "4500.0",
-    originalPrice: "5200.0",
-    image: Dummy1,
-    badge: "New",
-    discount: 13,
-  },
-];
+import axios from "axios";
+import { toast } from "react-toastify";
 
 // Single product card component
 const ProductCard = ({ product }) => {
+  const [isWishlisted, setIsWishlisted] = useState([]);
+  const [defaultWishlistId, setDefaultWishlistId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Check if product is in wishlist
+  const checkIsWishlisted = (productId) => {
+    return isWishlisted.includes(productId);
+  };
+
+  // Fetch user's wishlists and check wishlist status
+  const fetchWishlists = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.log("No token found");
+        return;
+      }
+
+      setIsLoading(true);
+      const res = await axios.get(
+        "http://localhost:9000/api/products/wishlists",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data && res.data.wishlists?.length > 0) {
+        const defaultWishlist =
+          res.data.wishlists.find((w) => w.isDefault) || res.data.wishlists[0];
+        setDefaultWishlistId(defaultWishlist._id || defaultWishlist.id);
+
+        // Extract all product IDs from all wishlists
+        const allWishlistProductIds = res.data.wishlists.flatMap(
+          (wishlist) =>
+            wishlist.products?.map((product) => product._id || product) || []
+        );
+
+        setIsWishlisted(allWishlistProductIds);
+      } else {
+        console.log("No wishlists found or empty response");
+        setDefaultWishlistId(null);
+      }
+    } catch (error) {
+      console.error("Error fetching wishlists:", error);
+      setDefaultWishlistId(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add/Remove from wishlist
+  const toggleWishlist = async (product) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in first to add to wishlist");
+        return;
+      }
+
+      const productId = product._id || product.productId?._id;
+      if (!productId) {
+        console.error("Product ID not found");
+        return;
+      }
+
+      // Check if product is already in wishlist
+      const alreadyWishlisted = checkIsWishlisted(productId);
+
+      if (alreadyWishlisted) {
+        // Remove from wishlist
+        await removeFromWishlist(productId);
+      } else {
+        // Add to wishlist
+        await addToWishlist(product);
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+      toast.error("Failed to update wishlist. Please try again.");
+    }
+  };
+
+  const addToWishlist = async (product) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in first to add to wishlist");
+        return;
+      }
+
+      // Make sure a default wishlist exists
+      if (!defaultWishlistId) {
+        toast.error("No wishlist found. Please create a wishlist first.");
+        return;
+      }
+
+      const productId = product._id || product.productId?._id;
+
+      if (!productId) {
+        console.error("Product ID not found");
+        return;
+      }
+
+      // Check if already in wishlist
+      if (checkIsWishlisted(productId)) {
+        toast.info("Product is already in your wishlist");
+        return;
+      }
+
+      const response = await axios.post(
+        "http://localhost:9000/api/products/wishlist/add",
+        {
+          wishlistId: defaultWishlistId,
+          productId: productId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Add to local wishlist state
+        setIsWishlisted((prev) => [...prev, productId]);
+        toast.success(` added to wishlist!`);
+      }
+    } catch (error) {
+      console.error(
+        "❌ Error adding to wishlist:",
+        error.response?.data || error
+      );
+      toast.error("Failed to add to wishlist. Please try again.");
+    }
+  };
+
+  const removeFromWishlist = async (productId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await axios.delete(
+        "http://localhost:9000/api/products/wishlist/remove",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          data: {
+            wishlistId: defaultWishlistId,
+            productId: productId,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Remove from local wishlist state
+        setIsWishlisted((prev) => prev.filter((id) => id !== productId));
+        toast.success("Product removed from wishlist");
+      }
+    } catch (error) {
+      console.error("Error removing from wishlist:", error);
+      toast.error("Failed to remove from wishlist. Please try again.");
+    }
+  };
+
+  const addToCart = async (product) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in to add items to your cart");
+        return;
+      }
+
+      const productId = product._id || product.productId?._id;
+      if (!productId) {
+        toast.error("Invalid product data");
+        return;
+      }
+
+      const response = await axios.post(
+        "http://localhost:9000/api/products/cart/add",
+        {
+          productId: productId,
+          quantity: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success(` added to cart`);
+        // You can add fetchCartItems() here if you have that function
+      } else {
+        toast.error("Failed to add to cart. Try again!");
+      }
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error(error.response?.data?.message || "Failed to add to cart.");
+    }
+  };
+
+  // Fetch wishlists when component mounts
+  useEffect(() => {
+    fetchWishlists();
+  }, []);
+
+  const productId = product._id || product.productId?._id;
+  const isProductWishlisted = checkIsWishlisted(productId);
+
   return (
     <div className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 mx-2 my-2">
       {/* Product Image Container */}
       <div className="relative h-52 bg-gray-50">
         <Image
-          src={product.image}
+          src={product.images?.[0]?.url || Dummy1}
           alt={product.name}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
+          onError={(e) => {
+            e.target.src = Dummy1;
+          }}
         />
-
-        {/* Single Badge */}
-        <div className="absolute top-3 left-3">
-          <div
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${
-              product.badge === "Bestseller"
-                ? "bg-gradient-to-r from-red-500 to-red-600"
-                : product.badge === "Popular"
-                ? "bg-gradient-to-r from-blue-500 to-blue-600"
-                : product.badge === "Limited"
-                ? "bg-gradient-to-r from-orange-500 to-orange-600"
-                : "bg-gradient-to-r from-green-500 to-green-600"
-            }`}
-          >
-            {product.badge}
-          </div>
-        </div>
-
-        {/* Discount Badge */}
-        {product.discount && (
-          <div className="absolute top-3 right-12 bg-emerald-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-            -{product.discount}%
-          </div>
-        )}
 
         {/* Wishlist Button */}
         <button
-          className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 group/wishlist"
-          aria-label="Add to wishlist"
+          onClick={() => toggleWishlist(product)}
+          disabled={isLoading}
+          className={`absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 group/wishlist ${
+            isLoading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          aria-label={
+            isProductWishlisted ? "Remove from wishlist" : "Add to wishlist"
+          }
         >
-          <FaHeart className="text-gray-600 group-hover/wishlist:text-red-500 text-sm transition-colors" />
+          <FaHeart
+            className={`text-sm transition-colors ${
+              isProductWishlisted
+                ? "text-red-500 fill-red-500"
+                : "text-gray-600 group-hover/wishlist:text-red-500"
+            }`}
+          />
         </button>
       </div>
 
@@ -107,18 +271,30 @@ const ProductCard = ({ product }) => {
               className="w-4 h-4 mr-1.5"
             />
             <span className="text-xl font-bold text-gray-900">
-              {product.price}
+              {product.salePrice?.toLocaleString() || "0"}
             </span>
           </div>
-          {product.originalPrice && (
+          {product.regularPrice && product.regularPrice > product.salePrice && (
             <span className="text-sm text-gray-500 line-through ml-1">
-              {product.originalPrice}
+              {product.regularPrice?.toLocaleString()}
             </span>
           )}
         </div>
 
+        {/* Categories */}
+        {product.categories && product.categories.length > 0 && (
+          <div className="mb-3">
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              {product.categories[0]}
+            </span>
+          </div>
+        )}
+
         {/* Add to Cart Button */}
-        <button className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#0061b0ee] hover:to-[#1e518e] text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-300 hover:shadow-lg active:scale-95 group/cart">
+        <button
+          onClick={() => addToCart(product)}
+          className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#0061b0ee] hover:to-[#1e518e] text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-300 hover:shadow-lg active:scale-95 group/cart"
+        >
           <FaShoppingCart className="text-sm group-hover/cart:scale-110 transition-transform" />
           <span>Add to Cart</span>
         </button>
@@ -127,7 +303,110 @@ const ProductCard = ({ product }) => {
   );
 };
 
-const SimilarProduct = () => {
+const SimilarProduct = ({ productId }) => {
+  const [similarProducts, setSimilarProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch similar products
+  useEffect(() => {
+    const fetchSimilarProducts = async () => {
+      const token = localStorage.getItem("token");
+      if (!productId) return;
+
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `http://localhost:9000/api/products/${productId}/similar`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (response.data.success) {
+          setSimilarProducts(response.data.products || []);
+        } else {
+          setSimilarProducts([]);
+        }
+      } catch (err) {
+        console.error("Error fetching similar products:", err);
+        setError("Failed to load similar products");
+        setSimilarProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSimilarProducts();
+  }, [productId]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="bg-gray-50/80 py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">
+              Similar Products
+            </h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
+              Loading similar products...
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-xl shadow-sm p-5 animate-pulse"
+              >
+                <div className="h-52 bg-gray-200 rounded-lg mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                <div className="h-8 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="bg-gray-50/80 py-12 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            Similar Products
+          </h2>
+          <p className="text-gray-600 text-lg mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no similar products
+  if (!similarProducts || similarProducts.length === 0) {
+    return (
+      <div className="bg-gray-50/80 py-12 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            Similar Products
+          </h2>
+          <p className="text-gray-600 text-lg">
+            No similar products found at the moment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50/80 py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -137,20 +416,21 @@ const SimilarProduct = () => {
             Similar Products
           </h2>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
-            Discover more premium products that match your exquisite style and preferences
+            Discover more premium products that match your exquisite style and
+            preferences
           </p>
         </div>
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {productsData.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {similarProducts.map((product) => (
+            <ProductCard key={product._id} product={product} />
           ))}
         </div>
 
         {/* View More Button */}
         <div className="mt-12 text-center">
-          <button className="inline-flex items-center px-8 py-4 border-2 border-gray-300 rounded-xl text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-300">
+          <button className="inline-flex items-center px-8 py-4 border-2 border-gray-300 rounded-xl text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-300 group">
             View More Products
             <svg
               className="ml-3 w-5 h-5 transition-transform group-hover:translate-y-0.5"
@@ -175,10 +455,7 @@ const SimilarProduct = () => {
           <div className="max-w-7xl mx-auto mt-12 bg-white rounded-xl shadow-sm p-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="flex flex-col items-center text-center"
-                >
+                <div key={i} className="flex flex-col items-center text-center">
                   <div className="h-12 w-12 bg-gray-200 rounded-full animate-pulse mb-3"></div>
                   <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4 mb-2"></div>
                   <div className="h-3 bg-gray-200 rounded animate-pulse w-full"></div>
@@ -188,7 +465,7 @@ const SimilarProduct = () => {
           </div>
         }
       >
-       
+        {/* You can add services component here if needed */}
       </Suspense>
     </div>
   );

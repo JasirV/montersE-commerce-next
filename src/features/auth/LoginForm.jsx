@@ -32,7 +32,7 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
 
     if (response.status === 201 || response.status === 200) {
 
-      console.log(response,"jasir super");
+     
       
       // ✅ Extract token + user data
       const { token, userId, name } = response.data;
@@ -61,7 +61,7 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
       );
       window.dispatchEvent(new Event("localStorageUpdated"));
 
-      toast.success("✅ Login successful!");
+      toast.success("Login successful!");
       onRequestClose();
 
       // Small delay to ensure state updates

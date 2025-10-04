@@ -23,8 +23,6 @@ export default function WishlistBasePage() {
     }
   }, [router]);
 
-
-
   useEffect(() => {
     if (!token) return;
 
@@ -64,13 +62,10 @@ export default function WishlistBasePage() {
   }, [token, router]);
 
   const handleWishlistCreated = (newWishlist) => {
-    console.log("Wishlist created:", newWishlist); // Debug log
-    
     if (newWishlist && newWishlist.id) {
-      toast.success("🎉 Your first wishlist has been created!");
-      setTimeout(() => {
-        router.push(`/wishlist/${newWishlist.id}`);
-      }, 500);
+      toast.success("Your first wishlist has been created!");
+      // Navigate immediately to the new wishlist page
+      router.push(`/wishlist/${newWishlist.id}`);
     } else {
       console.log("Invalid wishlist data:", newWishlist);
     }

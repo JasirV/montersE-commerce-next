@@ -80,10 +80,8 @@ const ShoppingWishlist = () => {
         }
       );
 
-      if (response.data.success) {
-        toast.success("Item added to cart successfully! 🛒")    
-      } else {
-        throw new Error(response.data.message || "Failed to add item to cart");
+      if (response.status === 200) {
+        toast.success("Item added to cart successfully")    
       }
     } catch (error) {
       console.log("Error adding to cart:", error);
@@ -139,7 +137,7 @@ const ShoppingWishlist = () => {
         }
       );
 
-      console.log();
+     
 
       console.log("📥 Fetch wishlists response:", response.data);
       const wishlists = response.data.wishlists || [];
@@ -286,6 +284,14 @@ const ShoppingWishlist = () => {
       toast.error(error.response?.data?.message || "Failed to update wishlist");
     }
   };
+
+  // const handleViewDetails = () => {
+  //   console.log("Navigating to product:", product);
+  //   router.push(`/ProductDetailPage/${product._id}`);
+  // };
+
+
+
 
   // Toggle Public Sharing with API integration - IMPROVED STATE SYNC
   const handleTogglePublicSharing = async () => {
@@ -952,7 +958,7 @@ const ShoppingWishlist = () => {
                       </button>
 
                       <button
-                        onClick={() => handleViewProduct(item)}
+                        onClick={() => router.push(`/ProductDetailPage/${item.id}`)}
                         className={`border border-gray-300 text-gray-700 py-2 rounded font-medium hover:bg-gray-50 transition-colors ${
                           viewMode === "grid"
                             ? "flex-1 text-xs"

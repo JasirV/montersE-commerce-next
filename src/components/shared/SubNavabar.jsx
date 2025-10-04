@@ -24,10 +24,12 @@ import SilverCufflinks from "../../assets/Silver Cufflinks.jpg";
 import FountainPen from "../../assets/Fountain Pen.jpg";
 import AccessoryDeals from "../../assets/Accessory Deals.jpg";
 import { useCurrency } from "@/app/CurrencyContext";
-import newCurrency from '../../assets/newSymbole.png'
+import newCurrency from '../../assets/newSymbole.png';
 import Image from "next/image";
-
 import axios from "axios";
+
+// Import the MegaMenu component
+import MegaMenu from "./MegaMenu";
 
 const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currency, setCurrency, setRate } = useCurrency();
@@ -45,84 +47,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Handle currency change
-  const handleCurrencyChange = async (currency) => {
-    setIsLoading(true);
-    setSelectedCurrency(currency);
-    setCurrency(currency.code);
-
-    try {
-      const res = await axios.get(
-        `http://localhost:9000/api/Auth/convert-price`,
-        {
-          params: {
-            amount: 1,
-            from: "AED",
-            to: currency.code,
-          },
-        }
-      );
-
-      if (res.data && res.data.converted !== undefined) {
-        setRate(res.data.converted);
-        console.log(
-          `Currency changed to ${currency.code}, rate: ${res.data.converted}`
-        );
-      } else {
-        throw new Error("Invalid response from server");
-      }
-    } catch (err) {
-      console.error("Conversion failed", err.response?.data || err.message);
-      // Fallback to default rate if API fails
-      const fallbackRates = {
-        USD: 0.27,
-        EUR: 0.25,
-        GBP: 0.21,
-        INR: 22.5,
-        SAR: 1.02,
-        AED: 1,
-      };
-      setRate(fallbackRates[currency.code] || 1);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Initialize currency from context on component mount
-  useEffect(() => {
-    const initialCurrency =
-      currencyOptions.find((opt) => opt.code === currency) ||
-      currencyOptions[0];
-    setSelectedCurrency(initialCurrency);
-  }, [currency]);
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 10);
-    const checkScreenSize = () => setIsDesktop(window.innerWidth >= 768);
-
-    // Initial check
-    checkScreenSize();
-
-    window.addEventListener("scroll", handleScroll);
-    window.addEventListener("resize", checkScreenSize);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", checkScreenSize);
-    };
-  }, []);
-
-  // Currency options
-  const currencyOptions = [
-    { code: "AED", symbol: "د.إ", name: "UAE Dirham", flag: "🇦🇪" },
-    { code: "USD", symbol: "$", name: "US Dollar", flag: "🇺🇸" },
-    { code: "EUR", symbol: "€", name: "Euro", flag: "🇪🇺" },
-    { code: "GBP", symbol: "£", name: "British Pound", flag: "🇬🇧" },
-    { code: "INR", symbol: "₹", name: "Indian Rupee", flag: "🇮🇳" },
-    { code: "SAR", symbol: "﷼", name: "Saudi Riyal", flag: "🇸🇦" },
-  ];
-
-  // Mega menu data for different categories
+  // Mega Menu Data
   const megaMenuData = {
     watches: {
       categories: [
@@ -229,6 +154,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     },
   };
 
+  // Menu Items
   const menuItems = [
     {
       name: "SHOP BY BRANDS",
@@ -298,6 +224,78 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     },
   ];
 
+  // Currency options
+  const currencyOptions = [
+    { code: "AED", symbol: "د.إ", name: "UAE Dirham", flag: "🇦🇪" },
+    { code: "USD", symbol: "$", name: "US Dollar", flag: "🇺🇸" },
+    { code: "EUR", symbol: "€", name: "Euro", flag: "🇪🇺" },
+    { code: "GBP", symbol: "£", name: "British Pound", flag: "🇬🇧" },
+    { code: "INR", symbol: "₹", name: "Indian Rupee", flag: "🇮🇳" },
+    { code: "SAR", symbol: "﷼", name: "Saudi Riyal", flag: "🇸🇦" },
+  ];
+
+  // Handle currency change
+  const handleCurrencyChange = async (currency) => {
+    setIsLoading(true);
+    setSelectedCurrency(currency);
+    setCurrency(currency.code);
+
+    try {
+      const res = await axios.get(
+        `http://localhost:9000/api/Auth/convert-price`,
+        {
+          params: {
+            amount: 1,
+            from: "AED",
+            to: currency.code,
+          },
+        }
+      );
+
+      if (res.data && res.data.converted !== undefined) {
+        setRate(res.data.converted);
+      } else {
+        throw new Error("Invalid response from server");
+      }
+    } catch (err) {
+      console.error("Conversion failed", err.response?.data || err.message);
+      const fallbackRates = {
+        USD: 0.27,
+        EUR: 0.25,
+        GBP: 0.21,
+        INR: 22.5,
+        SAR: 1.02,
+        AED: 1,
+      };
+      setRate(fallbackRates[currency.code] || 1);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initialize currency from context on component mount
+  useEffect(() => {
+    const initialCurrency =
+      currencyOptions.find((opt) => opt.code === currency) ||
+      currencyOptions[0];
+    setSelectedCurrency(initialCurrency);
+  }, [currency]);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
+    const checkScreenSize = () => setIsDesktop(window.innerWidth >= 768);
+
+    checkScreenSize();
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", checkScreenSize);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", checkScreenSize);
+    };
+  }, []);
+
+  // Helper functions
   const toggleDropdown = useCallback(
     (name) => setDropdown((prev) => (prev === name ? null : name)),
     []
@@ -322,31 +320,30 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     setIsCurrencyOpen(false);
   }, []);
 
-const getCurrencyIcon = (code) => {
-  switch (code) {
-    case "USD":
-      return <FaDollarSign className="text-green-600" />;
-    case "EUR":
-      return <FaEuroSign className="text-blue-600" />;
-    case "GBP":
-      return <FaPoundSign className="text-red-600" />;
-    case "INR":
-      return <FaRupeeSign className="text-orange-600" />;
-    case "AED":
-      return (
-        <Image
-          src={newCurrency}
-          alt="AED"
-          width={16}
-          height={16}
-          className="inline-block"
-        />
-      );
-    default:
-      return <span className="text-amber-600 font-bold">{selectedCurrency.symbol}</span>;
-  }
-};
-
+  const getCurrencyIcon = (code) => {
+    switch (code) {
+      case "USD":
+        return <FaDollarSign className="text-green-600" />;
+      case "EUR":
+        return <FaEuroSign className="text-blue-600" />;
+      case "GBP":
+        return <FaPoundSign className="text-red-600" />;
+      case "INR":
+        return <FaRupeeSign className="text-orange-600" />;
+      case "AED":
+        return (
+          <Image
+            src={newCurrency}
+            alt="AED"
+            width={16}
+            height={16}
+            className="inline-block"
+          />
+        );
+      default:
+        return <span className="text-amber-600 font-bold">{selectedCurrency.symbol}</span>;
+    }
+  };
 
   // Function to render currency selector for desktop
   const renderDesktopCurrencySelector = () => (
@@ -457,97 +454,6 @@ const getCurrencyIcon = (code) => {
     </div>
   );
 
-  const renderMegaMenu = (megaMenuKey) => {
-    if (!isDesktop) return null; // Only render on desktop
-
-    const data = megaMenuData[megaMenuKey];
-
-    return (
-      <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-0 w-screen max-w-5xl bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden">
-        <div className="p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Column 1: Categories */}
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-4 text-lg">
-                Categories
-              </h3>
-              <ul className="space-y-3">
-                {data.categories.map((category) => (
-                  <li key={category.name}>
-                    <Link
-                      href={category.path}
-                      className="text-gray-600 hover:text-amber-600 transition-colors duration-200 block py-1"
-                    >
-                      {category.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Column 2: Featured Products */}
-            <div className="lg:col-span-2">
-              <h3 className="font-semibold text-gray-900 mb-4 text-lg">
-                Featured Products
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {data.featuredProducts.map((product) => (
-                  <Link
-                    key={product.id}
-                    href={`/product/${product.id}`}
-                    className="group flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-all duration-200"
-                  >
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      width={product.width}
-                      height={product.height}
-                      className="w-16 h-16 object-cover rounded-lg group-hover:scale-105 transition-transform duration-200"
-                    />
-                    <div>
-                      <h4 className="font-medium text-gray-900 group-hover:text-amber-600 transition-colors">
-                        {product.name}
-                      </h4>
-                      <Image src={newCurrency} alt="AED" width={14} height={14} className="inline-block" />
-                      <p className="text-amber-600 font-semibold">
-                        {product.price}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Column 3: Promotion & Newsletter */}
-            <div className="space-y-6">
-              {/* Promotion Banner */}
-              <div className="relative group overflow-hidden rounded-lg">
-                <Image
-                  src={data.promotion.image}
-                  alt={data.promotion.title}
-                  width={data.promotion.width}
-                  height={data.promotion.height}
-                  className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <h4 className="font-bold text-lg">
-                      {data.promotion.title}
-                    </h4>
-                    <p className="text-sm mb-2">{data.promotion.description}</p>
-                    <button className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                      {data.promotion.cta}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // Function to render nested submenus for desktop
   const renderDesktopSubMenu = (subItems, level = 0) => {
     return (
@@ -618,277 +524,216 @@ const getCurrencyIcon = (code) => {
     ));
   };
 
-  // Function to render mobile menu content (without mega menu layout)
-  const renderMobileMenuContent = (megaMenuKey) => {
-    const data = megaMenuData[megaMenuKey];
-
-    return (
-      <div className="pl-4 pb-4 space-y-4">
-        {/* Categories */}
-        <div>
-          <h4 className="font-semibold text-gray-900 mb-2">Categories</h4>
-          <ul className="space-y-2">
-            {data.categories.map((category) => (
-              <li key={category.name}>
-                <Link
-                  href={category.path}
-                  className="text-gray-600 hover:text-amber-600 block py-1"
-                  onClick={closeMobileMenu}
-                >
-                  {category.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Featured Products */}
-        <div>
-          <h4 className="font-semibold text-gray-900 mb-2">Featured</h4>
-          <div className="space-y-3">
-            {data.featuredProducts.map((product) => (
-              <Link
-                key={product.id}
-                href={`/product/${product.id}`}
-                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50"
-                onClick={closeMobileMenu}
-              >
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  width={60}
-                  height={60}
-                  className="w-12 h-12 object-cover rounded"
-                />
-                <div>
-                  <p className="font-medium text-sm">{product.name}</p>
-                  <p className="text-amber-600 text-sm font-semibold">
-                  <Image src={newCurrency} alt="AED" width={14} height={14} className="inline-block" />
-                    {product.price}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Promotion */}
-        <div className="bg-gray-50 p-3 rounded-lg">
-          <h4 className="font-semibold text-gray-900 mb-1">
-            {data.promotion.title}
-          </h4>
-          <p className="text-sm text-gray-600 mb-2">
-            {data.promotion.description}
-          </p>
-          <Link
-            href={
-              megaMenuKey === "watches"
-                ? "/watches"
-                : megaMenuKey === "leathers"
-                ? "/leathers"
-                : "/accessories"
-            }
-            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded text-sm w-full transition-colors block text-center"
-            onClick={closeMobileMenu}
-          >
-            {data.promotion.cta}
-          </Link>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
       {/* Desktop SubNavbar */}
       <header
-        className={`w-full bg-white sticky top-14 md:top-16 z-40 transition-all duration-300 ${
-          isScrolled ? "shadow-md" : "shadow-sm"
-        } hidden md:block`}
+        className={`w-full bg-white sticky top-14 lg:top-16 z-40 transition-all duration-300 ${
+          isScrolled ? "shadow-lg" : "shadow-sm"
+        } hidden lg:block`}
       >
-        <div className="container mx-auto px-4 md:px-6 lg:px-8 flex justify-between items-center h-12 md:h-14">
-          {/* Centered Main Menu */}
-          <nav className="flex-1 flex justify-center">
-            <div className="flex items-center justify-center gap-4 md:gap-6 lg:gap-8 h-full">
-              {menuItems.map((item) => (
-                <div
-                  key={item.name}
-                  className="relative group h-full flex items-center"
-                  onMouseEnter={() => setDropdown(item.name)}
-                  onMouseLeave={() => setDropdown(null)}
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="flex justify-between items-center h-14">
+            {/* Main Navigation */}
+            <nav className="flex-1 flex justify-center">
+              <div className="flex items-center justify-center gap-6 xl:gap-8 h-full">
+                {menuItems.map((item) => (
+                  <div
+                    key={item.name}
+                    className="relative group h-full flex items-center"
+                    onMouseEnter={() => setDropdown(item.name)}
+                    onMouseLeave={() => setDropdown(null)}
+                  >
+                    <Link
+                      href={item.path || "#"}
+                      className="block text-gray-800 font-semibold hover:text-amber-700 transition-colors text-sm xl:text-base whitespace-nowrap py-2 px-1 border-b-2 border-transparent hover:border-amber-500"
+                    >
+                      {item.name}
+                    </Link>
+
+                    {/* Mega Menu for specific items */}
+                    {item.hasMegaMenu &&
+                      dropdown === item.name && (
+                        <MegaMenu 
+                          data={megaMenuData[item.megaMenuKey]} 
+                          megaMenuKey={item.megaMenuKey}
+                          isMobile={false}
+                        />
+                      )}
+
+                    {/* Regular Submenu for other items */}
+                    {item.subMenu &&
+                      !item.hasMegaMenu &&
+                      dropdown === item.name &&
+                      renderDesktopSubMenu(item.subMenu)}
+                  </div>
+                ))}
+              </div>
+            </nav>
+
+            {/* Right side items - Currency, Help & Language */}
+            <div className="flex items-center gap-4 pl-6 border-l border-gray-200">
+              {/* Currency Selector */}
+              {renderDesktopCurrencySelector()}
+
+              {/* Help */}
+              <div className="relative">
+                <button
+                  onClick={toggleHelp}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 text-sm transition-colors duration-200 border border-gray-200"
                 >
-                  <Link
-                    href={item.path || "#"}
-                    className="block text-gray-800 font-medium hover:text-amber-700 transition-colors text-sm md:text-base whitespace-nowrap py-2"
-                  >
-                    {item.name}
-                  </Link>
-
-                  {/* Mega Menu for specific items - DESKTOP ONLY */}
-                  {item.hasMegaMenu &&
-                    dropdown === item.name &&
-                    renderMegaMenu(item.megaMenuKey)}
-
-                  {/* Regular Submenu for other items */}
-                  {item.subMenu &&
-                    !item.hasMegaMenu &&
-                    dropdown === item.name &&
-                    renderDesktopSubMenu(item.subMenu)}
-                </div>
-              ))}
-            </div>
-          </nav>
-
-          {/* Right side items - Currency, Help & Language */}
-          <div className="flex items-center gap-4 md:gap-6">
-            {/* Currency Selector */}
-            {renderDesktopCurrencySelector()}
-
-            {/* Help */}
-            <div className="relative">
-              <button
-                onClick={toggleHelp}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-100 text-sm transition-colors duration-200"
-              >
-                <FaPhone className="text-[#1e518e]" size={14} />
-                <span>Support</span>
-                <FaChevronDown
-                  className={`transition-transform duration-200 ${
-                    isHelpOpen ? "rotate-180" : ""
-                  }`}
-                  size={12}
-                />
-              </button>
-              {isHelpOpen && (
-                <div className="absolute right-0 mt-2 w-52 bg-white shadow-xl rounded-lg py-2 z-50 border border-gray-200">
-                  <a
-                    href="tel:+97112345678"
-                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 text-sm transition-colors"
-                  >
-                    <FaPhone className="text-[#1e518e]" />
-                    <div>
-                      <div>Call Support</div>
-                      <div className="text-xs text-gray-500">
-                        +971 1234 5678
-                      </div>
+                  <FaPhone className="text-[#1e518e]" size={16} />
+                  <span className="font-semibold text-gray-700">Support</span>
+                  <FaChevronDown
+                    className={`transition-transform duration-200 ${
+                      isHelpOpen ? "rotate-180" : ""
+                    } text-gray-500`}
+                    size={12}
+                  />
+                </button>
+                {isHelpOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white shadow-xl rounded-lg py-3 z-50 border border-gray-200">
+                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100 bg-gray-50">
+                      HELP & SUPPORT
                     </div>
-                  </a>
-                  <Link
-                    href="/ContactForm"
-                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 text-sm transition-colors"
-                  >
-                    <FaEnvelope className="text-[#1e518e]" />
-                    Contact Form
-                  </Link>
-                  <Link
-                    href="/LiveChat"
-                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 text-sm transition-colors"
-                  >
-                    <FaComments className="text-[#1e518e]" />
-                    Live Chat
-                  </Link>
-                  <Link
-                    href="/Faq"
-                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 text-sm transition-colors"
-                  >
-                    <FaQuestionCircle className="text-[#1e518e]" />
-                    FAQs
-                  </Link>
-                </div>
-              )}
-            </div>
+                    <a
+                      href="tel:+97112345678"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm transition-colors border-b border-gray-100"
+                    >
+                      <FaPhone className="text-[#1e518e]" size={16} />
+                      <div>
+                        <div className="font-medium">Call Support</div>
+                        <div className="text-xs text-gray-500">+971 1234 5678</div>
+                      </div>
+                    </a>
+                    <Link
+                      href="/ContactForm"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm transition-colors border-b border-gray-100"
+                    >
+                      <FaEnvelope className="text-[#1e518e]" size={16} />
+                      <span className="font-medium">Contact Form</span>
+                    </Link>
+                    <Link
+                      href="/LiveChat"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm transition-colors border-b border-gray-100"
+                    >
+                      <FaComments className="text-[#1e518e]" size={16} />
+                      <span className="font-medium">Live Chat</span>
+                    </Link>
+                    <Link
+                      href="/Faq"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm transition-colors"
+                    >
+                      <FaQuestionCircle className="text-[#1e518e]" size={16} />
+                      <span className="font-medium">FAQs</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
 
-            {/* Language */}
-            <div className="relative">
-              <button
-                onClick={toggleLanguage}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-100 text-sm transition-colors duration-200"
-              >
-                <FaGlobe className="text-[#1e518e]" size={14} />
-                <span>English</span>
-                <FaChevronDown
-                  className={`transition-transform duration-200 ${
-                    isLanguageOpen ? "rotate-180" : ""
-                  }`}
-                  size={12}
-                />
-              </button>
-              {isLanguageOpen && (
-                <div className="absolute right-0 mt-2 w-36 bg-white shadow-xl rounded-lg py-2 z-50 border border-gray-200">
-                  <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-sm transition-colors">
-                    🇬🇧 English
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-sm transition-colors">
-                    🇦🇪 العربية
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-sm transition-colors">
-                    🇮🇳 हिन्दी
-                  </button>
-                </div>
-              )}
+              {/* Language */}
+              <div className="relative">
+                <button
+                  onClick={toggleLanguage}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 text-sm transition-colors duration-200 border border-gray-200"
+                >
+                  <FaGlobe className="text-[#1e518e]" size={16} />
+                  <span className="font-semibold text-gray-700">English</span>
+                  <FaChevronDown
+                    className={`transition-transform duration-200 ${
+                      isLanguageOpen ? "rotate-180" : ""
+                    } text-gray-500`}
+                    size={12}
+                  />
+                </button>
+                {isLanguageOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-lg py-2 z-50 border border-gray-200">
+                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100 bg-gray-50">
+                      SELECT LANGUAGE
+                    </div>
+                    <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm transition-colors border-b border-gray-100">
+                      <span className="text-lg">🇬🇧</span>
+                      <span className="font-medium">English</span>
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm transition-colors border-b border-gray-100">
+                      <span className="text-lg">🇦🇪</span>
+                      <span className="font-medium">العربية</span>
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm transition-colors">
+                      <span className="text-lg">🇮🇳</span>
+                      <span className="font-medium">हिन्दी</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu - Half Screen */}
+      {/* Mobile Menu */}
       <div
-        className={`fixed inset-y-0 left-0 w-3/4 bg-white z-50 shadow-xl transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 w-full sm:w-4/5 bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        } md:hidden`}
+        } lg:hidden`}
       >
         {/* Mobile Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-          <h2 className="text-lg font-bold text-gray-800">Montres</h2>
+        <div className="flex justify-between items-center p-6 border-b border-gray-300 bg-gradient-to-r from-gray-50 to-white">
+          <h2 className="text-xl font-bold text-gray-800">Montres Boutique</h2>
           <button
             onClick={closeMobileMenu}
-            className="p-9 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+            className="p-3 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
             aria-label="Close menu"
           >
-            <FaTimes size={20} />
+            <FaTimes size={24} />
           </button>
         </div>
 
-        {/* Mobile Items */}
-        <div className="overflow-y-auto h-full pb-20">
+        {/* Mobile Menu Content */}
+        <div className="overflow-y-auto h-full pb-32">
+          {/* Main Menu Items */}
           {menuItems.map((item) => (
-            <div key={item.name} className="border-b border-gray-100">
-              {/* If item has no submenu or mega menu, render as direct link */}
+            <div key={item.name} className="border-b border-gray-200">
               {!item.subMenu && !item.hasMegaMenu ? (
                 <Link
                   href={item.path}
-                  className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors"
+                  className="w-full flex justify-between items-center px-6 py-5 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
                   onClick={closeMobileMenu}
                 >
-                  <span className="font-medium text-gray-700 hover:text-yellow-600 transition">
+                  <span className="font-semibold text-gray-700 text-base hover:text-amber-600 transition">
                     {item.name}
                   </span>
                 </Link>
               ) : (
-                // If item has submenu or mega menu, render as toggle button
                 <button
                   onClick={() => toggleDropdown(item.name)}
-                  className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors"
+                  className="w-full flex justify-between items-center px-6 py-5 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
                 >
-                  <span className="font-medium text-gray-700 hover:text-yellow-600 transition">
+                  <span className="font-semibold text-gray-700 text-base">
                     {item.name}
                   </span>
                   <span className="text-gray-400">
                     {dropdown === item.name ? (
-                      <FaChevronDown size={14} />
+                      <FaChevronDown size={18} />
                     ) : (
-                      <FaChevronRight size={14} />
+                      <FaChevronRight size={18} />
                     )}
                   </span>
                 </button>
               )}
 
-              {/* Mobile Menu Content (simplified layout for mobile) */}
+              {/* Mobile Menu Content */}
               {(item.hasMegaMenu || item.subMenu) && dropdown === item.name && (
-                <div className="bg-gray-50 pl-5">
-                  {item.hasMegaMenu
-                    ? renderMobileMenuContent(item.megaMenuKey)
-                    : renderMobileSubMenu(item.subMenu, item.name)}
+                <div className="bg-white">
+                  {item.hasMegaMenu ? (
+                    <MegaMenu 
+                      data={megaMenuData[item.megaMenuKey]} 
+                      megaMenuKey={item.megaMenuKey}
+                      isMobile={true}
+                    />
+                  ) : (
+                    renderMobileSubMenu(item.subMenu, item.name)
+                  )}
                 </div>
               )}
             </div>
@@ -898,103 +743,111 @@ const getCurrencyIcon = (code) => {
           {renderMobileCurrencySelector()}
 
           {/* Mobile Help */}
-          <div className="border-b border-gray-100">
+          <div className="border-b border-gray-200">
             <button
               onClick={toggleHelp}
-              className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors"
+              className="w-full flex justify-between items-center px-6 py-5 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
             >
-              <div className="flex items-center gap-3">
-                <FaPhone className="text-[#1e518e]" />
-                <span className="font-medium text-base">Help & Support</span>
+              <div className="flex items-center gap-4">
+                <FaPhone className="text-[#1e518e]" size={20} />
+                <span className="font-semibold text-base">Help & Support</span>
               </div>
               <FaChevronDown
-                className={`text-gray-400 transition-transform ${
+                className={`text-gray-400 transition-transform duration-200 ${
                   isHelpOpen ? "rotate-180" : ""
                 }`}
+                size={18}
               />
             </button>
             {isHelpOpen && (
-              <div className="bg-gray-50 pl-5">
+              <div className="bg-gray-50 border-t border-gray-200">
                 <a
                   href="tel:+97112345678"
-                  className="flex items-center gap-3 px-5 py-3 text-gray-600 hover:bg-gray-100 text-sm border-t border-gray-100 transition-colors"
+                  className="flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base border-b border-gray-200 transition-colors"
                   onClick={closeMobileMenu}
                 >
-                  <FaPhone className="text-[#1e518e]" />
-                  Call Support
+                  <FaPhone className="text-[#1e518e]" size={18} />
+                  <div>
+                    <div className="font-medium">Call Support</div>
+                    <div className="text-sm text-gray-600">+971 1234 5678</div>
+                  </div>
                 </a>
                 <Link
                   href="/ContactForm"
-                  className="flex items-center gap-3 px-5 py-3 text-gray-600 hover:bg-gray-100 text-sm border-t border-gray-100 transition-colors"
+                  className="flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base border-b border-gray-200 transition-colors"
                   onClick={closeMobileMenu}
                 >
-                  <FaEnvelope className="text-[#1e518e]" />
-                  Contact Form
+                  <FaEnvelope className="text-[#1e518e]" size={18} />
+                  <span className="font-medium">Contact Form</span>
                 </Link>
                 <Link
-                  href="/live-chat"
-                  className="flex items-center gap-3 px-5 py-3 text-gray-600 hover:bg-gray-100 text-sm border-t border-gray-100 transition-colors"
+                  href="/LiveChat"
+                  className="flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base border-b border-gray-200 transition-colors"
                   onClick={closeMobileMenu}
                 >
-                  <FaComments className="text-[#1e518e]" />
-                  Live Chat
+                  <FaComments className="text-[#1e518e]" size={18} />
+                  <span className="font-medium">Live Chat</span>
                 </Link>
                 <Link
                   href="/Faq"
-                  className="flex items-center gap-3 px-5 py-3 text-gray-600 hover:bg-gray-100 text-sm border-t border-gray-100 transition-colors"
+                  className="flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base transition-colors"
                   onClick={closeMobileMenu}
                 >
-                  <FaQuestionCircle className="text-[#1e518e]" />
-                  FAQs
+                  <FaQuestionCircle className="text-[#1e518e]" size={18} />
+                  <span className="font-medium">FAQs</span>
                 </Link>
               </div>
             )}
           </div>
 
           {/* Mobile Language */}
-          <div className="border-b border-gray-100">
+          <div className="border-b border-gray-200">
             <button
               onClick={toggleLanguage}
-              className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors"
+              className="w-full flex justify-between items-center px-6 py-5 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
             >
-              <div className="flex items-center gap-3">
-                <FaGlobe className="text-[#1e518e]" />
-                <span className="font-medium text-base">Language</span>
+              <div className="flex items-center gap-4">
+                <FaGlobe className="text-[#1e518e]" size={20} />
+                <span className="font-semibold text-base">Language</span>
               </div>
               <FaChevronDown
-                className={`text-gray-400 transition-transform ${
+                className={`text-gray-400 transition-transform duration-200 ${
                   isLanguageOpen ? "rotate-180" : ""
                 }`}
+                size={18}
               />
             </button>
             {isLanguageOpen && (
-              <div className="bg-gray-50 pl-5">
+              <div className="bg-gray-50 border-t border-gray-200">
                 <button
-                  className="w-full flex items-center gap-3 px-5 py-3 text-gray-600 hover:bg-gray-100 text-sm border-t border-gray-100 transition-colors"
+                  className="w-full flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base border-b border-gray-200 transition-colors"
                   onClick={() => {
                     setIsLanguageOpen(false);
                     closeMobileMenu();
                   }}
                 >
-                  🇬🇧 English
+                  <span className="text-xl">🇬🇧</span>
+                  <span className="font-medium">English</span>
                 </button>
                 <button
-                  className="w-full flex items-center gap-3 px-5 py-3 text-gray-600 hover:bg-gray-100 text-sm border-t border-gray-100 transition-colors"
+                  className="w-full flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base border-b border-gray-200 transition-colors"
                   onClick={() => {
                     setIsLanguageOpen(false);
                     closeMobileMenu();
                   }}
                 >
-                  🇦🇪 العربية
+                  <span className="text-xl">🇦🇪</span>
+                  <span className="font-medium">العربية</span>
                 </button>
                 <button
-                  className="w-full flex items-center gap-3 px-5 py-3 text-gray-600 hover:bg-gray-100 text-sm border-t border-gray-100 transition-colors"
+                  className="w-full flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base transition-colors"
                   onClick={() => {
                     setIsLanguageOpen(false);
                     closeMobileMenu();
                   }}
                 >
-                  🇮🇳 हिन्दी
+                  <span className="text-xl">🇮🇳</span>
+                  <span className="font-medium">हिन्दी</span>
                 </button>
               </div>
             )}
@@ -1002,10 +855,10 @@ const getCurrencyIcon = (code) => {
         </div>
       </div>
 
-      {/* Overlay for mobile menu - Changed to blur effect */}
+      {/* Overlay for mobile menu */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 backdrop-blur-sm bg-white/10 z-40 md:hidden"
+          className="fixed inset-0 backdrop-blur-sm bg-black/20 z-40 lg:hidden"
           onClick={closeMobileMenu}
         ></div>
       )}

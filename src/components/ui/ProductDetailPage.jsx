@@ -18,6 +18,8 @@ import Image from "next/image";
 const ReviewsRatings = lazy(() => import("./ReviewsRatings"));
 import { addToCart, fetchProduct } from "@/service/productService";
 import axios from "axios";
+import { toast } from "react-toastify";
+import SimilarProduct from "./SimillarProduct";
 
 const ProductDetailPage = () => {
   const router = useRouter();
@@ -151,7 +153,7 @@ const ProductDetailPage = () => {
       }
 
       if (!defaultWishlistId) {
-        console.error("No default wishlist found");
+        toast.error("No default wishlist found");
         return;
       }
 
@@ -511,21 +513,21 @@ const ProductDetailPage = () => {
             {isInCart ? (
               <button
                 onClick={handleGoToCart}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
+                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
               >
                 GO TO CART
               </button>
             ) : (
               <button
                 onClick={handleAddToCart}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
+                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
               >
                 ADD TO CART
               </button>
             )}
             <button
               onClick={handleBuyNow}
-              className="flex-1 bg-orange-600 text-white py-4 rounded-lg font-semibold hover:bg-orange-700 transition-colors text-base shadow-md"
+              className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors text-base shadow-md"
             >
               BUY NOW
             </button>
@@ -626,6 +628,7 @@ const ProductDetailPage = () => {
         }
       >
         <ReviewsRatings productId={id} />
+        <SimilarProduct productId={id} />
       </Suspense>
     </div>
   );
