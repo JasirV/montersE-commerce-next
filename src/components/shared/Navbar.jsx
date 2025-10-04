@@ -300,7 +300,7 @@ const Navbar = ({ onSignUpClick }) => {
                   ))}
                 </div>
               )}
-            </div>
+            </div>   
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-4">
