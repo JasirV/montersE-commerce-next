@@ -23,7 +23,7 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
 
   try {
     const response = await axios.post(
-      "https://montres-ecommerce-backend-1.onrender.com/api/Auth/Login",
+      "https://montres-ecommerce-backend-1.onrender.com/api/Auth/login",
       {
         email,
         password,
