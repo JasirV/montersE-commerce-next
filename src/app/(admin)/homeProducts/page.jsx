@@ -1,3 +1,4 @@
+"use client"
 import ProductGridEdit from '@/components/admin/ProductGridEdit'
 import React from 'react'
 
