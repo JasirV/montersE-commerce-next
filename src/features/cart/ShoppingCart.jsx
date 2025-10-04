@@ -434,7 +434,7 @@ useEffect(() => {
               </span>
               .{" "}
               <a href="#" className="text-blue-600 underline">
-                Learn more
+                Learn more       
               </a>
             </div>
             
