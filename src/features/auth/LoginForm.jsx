@@ -31,6 +31,9 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
     );
 
     if (response.status === 201 || response.status === 200) {
+
+      console.log(response,"jasir super");
+      
       // ✅ Extract token + user data
       const { token, userId, name } = response.data;
       

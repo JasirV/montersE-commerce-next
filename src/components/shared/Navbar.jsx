@@ -19,7 +19,9 @@ import { useSession, signOut } from "next-auth/react";
 import { fetchProductAll } from "@/service/productService";
 
 const Navbar = ({ onSignUpClick }) => {
-  const { data: session, status } = useSession();
+
+ const { data: session, status } = useSession() || {};
+
   const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);

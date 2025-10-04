@@ -10,8 +10,7 @@ import { useCurrency } from "@/app/CurrencyContext";
 const ProductGrid = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-
-    const { currency, rate } = useCurrency();
+  const { currency, rate } = useCurrency();
 
    // Dummy jewelry products for specified categories only
     const dummyJewelry = [
