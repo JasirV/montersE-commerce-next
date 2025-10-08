@@ -3,21 +3,26 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { FiTrash2, FiHeart, FiShoppingCart } from "react-icons/fi";
 import Image from "next/image";
 import Link from "next/link";
-
-import Item1 from "../../assets/Watche/rendering-smart-home-device.jpg";
-import Item2 from "../../assets/Watche/ChatGPT Image Aug 10, 2025, 10_35_04 PM.png";
-import { getCart, Recommendations, removeFromCart, updateCart } from "@/service/productService";
-import { useDispatch } from "react-redux";
-import { decrementCart } from "@/lib/store/cartSlice";
+import newCurrency from "../../assets/newSymbole.png";
+import {
+  getCart,
+  Recommendations,
+  removeFromCart,
+  updateCart,
+} from "@/service/productService";
+import { toast } from "react-toastify";
+import api from "@/api/axiosIntespter";
 
 const ShoppingCart = () => {
-   const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
-  const [loadingOne,setLoadingOne]=useState(false)
-  const [loadingTwo,setLoadingTwo]=useState(false)
-  const dispatch = useDispatch();
+  const [loadingOne, setLoadingOne] = useState(false);
+  const [loadingTwo, setLoadingTwo] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState([]);
+  const [defaultWishlistId, setDefaultWishlistId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState({});
 
   const syncTimeout = useRef(null);
 
@@ -32,58 +37,82 @@ const ShoppingCart = () => {
     }
   };
 
-useEffect(() => {
-  const fetchData = async () => {
+  // Fetch user's wishlists and check wishlist status
+  const fetchWishlists = async () => {
     try {
-      setLoadingOne(true)
-      await fetchCartItems(); // fetch cart items first if needed
-      setLoadingOne(false)
-      setLoadingTwo(true)
-      const token = localStorage.getItem("token");
-      const result = await Recommendations(token);
-      setRecommendedProducts(result.recommended);
-      setLoadingTwo(false)
-    } catch (err) {
-      console.error("Failed to fetch recommendations:", err);
-      setLoadingOne(false)
-      setLoadingTwo(false)
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        console.log("No token found");
+        return;
+      }
+
+      setIsLoading(true);
+      const res = await api.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/wishlists`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data && res.data.wishlists?.length > 0) {
+        const defaultWishlist =
+          res.data.wishlists.find((w) => w.isDefault) || res.data.wishlists[0];
+        setDefaultWishlistId(defaultWishlist._id || defaultWishlist.id);
+
+        // Extract all product IDs from all wishlists
+        const allWishlistProductIds = res.data.wishlists.flatMap(
+          (wishlist) =>
+            wishlist.products?.map((product) => product._id || product) || []
+        );
+
+        setIsWishlisted(allWishlistProductIds);
+      } else {
+        console.log("No wishlists found or empty response");
+        setDefaultWishlistId(null);
+      }
+    } catch (error) {
+      console.error("Error fetching wishlists:", error);
+      setDefaultWishlistId(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  fetchData();
-}, []);
+  // Check if a product is in wishlist
+  const checkIsWishlisted = (productId) => {
+    return isWishlisted.includes(productId);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoadingOne(true);
+        await fetchCartItems();
+        await fetchWishlists(); // Fetch wishlists after cart items
+        setLoadingOne(false);
+
+        setLoadingTwo(true);
+        const token = localStorage.getItem("accessToken");
+        const result = await Recommendations(token);
+        setRecommendedProducts(result?.recommended);
+        setLoadingTwo(false);
+      } catch (err) {
+        console.error("Failed to fetch recommendations:", err);
+        setLoadingOne(false);
+        setLoadingTwo(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleRemove = async (productId) => {
-    setCartItems((prev) => prev.filter((item) => item.productId._id !== productId));
-    const token=localStorage.getItem('token')
-    removeFromCart(token,productId)
-    dispatch(decrementCart());
-    // Debounced sync with backend
-    if (syncTimeout.current) clearTimeout(syncTimeout.current);
-    syncTimeout.current = setTimeout(syncCartWithBackend, 1000);
-  };
+    setCartItems((prev) =>
+      prev.filter((item) => item.productId._id !== productId)
+    );
 
-  const moveToWishlist = (item) => {
-    setWishlist((prev) => [...prev, item]);
-    setCartItems((prev) => prev.filter((i) => i.productId._id !== item.productId._id));
-
-    if (syncTimeout.current) clearTimeout(syncTimeout.current);
-    syncTimeout.current = setTimeout(syncCartWithBackend, 1000);
-  };
-
-  const addToCart = (product) => {
-    const existingItem = cartItems.find((item) => item.productId._id === product._id);
-    if (existingItem) {
-      setCartItems(
-        cartItems.map((item) =>
-          item.productId._id === product._id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
-      );
-    } else {
-      setCartItems([...cartItems, { productId: product, quantity: 1 }]);
-    }
+    const token = localStorage.getItem("accessToken");
+    removeFromCart(token, productId);
 
     if (syncTimeout.current) clearTimeout(syncTimeout.current);
     syncTimeout.current = setTimeout(syncCartWithBackend, 1000);
@@ -94,7 +123,9 @@ useEffect(() => {
 
     setCartItems((prev) =>
       prev.map((item) =>
-        item.productId._id === productId ? { ...item, quantity: newQuantity } : item
+        item.productId._id === productId
+          ? { ...item, quantity: newQuantity }
+          : item
       )
     );
 
@@ -104,7 +135,7 @@ useEffect(() => {
 
   const syncCartWithBackend = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       const items = cartItems.map((item) => ({
         productId: item.productId._id,
         quantity: item.quantity,
@@ -136,11 +167,144 @@ useEffect(() => {
   const subtotal = useMemo(
     () =>
       cartItems.reduce((acc, item) => {
-        const price = item.productId.salePrice || item.productId.regularPrice || 0;
+        const price =
+          item.productId?.salePrice || item.productId.regularPrice || 0;
         return acc + price * item.quantity;
       }, 0),
     [cartItems]
   );
+
+  // Toggle Wishlist (Add/Remove)
+  const handleToggleWishlist = async (product) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        toast.error("Please login to manage wishlist");
+        return;
+      }
+
+      if (!defaultWishlistId) {
+        toast.error("No wishlist available");
+        return;
+      }
+
+      const productId = product._id || product.productId?._id;
+      if (!productId) {
+        toast.error("Invalid product data");
+        return;
+      }
+
+      // Set loading state for this specific product
+      setWishlistLoading(prev => ({ ...prev, [productId]: true }));
+
+      const isAlreadyWishlisted = isWishlisted.includes(productId);
+
+      if (isAlreadyWishlisted) {
+        // ✅ Remove from wishlist
+        const response = await api.delete(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
+          {
+            data: {
+              wishlistId: defaultWishlistId,
+              productId,
+            },
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          setIsWishlisted((prev) => prev.filter((id) => id !== productId));
+          toast.info("Removed from wishlist");
+        }
+      } else {
+        // ✅ Add to wishlist
+        const response = await api.post(
+          `${process.env.NEXT_PUBLIC_BASEURL}/wishlist/add`,
+          {
+            wishlistId: defaultWishlistId,
+            productId,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          setIsWishlisted((prev) => [...prev, productId]);
+          toast.success("Added to wishlist!");
+        }
+      }
+    } catch (error) {
+      console.log("Error toggling wishlist:", error);
+      
+      if (error.response?.status === 400) {
+        toast.warning("Product is already in your wishlist!");
+      } else {
+        toast.error(error.response?.data?.message || "Something went wrong!");
+      }
+    } finally {
+      // Clear loading state for this product
+      setWishlistLoading(prev => ({ ...prev, [product._id || product.productId?._id]: false }));
+    }
+  };
+
+  const addToCart = async (product) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        toast.error("Please log in to add items to your cart");
+        return;
+      }
+
+      const productId = product._id || product.productId?._id;
+      if (!productId) {
+        toast.error("Invalid product data");
+        return;
+      }
+
+      const response = await api.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/cart/add`,
+        {
+          productId: productId,
+          quantity: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success(` added to cart`);
+        await fetchCartItems(); // Refresh the cart items after adding
+      } else {
+        toast.error("Failed to add to cart. Try again!");
+      }
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error(error.response?.data?.message || "Failed to add to cart.");
+    }
+  };
+
+  // Helper component to display price with currency symbol
+  const PriceWithCurrency = ({ amount, className = "" }) => (
+    <div className={`flex items-center gap-1 ${className}`}>
+      <Image
+        src={newCurrency}
+        alt="Currency"
+        width={16}
+        height={16}
+        className="w-4 h-4"
+      />
+      <span>{amount.toFixed(2)}</span>
+    </div>
+  );
+
   return (
     <div className="bg-gray-50 min-h-screen py-4 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -170,7 +334,13 @@ useEffect(() => {
               <FiShoppingCart className="text-4xl text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">Your cart is empty</p>
               <button
-                onClick={() => addToCart(recommendedProducts[0])}
+                onClick={() => {
+                  if (recommendedProducts?.length > 0) {
+                    addToCart(recommendedProducts[0]);
+                  } else {
+                    toast.info("No recommended products available right now!");
+                  }
+                }}
                 className="mt-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity"
               >
                 Start Shopping
@@ -178,149 +348,187 @@ useEffect(() => {
             </div>
           ) : (
             <>
-              {cartItems.map((item) => (
-                <div
-                  key={item._id}
-                  className="flex flex-col sm:flex-row justify-between items-start border-b pb-4 mb-4 gap-4"
-                >
-                  {/* Product Info */}
-                  <div className="flex items-start gap-3 sm:gap-4 flex-1">
-                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
-                      <Image
-                        src={item.productId.images[0].url}
-                        alt={item.productId.name}
-                        fill
-                        className="rounded-md object-cover"
-                      />
+              {cartItems.map((item, index) => {
+                const productId = item.productId._id;
+                const isInWishlist = checkIsWishlisted(productId);
+                const isLoadingWishlist = wishlistLoading[productId];
+
+                return (
+                  <div
+                    key={item._id || index}
+                    className="flex flex-col sm:flex-row justify-between items-start border-b pb-4 mb-4 gap-4"
+                  >
+                    {/* Product Info */}
+                    <div className="flex items-start gap-3 sm:gap-4 flex-1">
+                      <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
+                        <Image
+                          src={item.productId.images[0].url}
+                          alt={item.productId.name}
+                          fill
+                          className="rounded-md object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-800 text-sm sm:text-base line-clamp-2">
+                          {item.productId.name}
+                        </h3>
+                        <p className="text-gray-500 text-xs sm:text-sm">
+                          Sold by {item.seller}
+                        </p>
+
+                        {/* Actions */}
+                        <div className="flex gap-3 mt-3 flex-wrap">
+                          <button
+                            onClick={() => handleRemove(productId)}
+                            className="flex items-center gap-1 text-gray-600 text-xs sm:text-sm hover:text-red-600 transition-colors"
+                          >
+                            <FiTrash2 /> Remove
+                          </button>
+                          <button
+                            onClick={() => handleToggleWishlist(item.productId)}
+                            disabled={isLoadingWishlist}
+                            className={`flex items-center gap-1 text-xs sm:text-sm font-medium transition-colors ${
+                              isInWishlist
+                                ? "text-green-600 cursor-default"
+                                : "text-gray-600 hover:text-red-600"
+                            } ${isLoadingWishlist ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <FiHeart
+                              className={`text-base ${
+                                isInWishlist
+                                  ? "text-green-600 fill-green-600"
+                                  : ""
+                              } ${isLoadingWishlist ? 'animate-pulse' : ''}`}
+                            />
+                            {isLoadingWishlist 
+                              ? "Processing..." 
+                              : isInWishlist
+                                ? "Added to Wishlist"
+                                : "Move to Wishlist"
+                            }
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-800 text-sm sm:text-base line-clamp-2">
-                        {item.productId.name}
-                      </h3>
-                      <p className="text-green-600 text-xs sm:text-sm mt-1">
-                        Get it Tomorrow
-                      </p>
-                      <p className="text-gray-500 text-xs sm:text-sm">
-                        Sold by {item.seller}
-                      </p>
 
-                      {/* Offer */}
-                      <p className="text-xs text-green-700 mt-2 border border-green-500 px-2 py-1 rounded-md inline-block">
-                        Buy 5 Get 10% Cashback - CODE: B5G10
-                      </p>
+                    {/* Price & Quantity */}
+                    <div className="flex sm:flex-col justify-between items-end sm:items-center w-full sm:w-auto gap-2 sm:gap-0">
+                      <div className="text-right sm:text-center">
+                        <div className="text-lg font-bold text-gray-800 flex items-center justify-end sm:justify-center gap-1">
+                          <PriceWithCurrency
+                            amount={item.productId.salePrice * item.quantity}
+                          />
+                        </div>
+                        {item.originalPrice && (
+                          <>
+                            <p className="text-sm text-green-600">
+                              {Math.round(
+                                (1 - item.price / item.originalPrice) * 100
+                              )}
+                              % OFF
+                            </p>
+                            <p className="text-xs text-gray-500 line-through flex items-center gap-1 justify-end sm:justify-center">
+                              <Image
+                                src={newCurrency}
+                                alt="Currency"
+                                width={12}
+                                height={12}
+                                className="w-3 h-3"
+                              />
+                              {item.originalPrice.toFixed(2)}
+                            </p>
+                          </>
+                        )}
+                        <p className="text-xs text-green-600">Free Delivery</p>
+                      </div>
 
-                      {/* Actions */}
-                      <div className="flex gap-3 mt-3 flex-wrap">
+                      <div className="flex items-center gap-2 sm:mt-2">
                         <button
-                          onClick={() => handleRemove(item.productId._id)}
-                          className="flex items-center gap-1 text-gray-600 text-xs sm:text-sm hover:text-red-600 transition-colors"
+                          onClick={() =>
+                            updateQuantity(productId, item.quantity - 1)
+                          }
+                          className="w-6 h-6 rounded-full border flex items-center justify-center text-sm hover:bg-gray-100"
                         >
-                          <FiTrash2 /> Remove
+                          -
                         </button>
+                        <span className="text-sm font-medium min-w-[30px] text-center">
+                          {item.quantity}
+                        </span>
                         <button
-                          onClick={() => moveToWishlist(item)}
-                          className="flex items-center gap-1 text-gray-600 text-xs sm:text-sm hover:text-red-600 transition-colors"
+                          onClick={() =>
+                            updateQuantity(productId, item.quantity + 1)
+                          }
+                          className="w-6 h-6 rounded-full border flex items-center justify-center text-sm hover:bg-gray-100"
                         >
-                          <FiHeart /> Move to Wishlist
+                          +
                         </button>
                       </div>
                     </div>
                   </div>
-
-                  {/* Price & Quantity */}
-                  <div className="flex sm:flex-col justify-between items-end sm:items-center w-full sm:w-auto gap-2 sm:gap-0">
-                    <div className="text-right sm:text-center">
-                      <p className="text-lg font-bold text-gray-800">
-                        AED{" "}
-                        {(item.productId.salePrice * item.quantity).toFixed(2)}
-                      </p>
-                      {item.originalPrice && (
-                        <>
-                          <p className="text-sm text-green-600">
-                            {Math.round(
-                              (1 - item.price / item.originalPrice) * 100
-                            )}
-                            % OFF
-                          </p>
-                          <p className="text-xs text-gray-500 line-through">
-                            ฿{item.originalPrice.toFixed(2)}
-                          </p>
-                        </>
-                      )}
-                      <p className="text-xs text-green-600">Free Delivery</p>
-                    </div>
-
-                    <div className="flex items-center gap-2 sm:mt-2">
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.productId._id, item.quantity - 1)
-                        }
-                        className="w-6 h-6 rounded-full border flex items-center justify-center text-sm hover:bg-gray-100"
-                      >
-                        -
-                      </button>
-                      <span className="text-sm font-medium min-w-[30px] text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.productId._id, item.quantity + 1)
-                        }
-                        className="w-6 h-6 rounded-full border flex items-center justify-center text-sm hover:bg-gray-100"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Recommended Section */}
               <div className="mt-6 sm:mt-8">
                 <h3 className="font-bold text-lg mb-4">Recommended for you</h3>
-                {loadingTwo?<RecommendedSkeleton/>:(
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                  {recommendedProducts.map((product) => (
-                    <div
-                      key={product._id}
-                      className="border rounded-lg p-2 sm:p-3 shadow-sm hover:shadow-md transition-shadow relative group"
-                    >
-                      <div className="relative aspect-square mb-2">
-                        <Image
-                          src={product.images[0].url}
-                          alt={product.name}
-                          fill
-                          className="object-cover rounded"
-                        />
-                        <button
-                          onClick={() => {
-                            const isInWishlist = wishlist.find(
-                              (w) => w.id === product.id
-                            );
-                            if (!isInWishlist) {
-                              setWishlist([...wishlist, product]);
-                            }
-                          }}
-                          className="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors"
+                {loadingTwo ? (
+                  <RecommendedSkeleton />
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                    {recommendedProducts.map((product) => {
+                      const productId = product._id;
+                      const isInWishlist = checkIsWishlisted(productId);
+                      const isLoadingWishlist = wishlistLoading[productId];
+
+                      return (
+                        <div
+                          key={product._id}
+                          className="border rounded-lg p-2 sm:p-3 shadow-sm hover:shadow-md transition-shadow relative group"
                         >
-                          <FiHeart />
-                        </button>
-                      </div>
-                      <h4 className="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2 mb-1">
-                        {product.name}
-                      </h4>
-                      <p className="text-sm font-bold text-gray-900">
-                        ฿{product.salePrice}
-                      </p>
-                      <button
-                        onClick={() => addToCart(product)}
-                        className="w-full mt-2 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white text-xs sm:text-sm py-2 rounded hover:opacity-90 transition-opacity"
-                      >
-                        Add to Cart
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                          <div className="relative aspect-square mb-2">
+                            <Image
+                              src={product.images[0].url}
+                              alt={product.name}
+                              fill
+                              className="object-cover rounded"
+                            />
+                            <button
+                              onClick={() => handleToggleWishlist(product)}
+                              disabled={isLoadingWishlist}
+                              className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
+                                isInWishlist
+                                  ? "text-green-600 bg-white shadow-md"
+                                  : "text-gray-400 hover:text-red-500 bg-white/80 hover:bg-white"
+                              } ${isLoadingWishlist ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              <FiHeart
+                                className={`${isInWishlist ? "fill-green-600" : ""} ${isLoadingWishlist ? 'animate-pulse' : ''}`}
+                              />
+                            </button>
+                          </div>
+                          <h4 className="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2 mb-1">
+                            {product.name}
+                          </h4>
+                          <div className="text-sm font-bold text-gray-900 flex items-center gap-1">
+                            <Image
+                              src={newCurrency}
+                              alt="Currency"
+                              width={16}
+                              height={16}
+                              className="w-4 h-4"
+                            />
+                            {product.salePrice}
+                          </div>
+                          <button
+                            onClick={() => addToCart(product)}
+                            className="w-full mt-2 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white text-xs sm:text-sm py-2 rounded hover:opacity-90 transition-opacity"
+                          >
+                            Add to Cart
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </>
@@ -353,7 +561,16 @@ useEffect(() => {
               <span>
                 Subtotal ({totalItems} {totalItems === 1 ? "item" : "items"})
               </span>
-              <span>฿{subtotal.toFixed(2)}</span>
+              <span className="flex items-center gap-1">
+                <Image
+                  src={newCurrency}
+                  alt="Currency"
+                  width={16}
+                  height={16}
+                  className="w-4 h-4"
+                />
+                {subtotal.toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>Shipping Fee</span>
@@ -363,7 +580,16 @@ useEffect(() => {
 
           <div className="flex justify-between font-bold text-gray-800 text-lg mb-4 border-t pt-4">
             <span>Total (Inclusive of VAT)</span>
-            <span>฿{subtotal.toFixed(2)}</span>
+            <span className="flex items-center gap-1">
+              <Image
+                src={newCurrency}
+                alt="Currency"
+                width={20}
+                height={20}
+                className="w-5 h-5"
+              />
+              {subtotal.toFixed(2)}
+            </span>
           </div>
 
           <Link href="/checkout">
@@ -376,30 +602,21 @@ useEffect(() => {
             </button>
           </Link>
 
-          {/* Extra Info */}
-          <p className="text-xs sm:text-sm text-yellow-600 mt-3">
-            Monthly payment plans from ฿250.{" "}
-            <span className="underline cursor-pointer">View more details</span>
-          </p>
-
           <div className="mt-4 space-y-2">
-            <p className="text-xs sm:text-sm">
-              Earn <span className="font-bold">5% cashback</span> with Mashreq
-              noon Credit Card.{" "}
-              <a href="#" className="text-blue-600 underline">
-                T&C apply
-              </a>
-            </p>
             <div className="border rounded-lg p-2 text-xs sm:text-sm">
               <span className="font-bold text-green-600">tabby</span> - Pay in 4
-              interest-free payments on orders over ฿100.{" "}
-              <a href="#" className="text-blue-600 underline">
-                Learn more
-              </a>
-            </div>
-            <div className="border rounded-lg p-2 text-xs sm:text-sm">
-              <span className="font-bold text-red-500">tamara</span> - Pay in 4
-              interest-free payments on orders over ฿100.{" "}
+              interest-free payments on orders over{" "}
+              <span className="flex items-center gap-1 inline-flex">
+                <Image
+                  src={newCurrency}
+                  alt="Currency"
+                  width={12}
+                  height={12}
+                  className="w-3 h-3"
+                />
+                100
+              </span>
+              .{" "}
               <a href="#" className="text-blue-600 underline">
                 Learn more
               </a>
@@ -410,7 +627,6 @@ useEffect(() => {
     </div>
   );
 };
-
 
 const RecommendedSkeleton = ({ count = 4 }) => {
   return (
@@ -437,4 +653,4 @@ const RecommendedSkeleton = ({ count = 4 }) => {
   );
 };
 
-  export default ShoppingCart;
+export default ShoppingCart;

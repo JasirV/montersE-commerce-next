@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import axios from "axios";
 import { toast } from "react-toastify";
+import api from "@/api/axiosIntespter";
 
 export default function WatchService() {
   const [selectedImage, setSelectedImage] = useState(null); // preview (base64)
@@ -74,8 +75,8 @@ const serviceOptions = [
       formData.append("image", imageFile); // key must match multer ("image")
     }
 
-    const response = await axios.post(
-      "http://localhost:7000/api/createBooking",
+    const response = await api.post(
+      `${process.env.NEXT_PUBLIC_BASEURL}/createBooking`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },

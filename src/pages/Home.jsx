@@ -10,6 +10,7 @@ const ProductGrid = () => {
   const [loading, setLoading] = useState(true);
   const { currency, rate } = useCurrency();
 
+
   useEffect(() => {
     const fetchHomeProducts = async () => {
       try {

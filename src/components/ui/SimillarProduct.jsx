@@ -1,131 +1,465 @@
 import Image from "next/image";
-import React, { useMemo, memo, lazy, Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
+import Dummy1 from "../../assets/Omega Seamaster.jpg";
+import newCurrency from "../../assets/newSymbole.png";
+import { toast } from "react-toastify";
+import api from "@/api/axiosIntespter";
 
-// Lazy load the Services component
-const Services = lazy(() => import("./Services"));
+// Single product card component
+const ProductCard = ({ product }) => {
+  const [isWishlisted, setIsWishlisted] = useState([]);
+  const [defaultWishlistId, setDefaultWishlistId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-// Memoized product data to prevent unnecessary re-renders
-const productsData = [
-  {
-    id: 1,
-    name: "Hermès Kelly Red Watch 20mm",
-    price: "4000.0 AED",
-    moq: "MOQ: 100 Pieces",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop"
-  },
-  {
-    id: 2,
-    name: "Hermès Kelly Red Watch 20mm",
-    price: "4000.0 AED",
-    moq: "MOQ: 35 Pieces",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop"
-  },
-  {
-    id: 3,
-    name: "Hermès Kelly Red Watch 20mm",
-    price: "4000.0 AED",
-    moq: "MOQ: 80 Pieces",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop"
-  },
-  {
-    id: 4,
-    name: "Hermès Kelly Red Watch 20mm",
-    price: "4000.0 AED",
-    moq: "MOQ: 50 Pieces",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop"
-  }
-];
+  // Check if product is in wishlist
+  const checkIsWishlisted = (productId) => {
+    return isWishlisted.includes(productId);
+  };
 
-// Single product card component to prevent re-renders
-const ProductCard = memo(({ product }) => {
-  // console.log(product,'product lin 42');
-  
+  // Fetch user's wishlists and check wishlist status
+  const fetchWishlists = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        console.log("No token found");
+        return;
+      }
+
+      setIsLoading(true);
+      const res = await api.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data && res.data.wishlists?.length > 0) {
+        const defaultWishlist =
+          res.data.wishlists.find((w) => w.isDefault) || res.data.wishlists[0];
+        setDefaultWishlistId(defaultWishlist._id || defaultWishlist.id);
+
+        // Extract all product IDs from all wishlists
+        const allWishlistProductIds = res.data.wishlists.flatMap(
+          (wishlist) =>
+            wishlist.products?.map((product) => product._id || product) || []
+        );
+
+        setIsWishlisted(allWishlistProductIds);
+      } else {
+        console.log("No wishlists found or empty response");
+        setDefaultWishlistId(null);
+      }
+    } catch (error) {
+      console.error("Error fetching wishlists:", error);
+      setDefaultWishlistId(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add/Remove from wishlist
+  const toggleWishlist = async (product) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        toast.error("Please log in first to add to wishlist");
+        return;
+      }
+
+      const productId = product._id || product.productId?._id;
+      if (!productId) {
+        console.error("Product ID not found");
+        return;
+      }
+
+      // Check if product is already in wishlist
+      const alreadyWishlisted = checkIsWishlisted(productId);
+
+      if (alreadyWishlisted) {
+        // Remove from wishlist
+        await removeFromWishlist(productId);
+      } else {
+        // Add to wishlist
+        await addToWishlist(product);
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+      toast.error("Failed to update wishlist. Please try again.");
+    }
+  };
+
+  const addToWishlist = async (product) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        toast.error("Please log in first to add to wishlist");
+        return;
+      }
+
+      // Make sure a default wishlist exists
+      if (!defaultWishlistId) {
+        toast.error("No wishlist found. Please create a wishlist first.");
+        return;
+      }
+
+      const productId = product._id || product.productId?._id;
+
+      if (!productId) {
+        console.error("Product ID not found");
+        return;
+      }
+
+      // Check if already in wishlist
+      if (checkIsWishlisted(productId)) {
+        toast.info("Product is already in your wishlist");
+        return;
+      }
+
+      const response = await api.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/add`,
+        {
+          wishlistId: defaultWishlistId,
+          productId: productId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Add to local wishlist state
+        setIsWishlisted((prev) => [...prev, productId]);
+        toast.success(` added to wishlist!`);
+      }
+    } catch (error) {
+      console.error(
+        "❌ Error adding to wishlist:",
+        error.response?.data || error
+      );
+      toast.error("Failed to add to wishlist. Please try again.");
+    }
+  };
+
+  const removeFromWishlist = async (productId) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) return;
+
+      const response = await api.delete(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          data: {
+            wishlistId: defaultWishlistId,
+            productId: productId,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Remove from local wishlist state
+        setIsWishlisted((prev) => prev.filter((id) => id !== productId));
+        toast.success("Product removed from wishlist");
+      }
+    } catch (error) {
+      console.error("Error removing from wishlist:", error);
+      toast.error("Failed to remove from wishlist. Please try again.");
+    }
+  };
+
+  const addToCart = async (product) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        toast.error("Please log in to add items to your cart");
+        return;
+      }
+
+      const productId = product._id || product.productId?._id;
+      if (!productId) {
+        toast.error("Invalid product data");
+        return;
+      }
+
+      const response = await api.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/cart/add`,
+        {
+          productId: productId,
+          quantity: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success(` added to cart`);
+      } else {
+        toast.error("Failed to add to cart. Try again!");
+      }
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error(error.response?.data?.message || "Failed to add to cart.");
+    }
+  };
+
+  // Fetch wishlists when component mounts
+  useEffect(() => {
+    fetchWishlists();
+  }, []);
+
+  const productId = product._id || product.productId?._id;
+  const isProductWishlisted = checkIsWishlisted(productId);
+
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-      {/* Product Image */}
-      <div className="relative h-48 xs:h-56 sm:h-64 bg-gray-100">
+    <div className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 mx-2 my-2">
+      {/* Product Image Container */}
+      <div className="relative h-52 bg-gray-50">
         <Image
-          src={product.image}
+          src={product.images?.[0]?.url || Dummy1}
           alt={product.name}
           fill
-          className="object-contain p-3 xs:p-4"
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
+          onError={(e) => {
+            e.target.src = Dummy1;
+          }}
         />
+
         {/* Wishlist Button */}
-        <button 
-          className="absolute top-2 right-2 xs:top-3 xs:right-3 p-1.5 xs:p-2 bg-white rounded-full shadow-sm hover:bg-gray-50 transition-colors"
-          aria-label="Add to wishlist"
+        <button
+          onClick={() => toggleWishlist(product)}
+          disabled={isLoading}
+          className={`absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 group/wishlist ${
+            isLoading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          aria-label={
+            isProductWishlisted ? "Remove from wishlist" : "Add to wishlist"
+          }
         >
-          <FaHeart className="text-sm xs:text-base text-gray-400 hover:text-red-500" />
+          <FaHeart
+            className={`text-sm transition-colors ${
+              isProductWishlisted
+                ? "text-red-500 fill-red-500"
+                : "text-gray-600 group-hover/wishlist:text-red-500"
+            }`}
+          />
         </button>
       </div>
-      
+
       {/* Product Details */}
-      <div className="p-3 xs:p-4">
-        <h3 className="text-gray-700 font-medium text-xs xs:text-sm mb-1 xs:mb-2 line-clamp-2" style={{ minHeight: '2.5rem' }}>
+      <div className="p-5">
+        {/* Product Name */}
+        <h3 className="text-gray-800 font-semibold text-[15px] mb-3 line-clamp-2 leading-tight min-h-[2.8rem]">
           {product.name}
         </h3>
-        <div className="flex items-baseline justify-between mb-1">
-          <span className="text-base xs:text-lg font-bold text-gray-900">{product.price}</span>
+
+        {/* Price Section */}
+        <div className="flex items-baseline gap-2 mb-3">
+          <div className="flex items-center">
+            <Image
+              src={newCurrency}
+              alt="Currency"
+              className="w-4 h-4 mr-1.5"
+            />
+            <span className="text-xl font-bold text-gray-900">
+              {product.salePrice?.toLocaleString() || "0"}
+            </span>
+          </div>
+          {product.regularPrice && product.regularPrice > product.salePrice && (
+            <span className="text-sm text-gray-500 line-through ml-1">
+              {product.regularPrice?.toLocaleString()}
+            </span>
+          )}
         </div>
-        <p className="text-xs xs:text-sm text-gray-500 mb-2 xs:mb-4">{product.moq}</p>
-        
+
+        {/* Categories */}
+        {product.categories && product.categories.length > 0 && (
+          <div className="mb-3">
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              {product.categories[0]}
+            </span>
+          </div>
+        )}
+
         {/* Add to Cart Button */}
-        <button className="w-full flex items-center justify-center gap-1 xs:gap-2 bg-gray-900 hover:bg-gray-800 text-white py-1.5 xs:py-2 px-2 xs:px-4 rounded text-xs xs:text-sm transition-colors">
-          <FaShoppingCart className="text-xs xs:text-sm" />
+        <button
+          onClick={() => addToCart(product)}
+          className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#0061b0ee] hover:to-[#1e518e] text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-300 hover:shadow-lg active:scale-95 group/cart"
+        >
+          <FaShoppingCart className="text-sm group-hover/cart:scale-110 transition-transform" />
           <span>Add to Cart</span>
         </button>
       </div>
     </div>
   );
-});
+};
 
-ProductCard.displayName = 'ProductCard';
+const SimilarProduct = ({ productId }) => {
+  const [similarProducts, setSimilarProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-const SimilarProduct = () => {
-  // Memoize the products data
-  const products = useMemo(() => productsData, []);
+  // Fetch similar products
+  useEffect(() => {
+    const fetchSimilarProducts = async () => {
+      if (!productId) {
+        console.log("No product ID provided");
+        setLoading(false);
+        return;
+      }
 
-  return (
-    <div className="bg-gray-50 py-4 xs:py-6 sm:py-8 px-3 xs:px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <h2 className="text-xl xs:text-2xl font-bold text-gray-800 mb-4 xs:mb-6 sm:mb-8 text-center">Similar Products</h2>
+      try {
+        setLoading(true);
+        setError(null);
         
-        {/* Products Grid - Responsive columns */}
-        <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 md:gap-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        console.log("Fetching similar products for ID:", productId);
         
-        {/* View More Button */}
-        <div className="mt-6 xs:mt-8 sm:mt-10 text-center">
-          <button className="inline-flex items-center px-4 xs:px-5 py-2 xs:py-2.5 border border-gray-300 rounded-md shadow-sm text-xs xs:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-            View More Products
-          </button>
-        </div>
-      </div>
-      
-      {/* Lazy load Services with a loading fallback */}
-      <Suspense fallback={
-        <div className="max-w-7xl mx-auto mt-6 xs:mt-8 sm:mt-10 bg-white rounded-lg shadow-md p-4 xs:p-6">
-          <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 xs:gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex flex-col items-center text-center">
-                <div className="h-8 xs:h-10 sm:h-12 w-8 xs:w-10 sm:w-12 bg-gray-200 rounded-full animate-pulse mb-2 xs:mb-3 sm:mb-4"></div>
-                <div className="h-3 xs:h-4 bg-gray-200 rounded animate-pulse w-3/4 mb-1 xs:mb-2"></div>
-                <div className="h-2 xs:h-3 bg-gray-200 rounded animate-pulse w-full"></div>
+        const response = await api.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`
+        );
+
+        console.log("API Response:", response.data);
+        
+        if (response.data.success) {
+          // ✅ FIX: Access the correct property from backend
+          const products = response.data.products || response.data.similarProducts || [];
+          console.log("Products found:", products.length);
+          setSimilarProducts(products);
+        } else {
+          console.log("API returned success: false");
+          setSimilarProducts([]);
+        }
+      } catch (err) {
+        console.error("Error fetching similar products:", err);
+        console.error("Error details:", err.response?.data);
+        setError("Failed to load similar products");
+        setSimilarProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSimilarProducts();
+  }, [productId]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="bg-gray-50/80 py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">
+              Similar Products
+            </h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
+              Loading similar products...
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-xl shadow-sm p-5 animate-pulse"
+              >
+                <div className="h-52 bg-gray-200 rounded-lg mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                <div className="h-8 bg-gray-200 rounded"></div>
               </div>
             ))}
           </div>
         </div>
-      }>
-        <Services />
-      </Suspense>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="bg-gray-50/80 py-12 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            Similar Products
+          </h2>
+          <p className="text-gray-600 text-lg mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no similar products
+  if (!similarProducts || similarProducts.length === 0) {
+    return (
+      <div className="bg-gray-50/80 py-12 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            Similar Products
+          </h2>
+          <p className="text-gray-600 text-lg">
+            No similar products found at the moment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-50/80 py-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            Similar Products
+          </h2>
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
+            Discover more premium products that match your exquisite style and
+            preferences
+          </p>
+        </div>
+
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {similarProducts.map((product) => (
+            <ProductCard key={product._id} product={product} />
+          ))}
+        </div>
+
+        {/* View More Button */}
+        <div className="mt-12 text-center">
+          <button className="inline-flex items-center px-8 py-4 border-2 border-gray-300 rounded-xl text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-300 group">
+            View More Products
+            <svg
+              className="ml-3 w-5 h-5 transition-transform group-hover:translate-y-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default memo(SimilarProduct);
+export default SimilarProduct;

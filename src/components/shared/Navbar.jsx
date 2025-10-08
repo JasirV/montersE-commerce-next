@@ -21,7 +21,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchCartCount } from "@/lib/store/cartSlice";
 
 const Navbar = ({ onSignUpClick }) => {
-  const { data: session, status } = useSession();
+  const { data: session, status } = useSession()||{};
   const dispatch = useDispatch();
   const cartCount = useSelector((state) => state.cart.count);
   const wishlistCount = useSelector((state) => state.wishlist.count);

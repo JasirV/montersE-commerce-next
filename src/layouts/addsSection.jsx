@@ -2,8 +2,19 @@ import React from "react";
 import WatchClassic from "../assets/classic.jpg"; // Classic watch
 import WatchLuxury from "../assets/pexels-pixabay-364822.jpg";  // Luxury watch
 import Image from "next/image";
-
+import { useRouter } from "next/navigation";
 const WatchImages = () => {
+
+    const router = useRouter();
+
+   const handleClassic = async ()=>{
+      router.push('/watches/classic')
+   }
+
+   const handleLuxury = async ()=>{
+     router.push('/watches/luxury')
+   }
+
   return (
     <section className="bg-gray-50 py-16">
       <div className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12">
@@ -27,7 +38,7 @@ const WatchImages = () => {
             <p className="text-gray-600 mb-4">
               Timeless elegance and precision craftsmanship for the sophisticated taste.
             </p>
-            <button className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-full transition-colors duration-300">
+            <button className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-full transition-colors duration-300" onClick={handleClassic}>
               Shop Classic
             </button>
           </div>
@@ -50,7 +61,7 @@ const WatchImages = () => {
             <p className="text-gray-600 mb-4">
               Premium materials and exquisite design for the ultimate luxury experience.
             </p>
-            <button className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-full transition-colors duration-300">
+            <button className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-full transition-colors duration-300" onClick={handleLuxury}>
               Shop Luxury
             </button>
           </div>

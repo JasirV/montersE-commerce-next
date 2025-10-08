@@ -1,141 +1,26 @@
 "use client";
 
-import React, { useState, useMemo, memo, Suspense, useEffect } from "react";
+import React, { useState, useMemo, Suspense, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import FilterSidebar from "./ProductFilterSidebar";
 import { fetchProduct } from "../../service/productService";
-import { FiFilter, FiX } from "react-icons/fi";
-
-const Pagination = memo(
-  ({ currentPage, totalPages,  setCurrentPage }) => {
-    const itemsPerPage = 15;
-
-    const pageNumbers = useMemo(() => {
-      const maxVisiblePages = 5;
-      let startPage = Math.max(
-        1,
-        currentPage - Math.floor(maxVisiblePages / 2)
-      );
-      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-      if (endPage - startPage + 1 < maxVisiblePages) {
-        startPage = Math.max(1, endPage - maxVisiblePages + 1);
-      }
-
-      return Array.from(
-        { length: endPage - startPage + 1 },
-        (_, i) => startPage + i
-      );
-    }, [currentPage, totalPages]);
-
-    if (totalPages <= 1) return null;
-
-    const isFirstPage = currentPage === 1;
-    const isLastPage = currentPage === totalPages;
-
-    // Calculate range display
-    const startItem = (currentPage - 1) * itemsPerPage + 1;
-    console.log(totalPages, "totalPages");
-    return (
-      <div className="mt-6 flex flex-col items-center gap-2">
-        {/* Pagination Buttons */}
-        <div className="flex flex-wrap justify-center gap-1 xs:gap-2">
-          <button
-            onClick={() => setCurrentPage(1)}
-            disabled={isFirstPage}
-            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-            aria-label="First page"
-          >
-            &laquo;
-          </button>
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={isFirstPage}
-            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-            aria-label="Previous page"
-          >
-            &lsaquo;
-          </button>
-
-          {pageNumbers.map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md min-w-[2rem] ${
-                currentPage === page
-                  ? "bg-[#8b6b4a] text-white"
-                  : "hover:bg-gray-100"
-              }`}
-              aria-label={`Page ${page}`}
-              aria-current={currentPage === page ? "page" : undefined}
-            >
-              {page}
-            </button>
-          ))}
-
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={isLastPage}
-            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-            aria-label="Next page"
-          >
-            &rsaquo;
-          </button>
-          <button
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={isLastPage}
-            className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-            aria-label="Last page"
-          >
-            &raquo;
-          </button>
-        </div>
-
-        {/* Info summary below pagination */}
-        <div className="text-xs text-gray-600 mt-1">
-          Showing <strong>{startItem}</strong>–
-          <strong>{totalPages}</strong> of <strong>{}</strong>{" "}
-         Page <strong>{currentPage}</strong> of{" "}
-          <strong>{totalPages}</strong>
-        </div>
-      </div>
-    );
-  }
-);
-
-Pagination.displayName = "Pagination";
+import { FiFilter, FiX, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 const ProductPage = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortOption, setSortOption] = useState("featured");
   const [brandSearch, setBrandSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState({ products: [], totalPages: 0, currentPage: 1, totalProducts: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Ref for scroll target
+  const productsSectionRef = useRef(null);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null); // reset error
-        const { data } = await fetchProduct({ page: currentPage, limit: 15 });
-        setProducts(data || []);
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        setError("Failed to load products. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProducts();
-  }, [currentPage]);
-
-  console.log(products, "products");
   const { category, subcategory } = useParams();
-  const productsPerPage = 12;
+  const productsPerPage = 15;
 
   const [activeFilters, setActiveFilters] = useState({
     category: [],
@@ -147,54 +32,37 @@ const ProductPage = () => {
     badges: [],
   });
 
-  // useEffect(() => {
-  //   const fetchProducts = async () => {
-  //     try {
-  //       setLoading(true);
-  //       const response = await axios.get(
-  //         "https://montres-ecommerce-backend-1.onrender.com/api/products"
-  //       );
-  //       setProducts(response.data); // Store API products in state
-  //       console.log(response.data,"response.data");
-
-  //     } catch (error) {
-  //       console.error("Error fetching products:", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchProducts();
-  // }, []);
-
-  // Fixed category filtering logic - now uses API products
-  const categoryFilteredProducts = useMemo(() => {
-    if (loading) return [];
-    console.log(products, "products.products");
-    return products.products.filter((p) => {
-
-      // First check if the main category matches
-      const isCategoryMatch =
-        p.categories &&
-        p.categories.some((cat) =>
-          cat?.toLowerCase()?.includes(category?.toLowerCase())
-        );
-
-      // If there's a subcategory in URL, check if it matches
-      if (subcategory) {
-        return (
-          isCategoryMatch &&
-          p.categories &&
-          p.categories.some((cat) =>
-            cat.toLowerCase().includes(subcategory.toLowerCase())
-          )
-        );
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const { data } = await fetchProduct({ page: currentPage, limit: 15 });
+        setProducts(data || { products: [], totalPages: 0, currentPage: 1, totalProducts: 0 });
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError("Failed to load products. Please try again later.");
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // If no subcategory in URL, only check main category
-      return isCategoryMatch;
-    });
-  }, [category, subcategory, products, loading]);
+    loadProducts();
+  }, [currentPage]);
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    if (productsSectionRef.current) {
+      productsSectionRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }
+  }, [currentPage]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   const toggleFilter = (type, value) => {
     setActiveFilters((prev) => {
@@ -218,6 +86,33 @@ const ProductPage = () => {
     });
     setCurrentPage(1);
   };
+
+  // Fixed category filtering logic - now uses API products
+  const categoryFilteredProducts = useMemo(() => {
+    if (loading) return [];
+    return products.products.filter((p) => {
+      // First check if the main category matches
+      const isCategoryMatch =
+        p.categories &&
+        p.categories.some((cat) =>
+          cat?.toLowerCase()?.includes(category?.toLowerCase())
+        );
+
+      // If there's a subcategory in URL, check if it matches
+      if (subcategory) {
+        return (
+          isCategoryMatch &&
+          p.categories &&
+          p.categories.some((cat) =>
+            cat.toLowerCase().includes(subcategory.toLowerCase())
+          )
+        );
+      }
+
+      // If no subcategory in URL, only check main category
+      return isCategoryMatch;
+    });
+  }, [category, subcategory, products, loading]);
 
   // Filter products based on active filters
   const filteredProducts = useMemo(() => {
@@ -252,7 +147,9 @@ const ProductPage = () => {
 
   // Sort products
   const sortedProducts = useMemo(() => {
-    return [...filteredProducts].sort((a, b) => {
+    if (!sortOption) return filteredProducts;
+
+    const result = [...filteredProducts].sort((a, b) => {
       switch (sortOption) {
         case "priceLowHigh":
           return parseFloat(a.price) - parseFloat(b.price);
@@ -266,29 +163,23 @@ const ProductPage = () => {
           return 0;
       }
     });
-  }, [filteredProducts, sortOption]);
+
+    return result.length > 0 ? result : products.products || [];
+  }, [filteredProducts, sortOption, products]);
 
   const brands = useMemo(
     () => [...new Set(categoryFilteredProducts.map((p) => p.brand))],
     [categoryFilteredProducts]
   );
-  const totalPages = Math.ceil(sortedProducts.length / productsPerPage);
 
-  // Current page products
-  const currentProducts = useMemo(() => {
-    return sortedProducts.slice(
-      (currentPage - 1) * productsPerPage,
-      currentPage * productsPerPage
-    );
-  }, [sortedProducts, currentPage]);
+  // Calculate display range for pagination
+  const getDisplayRange = () => {
+    const startItem = (currentPage - 1) * productsPerPage + 1;
+    const endItem = Math.min(currentPage * productsPerPage, products.totalProducts || 0);
+    return { startItem, endItem };
+  };
 
-  // Update breadcrumb to show actual category and subcategory
-  // const breadcrumbText = useMemo(() => {
-  //   if (subcategory) {
-  //     return `${category.charAt(0).toUpperCase() + category.slice(1)} / ${subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}`;
-  //   }
-  //   return `${category?.charAt(0)?.toUpperCase() + category.slice(1)}`;
-  // }, [category, subcategory]);
+  const { startItem, endItem } = getDisplayRange();
 
   return (
     <div className="bg-[#f8f5f2] min-h-screen">
@@ -304,7 +195,6 @@ const ProductPage = () => {
                 Home
               </a>
             </li>
-            {/* <li className="text-gray-500">/ {breadcrumbText}</li> */}
           </ol>
         </nav>
 
@@ -334,8 +224,8 @@ const ProductPage = () => {
             />
           </aside>
 
-          {/* Products Section */}
-          <main className="flex-1">
+          {/* Products Section with ref for scrolling */}
+          <main className="flex-1" ref={productsSectionRef}>
             {loading && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 xs:gap-4">
                 {[...Array(productsPerPage)].map((_, i) => (
@@ -350,12 +240,13 @@ const ProductPage = () => {
                 ))}
               </div>
             )}
+
             {/* Header */}
             {!loading && (
               <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between mb-4 xs:mb-5 sm:mb-6 gap-2 xs:gap-0">
                 <div>
                   <h2 className="text-xl xs:text-lg sm:text-lg font-bold text-[#1a1a1a] mb-1 xs:mb-2">
-                    {/* {breadcrumbText} */}
+                    Products
                   </h2>
                   <p className="text-xs xs:text-sm text-gray-500">
                     {sortedProducts.length}{" "}
@@ -385,6 +276,8 @@ const ProductPage = () => {
                 </div>
               </div>
             )}
+
+            {/* Active Filters */}
             {Object.values(activeFilters).some((arr) => arr.length > 0) && (
               <div className="mb-3 xs:mb-4 flex flex-wrap gap-1 xs:gap-2">
                 {Object.entries(activeFilters).map(([type, values]) =>
@@ -414,8 +307,9 @@ const ProductPage = () => {
                 </button>
               </div>
             )}
+
             {/* Products Grid */}
-            {products.products?.length || error > 0 ? (
+            {products.products?.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 xs:gap-4">
                   <Suspense
@@ -434,19 +328,17 @@ const ProductPage = () => {
                       </div>
                     }
                   >
-                    {console.log(products.products, "products.products")}
-                    {products?.products?.map((product) => (
+                    {products.products.map((product) => (
                       <ProductCard key={product._id} product={product} />
                     ))}
                   </Suspense>
                 </div>
 
-                {/* Pagination */}
-                <Pagination
-                  currentPage={products.currentPage}
-                  totalPages={products.totalPages}
-                  setCurrentPage={setCurrentPage}
-                  
+                {/* Mobile Responsive Pagination */}
+                <MobileResponsivePagination
+                  currentPage={currentPage}
+                  totalPages={products.totalPages || 1}
+                  onPageChange={handlePageChange}
                 />
               </>
             ) : (
@@ -473,5 +365,175 @@ const ProductPage = () => {
   );
 };
 
-export default memo(ProductPage);
+// Mobile Responsive Pagination Component
+const MobileResponsivePagination = ({ 
+  currentPage, 
+  totalPages, 
+  onPageChange 
+}) => {
+  const generatePageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
 
+    const pages = [];
+    pages.push(1);
+
+    if (currentPage > 3) {
+      pages.push('...');
+    }
+
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    if (currentPage < totalPages - 2) {
+      pages.push('...');
+    }
+
+    if (totalPages > 1) {
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
+
+  if (totalPages <= 1) return null;
+
+  const pageNumbers = generatePageNumbers();
+  const isFirstPage = currentPage === 1;
+  const isLastPage = currentPage === totalPages;
+
+  return (
+    <div className="mt-6 sm:mt-8">
+      {/* Desktop Layout */}
+      <div className="hidden sm:flex items-center justify-center space-x-2">
+        {/* Previous Button */}
+        <button
+          onClick={() => !isFirstPage && onPageChange(currentPage - 1)}
+          disabled={isFirstPage}
+          className={`flex items-center justify-center w-8 h-8 rounded border ${
+            isFirstPage
+              ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
+              : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+          }`}
+          aria-label="Previous page"
+        >
+          <FiChevronLeft className="h-4 w-4" />
+        </button>
+
+        {/* Page Numbers */}
+        <div className="flex items-center space-x-2">
+          {pageNumbers.map((page, index) => (
+            <React.Fragment key={index}>
+              {page === '...' ? (
+                <span className="px-2 py-1 text-sm text-gray-500">...</span>
+              ) : (
+                <button
+                  onClick={() => onPageChange(page)}
+                  className={`flex items-center justify-center w-8 h-8 text-sm font-medium rounded border ${
+                    currentPage === page
+                      ? 'bg-[#8b6b4a] text-white border-[#8b6b4a]'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                  }`}
+                  aria-label={`Page ${page}`}
+                  aria-current={currentPage === page ? 'page' : undefined}
+                >
+                  {page}
+                </button>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Next Button */}
+        <button
+          onClick={() => !isLastPage && onPageChange(currentPage + 1)}
+          disabled={isLastPage}
+          className={`flex items-center justify-center w-8 h-8 rounded border ${
+            isLastPage
+              ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
+              : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+          }`}
+          aria-label="Next page"
+        >
+          <FiChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="sm:hidden">
+        <div className="flex items-center justify-between">
+          {/* Previous Button */}
+          <button
+            onClick={() => !isFirstPage && onPageChange(currentPage - 1)}
+            disabled={isFirstPage}
+            className={`flex items-center justify-center w-10 h-10 rounded-lg border ${
+              isFirstPage
+                ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
+                : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+            }`}
+            aria-label="Previous page"
+          >
+            <FiChevronLeft className="h-5 w-5" />
+          </button>
+
+          {/* Current Page Display */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Page</span>
+            <span className="text-sm font-semibold text-gray-900">{currentPage}</span>
+            <span className="text-sm text-gray-600">of</span>
+            <span className="text-sm font-semibold text-gray-900">{totalPages}</span>
+          </div>
+
+          {/* Next Button */}
+          <button
+            onClick={() => !isLastPage && onPageChange(currentPage + 1)}
+            disabled={isLastPage}
+            className={`flex items-center justify-center w-10 h-10 rounded-lg border ${
+              isLastPage
+                ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
+                : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+            }`}
+            aria-label="Next page"
+          >
+            <FiChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Page Numbers for Mobile - Scrollable */}
+        {totalPages > 1 && (
+          <div className="mt-4 flex justify-center">
+            <div className="flex items-center space-x-1 overflow-x-auto scrollbar-hide max-w-full px-2 py-1">
+              {pageNumbers.map((page, index) => (
+                <React.Fragment key={index}>
+                  {page === '...' ? (
+                    <span className="px-2 py-1 text-sm text-gray-500">...</span>
+                  ) : (
+                    <button
+                      onClick={() => onPageChange(page)}
+                      className={`flex items-center justify-center min-w-8 h-8 px-2 text-sm font-medium rounded border ${
+                        currentPage === page
+                          ? 'bg-[#8b6b4a] text-white border-[#8b6b4a]'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                      }`}
+                      aria-label={`Page ${page}`}
+                      aria-current={currentPage === page ? 'page' : undefined}
+                    >
+                      {page}
+                    </button>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ProductPage;
