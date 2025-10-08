@@ -6,8 +6,8 @@ export const fetchCartCount = createAsyncThunk(
   "cart/fetchCount",
   async (_, { rejectWithValue }) => {
     try {
-      const token = JSON.parse(localStorage.getItem("user"))?.token;
-      if (!token) throw new Error("No token found");
+      const token = localStorage.getItem("accessToken");
+      if (!token) consoel.log("No token found");
 
       const res = await api.get("/cart-count", {
         headers: { Authorization: `Bearer ${token}` },

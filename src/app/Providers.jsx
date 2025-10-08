@@ -10,7 +10,7 @@ export default function Providers({ children }) {
     <SessionProvider>
       <Provider store={store}>
       <CurrencyProvider>{children}</CurrencyProvider>
-      </Provider>
+      </Provider> 
     </SessionProvider>
   );
 }

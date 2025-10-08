@@ -22,10 +22,10 @@ import { fetchCartCount } from "@/lib/store/cartSlice";
 
 const Navbar = ({ onSignUpClick }) => {
   const { data: session, status } = useSession()||{};
-  const dispatch = useDispatch();
-  const cartCount = useSelector((state) => state.cart.count);
-  const wishlistCount = useSelector((state) => state.wishlist.count);
-  console.log(wishlistCount, "wish");
+  // const dispatch = useDispatch();
+  // const cartCount = useSelector((state) => state.cart.count);
+  // const wishlistCount = useSelector((state) => state.wishlist.count);
+  // console.log(wishlistCount, "wish");
   const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);
@@ -63,10 +63,9 @@ const Navbar = ({ onSignUpClick }) => {
     loadUserFromStorage();
   }, [loadUserFromStorage]);
 
-  useEffect(() => {
-    dispatch(fetchCartCount());
-  }, [dispatch]); // fix this iisue i have using token
-
+  // useEffect(() => {
+  //   dispatch(fetchCartCount());
+  // }, [dispatch,isClient]); 
   // Auth update listener
   useEffect(() => {
     const handleAuthChange = () => {
@@ -324,11 +323,11 @@ const Navbar = ({ onSignUpClick }) => {
                 />
 
                 {/* Wishlist Count Badge */}
-                {wishlistCount > 0 && (
+                {/* {wishlistCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-red-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
                     {wishlistCount > 99 ? "99+" : wishlistCount}
                   </span>
-                )}
+                )} */}
               </Link>
               <Link
                 href="/cart"
@@ -337,11 +336,11 @@ const Navbar = ({ onSignUpClick }) => {
                 <FaShoppingCart size={20} />
 
                 {/* Cart Count Badge */}
-                {cartCount > 0 && (
+                {/* {cartCount > 0 && (
                   <span className="absolute text-center -top-1 -right-1 max-w-5 min-w-[12px] h-5 px-1.5 bg-red-600 text-white text-xs  rounded-full flex items-center justify-center">
                     {cartCount > 99 ? "99+" : cartCount}
                   </span>
-                )}
+                )} */}
               </Link>
               {status === "loading" ? (
                 <div className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-full animate-pulse">
