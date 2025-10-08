@@ -7,6 +7,8 @@ import Link from "next/link";
 import Item1 from "../../assets/Watche/rendering-smart-home-device.jpg";
 import Item2 from "../../assets/Watche/ChatGPT Image Aug 10, 2025, 10_35_04 PM.png";
 import { getCart, Recommendations, removeFromCart, updateCart } from "@/service/productService";
+import { useDispatch } from "react-redux";
+import { decrementCart } from "@/lib/store/cartSlice";
 
 const ShoppingCart = () => {
    const [cartItems, setCartItems] = useState([]);
@@ -15,6 +17,7 @@ const ShoppingCart = () => {
   const [wishlist, setWishlist] = useState([]);
   const [loadingOne,setLoadingOne]=useState(false)
   const [loadingTwo,setLoadingTwo]=useState(false)
+  const dispatch = useDispatch();
 
   const syncTimeout = useRef(null);
 
@@ -54,6 +57,7 @@ useEffect(() => {
     setCartItems((prev) => prev.filter((item) => item.productId._id !== productId));
     const token=localStorage.getItem('token')
     removeFromCart(token,productId)
+    dispatch(decrementCart());
     // Debounced sync with backend
     if (syncTimeout.current) clearTimeout(syncTimeout.current);
     syncTimeout.current = setTimeout(syncCartWithBackend, 1000);

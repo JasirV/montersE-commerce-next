@@ -17,6 +17,8 @@ const ReviewsRatings = lazy(() => import("./ReviewsRatings"));
 // import advertiseVideo from "../../assets/6811913-hd_1920_1080_25fps (1).mp4";
 import Image from "next/image";
 import { addToCart, fetchProduct } from "@/service/productService";
+import { incrementCart } from "@/lib/store/cartSlice";
+import { useDispatch } from "react-redux";
 
 const ProductDetailPage = () => {
   // const location = useLocation();
@@ -24,6 +26,7 @@ const ProductDetailPage = () => {
   const [isLoading, setLoading] = useState(true);
   const [isInCart, setIsInCart] = useState(false);
   const [error, setError] = useState(null);
+  const dispatch = useDispatch();
   const { id } = useParams();
   // Get product data from navigation state or fetch if needed
   useEffect(() => {
@@ -142,7 +145,7 @@ const ProductDetailPage = () => {
       const token = localStorage.getItem("token"); // assume JWT is saved
       console.log(id,'id')
       await addToCart(token, id, 1);
-
+      dispatch(incrementCart());
       // store in localStorage for quick UI update
       const cart = JSON.parse(localStorage.getItem("cart")) || [];
       cart.push({ productId: id, quantity: 1 });
