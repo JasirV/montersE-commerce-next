@@ -17,10 +17,15 @@ import SubNavbar from "./SubNavabar";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { fetchProductAll } from "@/service/productService";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCartCount } from "@/lib/store/cartSlice";
 
 const Navbar = ({ onSignUpClick }) => {
-  const { data: session, status } = useSession() || {};
-
+  const { data: session, status } = useSession()||{};
+  const dispatch = useDispatch();
+  const cartCount = useSelector((state) => state.cart.count);
+  const wishlistCount = useSelector((state) => state.wishlist.count);
+  console.log(wishlistCount, "wish");
   const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);
@@ -57,6 +62,10 @@ const Navbar = ({ onSignUpClick }) => {
     setIsClient(true);
     loadUserFromStorage();
   }, [loadUserFromStorage]);
+
+  useEffect(() => {
+    dispatch(fetchCartCount());
+  }, [dispatch]); // fix this iisue i have using token
 
   // Auth update listener
   useEffect(() => {
@@ -176,18 +185,18 @@ const Navbar = ({ onSignUpClick }) => {
     { term: "Luxury Watches for Men", path: "/search?q=luxury+watches+men" },
   ];
 
-  if (status === "loading") {
-    return (
-      <header className="w-full bg-white sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 md:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="h-8 w-32 bg-gray-200 animate-pulse rounded" />
-            <div className="h-8 w-8 bg-gray-200 animate-pulse rounded-full" />
-          </div>
-        </div>
-      </header>
-    );
-  }
+  // if (status === "loading") {
+  //   return (
+  //     <header className="w-full bg-white sticky top-0 z-50 shadow-sm">
+  //       <div className="container mx-auto px-4 md:px-6 lg:px-8">
+  //         <div className="flex justify-between items-center h-16">
+  //           <div className="h-8 w-32 bg-gray-200 animate-pulse rounded" />
+  //           <div className="h-8 w-8 bg-gray-200 animate-pulse rounded-full" />
+  //         </div>
+  //       </div>
+  //     </header>
+  //   );
+  // }
 
   return (
     <>
@@ -307,18 +316,43 @@ const Navbar = ({ onSignUpClick }) => {
             <nav className="hidden md:flex items-center gap-4">
               <Link
                 href="/wishlist"
-                className="hover:text-[#1e518e] p-2 rounded-full hover:bg-gray-100"
+                className="relative flex items-center justify-center p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               >
-                <FaHeart />
+                <FaHeart
+                  size={20}
+                  className="text-gray-700 hover:text-[#1e518e]"
+                />
+
+                {/* Wishlist Count Badge */}
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-red-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
+                    {wishlistCount > 99 ? "99+" : wishlistCount}
+                  </span>
+                )}
               </Link>
               <Link
                 href="/cart"
-                className="flex items-center justify-center rounded-full bg-gradient-to-br p-2.5 hover:shadow-md"
+                className="relative flex items-center justify-center rounded-full bg-gradient-to-br p-2.5 hover:shadow-md"
               >
-                <FaShoppingCart />
-              </Link>
+                <FaShoppingCart size={20} />
 
-              {user ? (
+                {/* Cart Count Badge */}
+                {cartCount > 0 && (
+                  <span className="absolute text-center -top-1 -right-1 max-w-5 min-w-[12px] h-5 px-1.5 bg-red-600 text-white text-xs  rounded-full flex items-center justify-center">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+              </Link>
+              {status === "loading" ? (
+                <div className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-full animate-pulse">
+                  <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+                  <div className="flex flex-col gap-1">
+                    <div className="w-20 h-3 bg-gray-300 rounded"></div>
+                    <div className="w-12 h-2 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="w-4 h-4 bg-gray-300 rounded-full ml-2"></div>
+                </div>
+              ) : user ? (
                 <div className="relative user-dropdown-container">
                   <button
                     onClick={toggleUserDropdown}
@@ -346,6 +380,7 @@ const Navbar = ({ onSignUpClick }) => {
                       }`}
                     />
                   </button>
+
                   {userDropdownOpen && (
                     <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-2 z-50">
                       <div className="px-4 py-2 border-b">

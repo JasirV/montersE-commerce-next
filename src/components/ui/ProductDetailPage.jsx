@@ -15,6 +15,8 @@ import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
 import ReviewsRating from "./ReviewsRatings";
 import { addToCart, fetchProduct } from "@/service/productService";
+import { incrementCart } from "@/lib/store/cartSlice";
+import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import SimilarProduct from "./SimillarProduct";
 import api from "@/api/axiosIntespter";
@@ -25,6 +27,7 @@ const ProductDetailPage = () => {
   const [isLoading, setLoading] = useState(true);
   const [isInCart, setIsInCart] = useState(false);
   const [error, setError] = useState(null);
+  const dispatch = useDispatch();
   const { id } = useParams();
 
   // Wishlist states
@@ -266,7 +269,7 @@ const ProductDetailPage = () => {
       const token = localStorage.getItem("accessToken"); // assume JWT is saved
       console.log(id, "id");
       await addToCart(token, id, 1);
-
+      dispatch(incrementCart());
       // store in localStorage for quick UI update
       const cart = JSON.parse(localStorage.getItem("cart")) || [];
       cart.push({ productId: id, quantity: 1 });
