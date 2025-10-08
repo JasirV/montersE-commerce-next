@@ -10,19 +10,19 @@ import {
   removeFromCart,
   updateCart,
 } from "@/service/productService";
-import axios from "axios";
 import { toast } from "react-toastify";
+import api from "@/api/axiosIntespter";
 
 const ShoppingCart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
   const [loadingOne, setLoadingOne] = useState(false);
   const [loadingTwo, setLoadingTwo] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState([]);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState({});
 
   const syncTimeout = useRef(null);
 
@@ -40,15 +40,15 @@ const ShoppingCart = () => {
   // Fetch user's wishlists and check wishlist status
   const fetchWishlists = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         console.log("No token found");
         return;
       }
 
       setIsLoading(true);
-      const res = await axios.get(
-        "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists",
+      const res = await api.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/wishlists`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -92,7 +92,7 @@ const ShoppingCart = () => {
         setLoadingOne(false);
 
         setLoadingTwo(true);
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("accessToken");
         const result = await Recommendations(token);
         setRecommendedProducts(result?.recommended);
         setLoadingTwo(false);
@@ -111,7 +111,7 @@ const ShoppingCart = () => {
       prev.filter((item) => item.productId._id !== productId)
     );
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("accessToken");
     removeFromCart(token, productId);
 
     if (syncTimeout.current) clearTimeout(syncTimeout.current);
@@ -135,7 +135,7 @@ const ShoppingCart = () => {
 
   const syncCartWithBackend = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       const items = cartItems.map((item) => ({
         productId: item.productId._id,
         quantity: item.quantity,
@@ -174,63 +174,87 @@ const ShoppingCart = () => {
     [cartItems]
   );
 
-  const MoveToWishlist = async (product) => {
+  // Toggle Wishlist (Add/Remove)
+  const handleToggleWishlist = async (product) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
-        toast.error("Please log in first to add to wishlist");
+        toast.error("Please login to manage wishlist");
         return;
       }
 
-      // Make sure a default wishlist exists
       if (!defaultWishlistId) {
-        toast.error("No wishlist found. Please create a wishlist first.");
+        toast.error("No wishlist available");
         return;
       }
 
       const productId = product._id || product.productId?._id;
-
       if (!productId) {
-        console.error("Product ID not found");
+        toast.error("Invalid product data");
         return;
       }
 
-      // Check if already in wishlist
-      if (checkIsWishlisted(productId)) {
-        toast.info("Product is already in your wishlist");
-        return;
-      }
+      // Set loading state for this specific product
+      setWishlistLoading(prev => ({ ...prev, [productId]: true }));
 
-      const response = await axios.post(
-        "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/add",
-        {
-          wishlistId: defaultWishlistId,
-          productId: productId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const isAlreadyWishlisted = isWishlisted.includes(productId);
+
+      if (isAlreadyWishlisted) {
+        // ✅ Remove from wishlist
+        const response = await api.delete(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
+          {
+            data: {
+              wishlistId: defaultWishlistId,
+              productId,
+            },
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          setIsWishlisted((prev) => prev.filter((id) => id !== productId));
+          toast.info("Removed from wishlist");
         }
-      );
+      } else {
+        // ✅ Add to wishlist
+        const response = await api.post(
+          `${process.env.NEXT_PUBLIC_BASEURL}/wishlist/add`,
+          {
+            wishlistId: defaultWishlistId,
+            productId,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      if (response.status === 200) {
-        // Add to local wishlist state
-        setIsWishlisted((prev) => [...prev, productId]);
-        toast.success(`added to wishlist!`);
+        if (response.status === 200) {
+          setIsWishlisted((prev) => [...prev, productId]);
+          toast.success("Added to wishlist!");
+        }
       }
     } catch (error) {
-      console.error(
-        "❌ Error adding to wishlist:",
-        error.response?.data || error
-      );
-      toast.error("Failed to add to wishlist. Please try again.");
+      console.log("Error toggling wishlist:", error);
+      
+      if (error.response?.status === 400) {
+        toast.warning("Product is already in your wishlist!");
+      } else {
+        toast.error(error.response?.data?.message || "Something went wrong!");
+      }
+    } finally {
+      // Clear loading state for this product
+      setWishlistLoading(prev => ({ ...prev, [product._id || product.productId?._id]: false }));
     }
   };
 
   const addToCart = async (product) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         toast.error("Please log in to add items to your cart");
         return;
@@ -242,8 +266,8 @@ const ShoppingCart = () => {
         return;
       }
 
-      const response = await axios.post(
-        "https://montres-ecommerce-backend-1.onrender.com/api/products/cart/add",
+      const response = await api.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/cart/add`,
         {
           productId: productId,
           quantity: 1,
@@ -310,7 +334,13 @@ const ShoppingCart = () => {
               <FiShoppingCart className="text-4xl text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">Your cart is empty</p>
               <button
-                onClick={() => addToCart(recommendedProducts[0])}
+                onClick={() => {
+                  if (recommendedProducts?.length > 0) {
+                    addToCart(recommendedProducts[0]);
+                  } else {
+                    toast.info("No recommended products available right now!");
+                  }
+                }}
                 className="mt-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity"
               >
                 Start Shopping
@@ -321,6 +351,7 @@ const ShoppingCart = () => {
               {cartItems.map((item, index) => {
                 const productId = item.productId._id;
                 const isInWishlist = checkIsWishlisted(productId);
+                const isLoadingWishlist = wishlistLoading[productId];
 
                 return (
                   <div
@@ -354,24 +385,27 @@ const ShoppingCart = () => {
                             <FiTrash2 /> Remove
                           </button>
                           <button
-                            onClick={() => MoveToWishlist(item)}
+                            onClick={() => handleToggleWishlist(item.productId)}
+                            disabled={isLoadingWishlist}
                             className={`flex items-center gap-1 text-xs sm:text-sm font-medium transition-colors ${
                               isInWishlist
                                 ? "text-green-600 cursor-default"
                                 : "text-gray-600 hover:text-red-600"
-                            }`}
-                            disabled={isInWishlist}
+                            } ${isLoadingWishlist ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <FiHeart
                               className={`text-base ${
                                 isInWishlist
                                   ? "text-green-600 fill-green-600"
                                   : ""
-                              }`}
+                              } ${isLoadingWishlist ? 'animate-pulse' : ''}`}
                             />
-                            {isInWishlist
-                              ? "Added to Wishlist"
-                              : "Move to Wishlist"}
+                            {isLoadingWishlist 
+                              ? "Processing..." 
+                              : isInWishlist
+                                ? "Added to Wishlist"
+                                : "Move to Wishlist"
+                            }
                           </button>
                         </div>
                       </div>
@@ -444,6 +478,7 @@ const ShoppingCart = () => {
                     {recommendedProducts.map((product) => {
                       const productId = product._id;
                       const isInWishlist = checkIsWishlisted(productId);
+                      const isLoadingWishlist = wishlistLoading[productId];
 
                       return (
                         <div
@@ -458,16 +493,16 @@ const ShoppingCart = () => {
                               className="object-cover rounded"
                             />
                             <button
-                              onClick={() => MoveToWishlist(product)}
+                              onClick={() => handleToggleWishlist(product)}
+                              disabled={isLoadingWishlist}
                               className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
                                 isInWishlist
-                                  ? "text-green-600 bg-white"
-                                  : "text-gray-400 hover:text-red-500 bg-white/80"
-                              }`}
-                              disabled={isInWishlist}
+                                  ? "text-green-600 bg-white shadow-md"
+                                  : "text-gray-400 hover:text-red-500 bg-white/80 hover:bg-white"
+                              } ${isLoadingWishlist ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                               <FiHeart
-                                className={isInWishlist ? "fill-green-600" : ""}
+                                className={`${isInWishlist ? "fill-green-600" : ""} ${isLoadingWishlist ? 'animate-pulse' : ''}`}
                               />
                             </button>
                           </div>

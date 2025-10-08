@@ -6,6 +6,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { FiPlus, FiHeart } from "react-icons/fi";
 import CreateWishlistModal from "../../../components/ui/createWishilist";
+import api from "@/api/axiosIntespter";
 
 export default function WishlistBasePage() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function WishlistBasePage() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+    const storedToken = localStorage.getItem("accessToken");
     if (storedToken) {
       setToken(storedToken);
     } else {
@@ -30,14 +31,14 @@ export default function WishlistBasePage() {
       try {
         setLoading(true);
 
-        const response = await axios.get(
-          "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+       const response = await api.get(
+      `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
         const wishlists = response.data.wishlists || [];
 

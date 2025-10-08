@@ -4,6 +4,7 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-toastify";
+import api from "@/api/axiosIntespter";
 
 const RegisterForm = ({ setActiveTab }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -34,8 +35,8 @@ const handleSubmit = async (e) => {
   setLoading(true);
 
   try {
-    const response = await axios.post(
-      "https://montres-ecommerce-backend-1.onrender.com/api/Auth/register",
+    const response = await api.post(
+      `${process.env.NEXT_PUBLIC_BASEURL}Auth/register`,
       {
         name,
         email,
@@ -53,7 +54,7 @@ const handleSubmit = async (e) => {
       
       localStorage.setItem("user", JSON.stringify(userData));
 
-      toast.success(" Registration successful!");
+      toast.success(" Registration successful");
       setActiveTab("login"); // go to login tab
     }
   } catch (error) {

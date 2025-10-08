@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify"; // optional for alerts
+import api from "@/api/axiosIntespter";
 
 const CreateWishlistModal = ({ isOpen, onClose, onWishlistCreated }) => {
   const [wishlistName, setWishlistName] = useState("");
@@ -18,12 +19,12 @@ const CreateWishlistModal = ({ isOpen, onClose, onWishlistCreated }) => {
     try {
       setLoading(true);
 
-      const token = localStorage.getItem("token"); // 👈 adjust if you store it differently
+      const token = localStorage.getItem("accessToken"); // 👈 adjust if you store it differently
       console.log(token,"My token");
       
 
-      const { data } = await axios.post(
-        "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/create",
+      const { data } = await api.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/create`,
         { name: wishlistName, isDefault },
         {
           headers: {

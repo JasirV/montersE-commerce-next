@@ -6,10 +6,13 @@ import { useCurrency } from "@/app/CurrencyContext";
 import newCurrency from "../../assets/newSymbole.png";
 
 // Brand logos (example)
-import Omega from "../../assets/PremimumBrands/1-7f05a788.png";
-import Rolex from "../../assets/PremimumBrands/20211211180920-61b4e95031459.jpg";
-import Mango from "../../assets/PremimumBrands/5782919d7dcd53a67171c3b81640633b.jpg";
-import Guess from "../../assets/PremimumBrands/ac8cb0c703739077d236a5ffb03f9331.jpg";
+import Omega from "../../assets/PremimumBrands/b6047a0809e6575a92443a6924e60eae.jpg";
+import Rolex from "../../assets/PremimumBrands/rolex-logo-editorial-illustration-free-vector.jpg";
+import Cartier from "../../assets/PremimumBrands/cartier-logo-png_seeklogo-26665.png";
+import Ap from "../../assets/PremimumBrands/bbdc6dc34c14f4427a5d1fe1475cd453.jpg";
+import Seamaster from '../../assets/PremimumBrands/images (6).jpeg'
+import santos from '../../assets/PremimumBrands/santos.jpg'
+import Speedmaster from '../../assets/PremimumBrands/images (4).png'
 
 const MegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
   const { currency } = useCurrency();
@@ -18,11 +21,11 @@ const MegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
   const topBrands = [
     { name: "Omega", logo: Omega },
     { name: "Rolex", logo: Rolex },
-    { name: "Mango", logo: Mango },
-    { name: "Guess", logo: Guess },
-    { name: "Nike", logo: null },
-    { name: "Adidas", logo: null },
-    { name: "Puma", logo: null },
+    { name: "Cartier", logo: Cartier },
+    { name: "Ap", logo: Ap },
+    { name: "Santos", logo: santos },
+    { name: "Seamaster", logo: Seamaster},
+    { name: "Speedmaster", logo: Speedmaster },
   ];
 
   // ---------- MOBILE VIEW ----------

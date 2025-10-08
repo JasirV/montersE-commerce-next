@@ -5,41 +5,73 @@ import { useParams } from "next/navigation";
 import React, {
   memo,
   Suspense,
-  use,
   useEffect,
   useMemo,
   useState,
+  useRef,
 } from "react";
-import { FiFilter } from "react-icons/fi";
+import { FiFilter, FiX, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import FilterSidebar from "@/features/product/ProductFilterSidebar";
 
-const page = () => {
-  const [crrentPage, setCurrentPage] = useState(1);
-  const [products, setProducts] = useState([]);
+const Page = () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [products, setProducts] = useState({
+    products: [],
+    totalPages: 0,
+    currentPage: 1,
+    totalProducts: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortOption, setSortOption] = useState("featured");
   const { category, subcategory } = useParams();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [brandSearch, setBrandSearch] = useState("");
+
+  // Ref for scroll target
+  const productsSectionRef = useRef(null);
+
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      const { data, error, isLoading } = await WatchBycategory("sports", {
-        page: crrentPage,
-        limit: 15,
-      });
-      if (data) {
-        setProducts(data || []);
-      } else {
-        setError(error);
+      try {
+        const { data, error, isLoading } = await WatchBycategory("sports", {
+          page: currentPage,
+          limit: 15,
+        });
+        if (data) {
+          setProducts(
+            data || {
+              products: [],
+              totalPages: 0,
+              currentPage: 1,
+              totalProducts: 0,
+            }
+          );
+        } else {
+          setError(error);
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchProducts();
-  }, [crrentPage]);
+  }, [currentPage]);
 
-  const productsPerPage = 12;
+  // Scroll to top when page changes
+  useEffect(() => {
+    if (productsSectionRef.current) {
+      productsSectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [currentPage]);
+
+  const productsPerPage = 15;
+
   const [activeFilters, setActiveFilters] = useState({
     category: [],
     price: [],
@@ -49,6 +81,7 @@ const page = () => {
     availability: [],
     badges: [],
   });
+
   const clearAllFilters = () => {
     setActiveFilters({
       category: [],
@@ -62,18 +95,19 @@ const page = () => {
     setCurrentPage(1);
   };
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   const categoryFilteredProducts = useMemo(() => {
     if (loading) return [];
-    console.log(products, "products.products");
     return products?.products?.filter((p) => {
-      // First check if the main category matches
       const isCategoryMatch =
         p.categories &&
         p.categories.some((cat) =>
           cat?.toLowerCase()?.includes(category?.toLowerCase())
         );
 
-      // If there's a subcategory in URL, check if it matches
       if (subcategory) {
         return (
           isCategoryMatch &&
@@ -84,7 +118,6 @@ const page = () => {
         );
       }
 
-      // If no subcategory in URL, only check main category
       return isCategoryMatch;
     });
   }, [category, subcategory, products, loading]);
@@ -120,29 +153,26 @@ const page = () => {
   }, [categoryFilteredProducts, activeFilters]);
 
   const sortedProducts = useMemo(() => {
-  if (!sortOption) return filteredProducts;
+    if (!sortOption) return filteredProducts;
 
-  const result = [...filteredProducts].sort((a, b) => {
-    switch (sortOption) {
-      case "priceLowHigh":
-        return parseFloat(a.price) - parseFloat(b.price);
-      case "priceHighLow":
-        return parseFloat(b.price) - parseFloat(a.price);
-      case "rating":
-        return b.rating - a.rating;
-      case "discount":
-        return parseFloat(b.discount) - parseFloat(a.discount);
-      default:
-        return 0;
-    }
-  });
+    const result = [...filteredProducts].sort((a, b) => {
+      switch (sortOption) {
+        case "priceLowHigh":
+          return parseFloat(a.price) - parseFloat(b.price);
+        case "priceHighLow":
+          return parseFloat(b.price) - parseFloat(a.price);
+        case "rating":
+          return b.rating - a.rating;
+        case "discount":
+          return parseFloat(b.discount) - parseFloat(a.discount);
+        default:
+          return 0;
+      }
+    });
 
-  // 👇 if sorting resulted in empty array, fallback to original
-  console.log(products ,'pro')
-  return result.length > 0 ? result : products.products || [];
-}, [filteredProducts, sortOption, products]);
+    return result.length > 0 ? result : products.products || [];
+  }, [filteredProducts, sortOption, products]);
 
-  console.log(products.totalProducts);
   const toggleFilter = (type, value) => {
     setActiveFilters((prev) => {
       const updated = prev[type].includes(value)
@@ -152,10 +182,24 @@ const page = () => {
     });
     setCurrentPage(1);
   };
+
   const brands = useMemo(
     () => [...new Set(categoryFilteredProducts.map((p) => p.brand))],
     [categoryFilteredProducts]
   );
+
+  // Calculate display range for pagination
+  const getDisplayRange = () => {
+    const startItem = (currentPage - 1) * productsPerPage + 1;
+    const endItem = Math.min(
+      currentPage * productsPerPage,
+      products.totalProducts || 0
+    );
+    return { startItem, endItem };
+  };
+
+  const { startItem, endItem } = getDisplayRange();
+
   return (
     <div className="bg-[#f8f5f2] min-h-screen">
       <div className="container mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 py-4 xs:py-5 sm:py-6 md:py-8 lg:py-10">
@@ -170,7 +214,6 @@ const page = () => {
                 Home
               </a>
             </li>
-            {/* <li className="text-gray-500">/ {breadcrumbText}</li> */}
           </ol>
         </nav>
 
@@ -200,8 +243,8 @@ const page = () => {
             />
           </aside>
 
-          {/* Products Section */}
-          <main className="flex-1">
+          {/* Products Section with ref for scrolling */}
+          <main className="flex-1" ref={productsSectionRef}>
             {loading && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 xs:gap-4">
                 {[...Array(productsPerPage)].map((_, i) => (
@@ -216,12 +259,13 @@ const page = () => {
                 ))}
               </div>
             )}
+
             {/* Header */}
             {!loading && (
               <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between mb-4 xs:mb-5 sm:mb-6 gap-2 xs:gap-0">
                 <div>
                   <h2 className="text-xl xs:text-lg sm:text-lg font-bold text-[#1a1a1a] mb-1 xs:mb-2">
-                    {/* {breadcrumbText} */}
+                    Sports Watches
                   </h2>
                   <p className="text-xs xs:text-sm text-gray-500">
                     {sortedProducts.length}{" "}
@@ -251,6 +295,8 @@ const page = () => {
                 </div>
               </div>
             )}
+
+            {/* Active Filters */}
             {Object.values(activeFilters).some((arr) => arr.length > 0) && (
               <div className="mb-3 xs:mb-4 flex flex-wrap gap-1 xs:gap-2">
                 {Object.entries(activeFilters).map(([type, values]) =>
@@ -280,8 +326,9 @@ const page = () => {
                 </button>
               </div>
             )}
+
             {/* Products Grid */}
-            {products.products?.length || error > 0 ? (
+            {products.products?.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 xs:gap-4">
                   <Suspense
@@ -300,18 +347,17 @@ const page = () => {
                       </div>
                     }
                   >
-                    {console.log(products.products, "products.products")}
-                    {products?.products?.map((product) => (
+                    {products.products.map((product) => (
                       <ProductCard key={product._id} product={product} />
                     ))}
                   </Suspense>
                 </div>
 
-                {/* Pagination */}
-                <Pagination
-                  currentPage={products.currentPage}
-                  totalPages={products.totalPages}
-                  setCurrentPage={setCurrentPage}
+                {/* Mobile Responsive Pagination */}
+                <MobileResponsivePagination
+                  currentPage={currentPage}
+                  totalPages={products.totalPages || 1}
+                  onPageChange={handlePageChange}
                 />
               </>
             ) : (
@@ -337,97 +383,182 @@ const page = () => {
     </div>
   );
 };
-const Pagination = memo(({ currentPage, totalPages, setCurrentPage }) => {
-  const itemsPerPage = 15;
 
-  const pageNumbers = useMemo(() => {
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+// Mobile Responsive Pagination Component
+const MobileResponsivePagination = memo(
+  ({ currentPage, totalPages, onPageChange }) => {
+    const generatePageNumbers = () => {
+      if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+      }
 
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
+      const pages = [];
+      pages.push(1);
 
-    return Array.from(
-      { length: endPage - startPage + 1 },
-      (_, i) => startPage + i
-    );
-  }, [currentPage, totalPages]);
+      if (currentPage > 3) {
+        pages.push("...");
+      }
 
-  if (totalPages <= 1) return null;
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
 
-  const isFirstPage = currentPage === 1;
-  const isLastPage = currentPage === totalPages;
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
 
-  // Calculate range display
-  const startItem = (currentPage - 1) * itemsPerPage + 1;
-  console.log(totalPages, "totalPages");
-  return (
-    <div className="mt-6 flex flex-col items-center gap-2">
-      {/* Pagination Buttons */}
-      <div className="flex flex-wrap justify-center gap-1 xs:gap-2">
-        <button
-          onClick={() => setCurrentPage(1)}
-          disabled={isFirstPage}
-          className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-          aria-label="First page"
-        >
-          &laquo;
-        </button>
-        <button
-          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-          disabled={isFirstPage}
-          className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-          aria-label="Previous page"
-        >
-          &lsaquo;
-        </button>
+      if (currentPage < totalPages - 2) {
+        pages.push("...");
+      }
 
-        {pageNumbers.map((page) => (
+      if (totalPages > 1) {
+        pages.push(totalPages);
+      }
+
+      return pages;
+    };
+
+    if (totalPages <= 1) return null;
+
+    const pageNumbers = generatePageNumbers();
+    const isFirstPage = currentPage === 1;
+    const isLastPage = currentPage === totalPages;
+
+    return (
+      <div className="mt-6 sm:mt-8">
+        {/* Desktop Layout */}
+        <div className="hidden sm:flex items-center justify-center space-x-2">
+          {/* Previous Button */}
           <button
-            key={page}
-            onClick={() => setCurrentPage(page)}
-            className={`px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md min-w-[2rem] ${
-              currentPage === page
-                ? "bg-[#8b6b4a] text-white"
-                : "hover:bg-gray-100"
+            onClick={() => !isFirstPage && onPageChange(currentPage - 1)}
+            disabled={isFirstPage}
+            className={`flex items-center justify-center w-8 h-8 rounded border ${
+              isFirstPage
+                ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
             }`}
-            aria-label={`Page ${page}`}
-            aria-current={currentPage === page ? "page" : undefined}
+            aria-label="Previous page"
           >
-            {page}
+            <FiChevronLeft className="h-4 w-4" />
           </button>
-        ))}
 
-        <button
-          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-          disabled={isLastPage}
-          className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-          aria-label="Next page"
-        >
-          &rsaquo;
-        </button>
-        <button
-          onClick={() => setCurrentPage(totalPages)}
-          disabled={isLastPage}
-          className="px-2 xs:px-3 py-1.5 text-xs xs:text-sm border rounded-md disabled:opacity-50 hover:bg-gray-100"
-          aria-label="Last page"
-        >
-          &raquo;
-        </button>
+          {/* Page Numbers */}
+          <div className="flex items-center space-x-2">
+            {pageNumbers.map((page, index) => (
+              <React.Fragment key={index}>
+                {page === "..." ? (
+                  <span className="px-2 py-1 text-sm text-gray-500">...</span>
+                ) : (
+                  <button
+                    onClick={() => onPageChange(page)}
+                    className={`flex items-center justify-center w-8 h-8 text-sm font-medium rounded border ${
+                      currentPage === page
+                        ? "bg-[#8b6b4a] text-white border-[#8b6b4a]"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                    }`}
+                    aria-label={`Page ${page}`}
+                    aria-current={currentPage === page ? "page" : undefined}
+                  >
+                    {page}
+                  </button>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+
+          {/* Next Button */}
+          <button
+            onClick={() => !isLastPage && onPageChange(currentPage + 1)}
+            disabled={isLastPage}
+            className={`flex items-center justify-center w-8 h-8 rounded border ${
+              isLastPage
+                ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+            }`}
+            aria-label="Next page"
+          >
+            <FiChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="sm:hidden">
+          <div className="flex items-center justify-between">
+            {/* Previous Button */}
+            <button
+              onClick={() => !isFirstPage && onPageChange(currentPage - 1)}
+              disabled={isFirstPage}
+              className={`flex items-center justify-center w-10 h-10 rounded-lg border ${
+                isFirstPage
+                  ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                  : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+              }`}
+              aria-label="Previous page"
+            >
+              <FiChevronLeft className="h-5 w-5" />
+            </button>
+
+            {/* Current Page Display */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">Page</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {currentPage}
+              </span>
+              <span className="text-sm text-gray-600">of</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {totalPages}
+              </span>
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => !isLastPage && onPageChange(currentPage + 1)}
+              disabled={isLastPage}
+              className={`flex items-center justify-center w-10 h-10 rounded-lg border ${
+                isLastPage
+                  ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                  : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+              }`}
+              aria-label="Next page"
+            >
+              <FiChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Page Numbers for Mobile - Scrollable */}
+          {totalPages > 1 && (
+            <div className="mt-4 flex justify-center">
+              <div className="flex items-center space-x-1 overflow-x-auto scrollbar-hide max-w-full px-2 py-1">
+                {pageNumbers.map((page, index) => (
+                  <React.Fragment key={index}>
+                    {page === "..." ? (
+                      <span className="px-2 py-1 text-sm text-gray-500">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => onPageChange(page)}
+                        className={`flex items-center justify-center min-w-8 h-8 px-2 text-sm font-medium rounded border ${
+                          currentPage === page
+                            ? "bg-[#8b6b4a] text-white border-[#8b6b4a]"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                        }`}
+                        aria-label={`Page ${page}`}
+                        aria-current={currentPage === page ? "page" : undefined}
+                      >
+                        {page}
+                      </button>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+    );
+  }
+);
 
-      {/* Info summary below pagination */}
-      <div className="text-xs text-gray-600 mt-1">
-        Showing <strong>{startItem}</strong>–<strong>{totalPages}</strong> of{" "}
-        <strong>{}</strong> Page <strong>{currentPage}</strong> of{" "}
-        <strong>{totalPages}</strong>
-      </div>
-    </div>
-  );
-});
+MobileResponsivePagination.displayName = "MobileResponsivePagination";
 
-Pagination.displayName = "Pagination";
-
-export default page;
+export default Page;

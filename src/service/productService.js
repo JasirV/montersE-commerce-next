@@ -75,7 +75,7 @@ export const addToCart = async (token, productId, quantity = 1) => {
 };
 export const getCart = async (token) => {
   try {
-    const response = await api.get("/cart", {
+    const response = await api.get("/products/cart", {
       headers: {
         Authorization: `Bearer ${token}`, // send JWT for auth
       },

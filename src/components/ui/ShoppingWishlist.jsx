@@ -22,6 +22,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import newCurrency from "../../assets/newSymbole.png";
+import api from "@/api/axiosIntespter";
 
 const ShoppingWishlist = () => {
   const router = useRouter();
@@ -42,7 +43,7 @@ const ShoppingWishlist = () => {
 
   useEffect(() => {
     // Get token from localStorage
-    const storedToken = localStorage.getItem("token");
+    const storedToken = localStorage.getItem("accessToken");
     if (storedToken) setToken(storedToken);
   }, []);
 
@@ -60,36 +61,37 @@ const ShoppingWishlist = () => {
     }
 
     // Set loading state for this specific product
-    setAddingToCart(prev => ({
+    setAddingToCart((prev) => ({
       ...prev,
-      [item.id]: true
+      [item.id]: true,
     }));
 
     try {
-      const response = await axios.post(
-        "https://montres-ecommerce-backend-1.onrender.com/api/products/cart/add",
+      const response = await api.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/cart/add`,
         {
           productId: item.id,
-          quantity: 1 // Default quantity, you can make this dynamic if needed
+          quantity: 1, // Default quantity, you can make this dynamic if needed
         },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
+            "Content-Type": "application/json",
+          },
         }
       );
 
       if (response.status === 200) {
-        toast.success("Item added to cart successfully")    
+        toast.success("Item added to cart successfully");
       }
     } catch (error) {
       console.log("Error adding to cart:", error);
-      
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          "Failed to add item to cart";
-      
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to add item to cart";
+
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
         router.push("/");
@@ -100,9 +102,9 @@ const ShoppingWishlist = () => {
       }
     } finally {
       // Clear loading state for this product
-      setAddingToCart(prev => ({
+      setAddingToCart((prev) => ({
         ...prev,
-        [item.id]: false
+        [item.id]: false,
       }));
     }
   };
@@ -124,8 +126,8 @@ const ShoppingWishlist = () => {
       setLoading(true);
       setError(null);
 
-      const response = await axios.get(
-        "hhttps://montres-ecommerce-backend-1.onrender.com/api/products/wishlists/getAll",
+      const response = await api.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists/getAll`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -136,8 +138,6 @@ const ShoppingWishlist = () => {
           },
         }
       );
-
-     
 
       console.log("📥 Fetch wishlists response:", response.data);
       const wishlists = response.data.wishlists || [];
@@ -246,8 +246,8 @@ const ShoppingWishlist = () => {
     if (!token || !wishlistId || !productId) return;
 
     try {
-      const response = await axios.delete(
-        `https://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/remove`,
+      const response = await api.delete(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
         {
           headers: { Authorization: `Bearer ${token}` },
           data: {
@@ -268,11 +268,15 @@ const ShoppingWishlist = () => {
 
   const handleMakeDefault = async () => {
     if (!activeWishlist || activeWishlist.isDefault || !token) return;
+    console.log(token, "token");
 
     try {
-      const response = await axios.put(
-        `https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists/${activeWishlist.id}/default`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.put(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists/${activeWishlist.id}/default`,
+        {}, // ✅ empty body if no data
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
       toast.success("Wishlist set as default successfully!");
@@ -283,14 +287,6 @@ const ShoppingWishlist = () => {
       toast.error(error.response?.data?.message || "Failed to update wishlist");
     }
   };
-
-  // const handleViewDetails = () => {
-  //   console.log("Navigating to product:", product);
-  //   router.push(`/ProductDetailPage/${product._id}`);
-  // };
-
-
-
 
   // Toggle Public Sharing with API integration - IMPROVED STATE SYNC
   const handleTogglePublicSharing = async () => {
@@ -315,8 +311,8 @@ const ShoppingWishlist = () => {
         )
       );
 
-      const response = await axios.put(
-        `https://montres-ecommerce-backend-1.onrender.com/api/wishlists/${activeWishlist.id}/visibility`,
+      const response = await api.put(
+        `${process.env.NEXT_PUBLIC_BASEURL}/wishlists/${activeWishlist.id}/visibility`,
         {
           isPublic: newPublicStatus,
         },
@@ -395,8 +391,8 @@ const ShoppingWishlist = () => {
       return;
 
     try {
-      const response = await axios.delete(
-        `https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists/${activeWishlist.id}/items`,
+      const response = await api.delete(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists/${activeWishlist.id}/items`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -419,8 +415,8 @@ const ShoppingWishlist = () => {
     }
 
     try {
-      const response = await axios.delete(
-        `https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists/${wishlistId}`,
+      const response = await api.delete(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists/${wishlistId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -860,13 +856,13 @@ const ShoppingWishlist = () => {
                   {/* Image Container */}
                   <div
                     className={`
-                    relative mb-3
-                    ${
-                      viewMode === "grid"
-                        ? "w-full h-28 sm:h-32 md:h-36"
-                        : "w-20 h-20 flex-shrink-0 mb-0"
-                    }
-                  `}
+    relative mb-3 overflow-hidden rounded-lg
+    ${
+      viewMode === "grid"
+        ? "w-full h-64 sm:h-72 md:h-80 lg:h-70" // Bigger image like TheLuxuryCloset
+        : "w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 mb-0"
+    }
+  `}
                   >
                     <Image
                       src={getItemImage(item)}
@@ -900,7 +896,9 @@ const ShoppingWishlist = () => {
                     <p
                       className={`
                       font-semibold text-gray-900
-                      ${viewMode === "grid" ? "text-base md:text-lg" : "text-lg"}
+                      ${
+                        viewMode === "grid" ? "text-base md:text-lg" : "text-lg"
+                      }
                       flex items-center gap-1
                     `}
                     >
@@ -914,18 +912,19 @@ const ShoppingWishlist = () => {
                       {item.salePrice}
 
                       {/* Optional: show regular price if available */}
-                      {item.regularPrice && item.regularPrice !== item.salePrice && (
-                        <span className="line-through text-gray-500 ml-2 flex items-center gap-1">
-                          <Image
-                            src={newCurrency}
-                            alt="AED"
-                            width={14}
-                            height={14}
-                            className="inline-block"
-                          />
-                          {item.regularPrice}
-                        </span>
-                      )}
+                      {item.regularPrice &&
+                        item.regularPrice !== item.salePrice && (
+                          <span className="line-through text-gray-500 ml-2 flex items-center gap-1">
+                            <Image
+                              src={newCurrency}
+                              alt="AED"
+                              width={14}
+                              height={14}
+                              className="inline-block"
+                            />
+                            {item.regularPrice}
+                          </span>
+                        )}
                     </p>
 
                     {/* Action Buttons */}
@@ -940,7 +939,11 @@ const ShoppingWishlist = () => {
                         disabled={addingToCart[item.id]}
                         className={`
                           bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2 rounded font-medium hover:from-[#1e518e]/90 hover:to-[#0061b0ee]/90 transition-all duration-200 shadow hover:shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2
-                          ${viewMode === "grid" ? "flex-1 text-xs" : "px-3 text-sm"}
+                          ${
+                            viewMode === "grid"
+                              ? "flex-1 text-xs"
+                              : "px-3 text-sm"
+                          }
                         `}
                       >
                         {addingToCart[item.id] ? (
@@ -957,7 +960,9 @@ const ShoppingWishlist = () => {
                       </button>
 
                       <button
-                        onClick={() => router.push(`/ProductDetailPage/${item.id}`)}
+                        onClick={() =>
+                          router.push(`/ProductDetailPage/${item.id}`)
+                        }
                         className={`border border-gray-300 text-gray-700 py-2 rounded font-medium hover:bg-gray-50 transition-colors ${
                           viewMode === "grid"
                             ? "flex-1 text-xs"
@@ -982,8 +987,8 @@ const ShoppingWishlist = () => {
               <p className="text-gray-500 text-sm mt-1">
                 Start adding items to your wishlist
               </p>
-              <button 
-                onClick={() => router.push('/products')}
+              <button
+                onClick={() => router.push("/products")}
                 className="mt-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 Browse Products
@@ -1105,4 +1110,3 @@ const ShoppingWishlist = () => {
 };
 
 export default ShoppingWishlist;
-

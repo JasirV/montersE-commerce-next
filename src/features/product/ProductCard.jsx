@@ -7,6 +7,7 @@ import { FiHeart } from "react-icons/fi";
 import { toast } from "react-toastify";
 import newCurrency from "../../assets/newSymbole.png";
 import { useCurrency } from "@/app/CurrencyContext";
+import api from "@/api/axiosIntespter";
 
 // Wishlist icon component with filled and outline states
 const WishlistIcon = ({ isWishlisted, onClick, className = "" }) => {
@@ -98,15 +99,15 @@ const ProductCard = ({ product }) => {
   useEffect(() => {
     const fetchWishlists = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("accessToken");
         if (!token) {
           console.log("No token found");
           return;
         }
 
         setIsLoading(true);
-        const res = await axios.get(
-          "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists",
+        const res = await api.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/wishlists`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -145,7 +146,7 @@ const ProductCard = ({ product }) => {
     e.stopPropagation();
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         toast.error("Please login to manage wishlist");
         return;
@@ -160,8 +161,8 @@ const ProductCard = ({ product }) => {
 
       if (isWishlisted) {
         // ✅ Remove from wishlist API call
-        const response = await axios.delete(
-          "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/remove",
+        const response = await api.delete(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
           {
             data: {
               wishlistId: defaultWishlistId,
@@ -179,8 +180,8 @@ const ProductCard = ({ product }) => {
         }
       } else {
         // ✅ Add to wishlist API call
-        const response = await axios.post(
-          "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/add",
+        const response = await api.post(
+          `${process.env.NEXT_PUBLIC_BASEURL}/wishlist/add`,
           {
             wishlistId: defaultWishlistId,
             productId: product._id,
@@ -198,8 +199,8 @@ const ProductCard = ({ product }) => {
         }
       }
     } catch (error) {
-      console.error("Error toggling wishlist:", error);
-      toast.error(message);
+      console.log("Error toggling wishlist:", error);
+      // toast.error(message);
     } finally {
       setIsLoading(false);
     }

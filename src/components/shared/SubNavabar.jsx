@@ -30,6 +30,7 @@ import axios from "axios";
 
 // Import the MegaMenu component
 import MegaMenu from "./MegaMenu";
+import api from "@/api/axiosIntespter";
 
 const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currency, setCurrency, setRate } = useCurrency();
@@ -241,8 +242,8 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     setCurrency(currency.code);
 
     try {
-      const res = await axios.get(
-        `https://montres-ecommerce-backend-1.onrender.com/api/Auth/convert-price`,
+      const res = await api.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}Auth/convert-price`,
         {
           params: {
             amount: 1,

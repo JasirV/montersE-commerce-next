@@ -3,8 +3,8 @@ import React, { Suspense, useEffect, useState } from "react";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import Dummy1 from "../../assets/Omega Seamaster.jpg";
 import newCurrency from "../../assets/newSymbole.png";
-import axios from "axios";
 import { toast } from "react-toastify";
+import api from "@/api/axiosIntespter";
 
 // Single product card component
 const ProductCard = ({ product }) => {
@@ -20,15 +20,15 @@ const ProductCard = ({ product }) => {
   // Fetch user's wishlists and check wishlist status
   const fetchWishlists = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         console.log("No token found");
         return;
       }
 
       setIsLoading(true);
-      const res = await axios.get(
-        "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlists",
+      const res = await api.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -61,7 +61,7 @@ const ProductCard = ({ product }) => {
   // Add/Remove from wishlist
   const toggleWishlist = async (product) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         toast.error("Please log in first to add to wishlist");
         return;
@@ -91,7 +91,7 @@ const ProductCard = ({ product }) => {
 
   const addToWishlist = async (product) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         toast.error("Please log in first to add to wishlist");
         return;
@@ -116,8 +116,8 @@ const ProductCard = ({ product }) => {
         return;
       }
 
-      const response = await axios.post(
-        "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/add",
+      const response = await api.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/add`,
         {
           wishlistId: defaultWishlistId,
           productId: productId,
@@ -145,11 +145,11 @@ const ProductCard = ({ product }) => {
 
   const removeFromWishlist = async (productId) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) return;
 
-      const response = await axios.delete(
-        "https://montres-ecommerce-backend-1.onrender.com/api/products/wishlist/remove",
+      const response = await api.delete(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -174,7 +174,7 @@ const ProductCard = ({ product }) => {
 
   const addToCart = async (product) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         toast.error("Please log in to add items to your cart");
         return;
@@ -186,8 +186,8 @@ const ProductCard = ({ product }) => {
         return;
       }
 
-      const response = await axios.post(
-        "https://montres-ecommerce-backend-1.onrender.com/api/products/cart/add",
+      const response = await api.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/cart/add`,
         {
           productId: productId,
           quantity: 1,
@@ -201,7 +201,6 @@ const ProductCard = ({ product }) => {
 
       if (response.status === 200) {
         toast.success(` added to cart`);
-        // You can add fetchCartItems() here if you have that function
       } else {
         toast.error("Failed to add to cart. Try again!");
       }
@@ -311,25 +310,36 @@ const SimilarProduct = ({ productId }) => {
   // Fetch similar products
   useEffect(() => {
     const fetchSimilarProducts = async () => {
-      const token = localStorage.getItem("token");
-      if (!productId) return;
+      if (!productId) {
+        console.log("No product ID provided");
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
-        const response = await axios.get(
-          `https://montres-ecommerce-backend-1.onrender.com/api/products/${productId}/similar`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+        setError(null);
+        
+        console.log("Fetching similar products for ID:", productId);
+        
+        const response = await api.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`
         );
 
+        console.log("API Response:", response.data);
+        
         if (response.data.success) {
-          setSimilarProducts(response.data.products || []);
+          // ✅ FIX: Access the correct property from backend
+          const products = response.data.products || response.data.similarProducts || [];
+          console.log("Products found:", products.length);
+          setSimilarProducts(products);
         } else {
+          console.log("API returned success: false");
           setSimilarProducts([]);
         }
       } catch (err) {
         console.error("Error fetching similar products:", err);
+        console.error("Error details:", err.response?.data);
         setError("Failed to load similar products");
         setSimilarProducts([]);
       } finally {
@@ -448,25 +458,6 @@ const SimilarProduct = ({ productId }) => {
           </button>
         </div>
       </div>
-
-      {/* Services Section Fallback */}
-      <Suspense
-        fallback={
-          <div className="max-w-7xl mx-auto mt-12 bg-white rounded-xl shadow-sm p-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex flex-col items-center text-center">
-                  <div className="h-12 w-12 bg-gray-200 rounded-full animate-pulse mb-3"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded animate-pulse w-full"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        }
-      >
-        {/* You can add services component here if needed */}
-      </Suspense>
     </div>
   );
 };
