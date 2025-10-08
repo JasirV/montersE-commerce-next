@@ -5,6 +5,7 @@ import { FaFacebook, FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { signIn } from "next-auth/react";
+import api from "@/api/axiosIntespter";
 
 const LoginForm = ({ setActiveTab, onRequestClose }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,63 +18,27 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
     setShowPassword((prev) => !prev);
   }, []);
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   setLoading(true);
 
   try {
-    const response = await axios.post(
-      "http://localhost:9000/api/Auth/Login",
-      {
-        email,
-        password,
-      }
+    const response = await api.post(
+      `${process.env.NEXT_PUBLIC_BASEURL}/auth/login`,
+      { email, password },
+      { withCredentials: true } // ✅ important to receive cookie
     );
 
-    if (response.status === 201 || response.status === 200) {
+    const { accessToken, user } = response.data;
 
-      console.log(response,"jasir super");
-      
-      // ✅ Extract token + user data
-      const { token, userId, name } = response.data;
-      
-      const userData = {
-        id: userId,
-        name: name || email.split("@")[0],
-        email,
-        token, // 👈 store token alongside user
-      };
+    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("accessToken", accessToken);
 
-      // ✅ Store user + token in localStorage
-      localStorage.setItem("user", JSON.stringify(userData));
-      localStorage.setItem("token", token); // 👈 optional separate storage
-
-      // ✅ Trigger navbar update
-      if (window.triggerNavbarAuthUpdate) {
-        window.triggerNavbarAuthUpdate();
-      }
-      window.dispatchEvent(new Event("authChange"));
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: "user",
-          newValue: JSON.stringify(userData),
-        })
-      );
-      window.dispatchEvent(new Event("localStorageUpdated"));
-
-      toast.success("✅ Login successful!");
-      onRequestClose();
-
-      // Small delay to ensure state updates
-      setTimeout(() => {
-        if (window.triggerNavbarAuthUpdate) {
-          window.triggerNavbarAuthUpdate();
-        }
-      }, 100);
-    }
-  } catch (error) {
-    console.error("Login error:", error);
-    toast.error(error.response?.data?.message || "❌ Login failed!");
+    toast.success("Login successful!");
+    onRequestClose();
+    window.dispatchEvent(new Event("authChange"));
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Login failed!");
   } finally {
     setLoading(false);
   }
