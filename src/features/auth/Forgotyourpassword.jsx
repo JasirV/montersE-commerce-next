@@ -5,6 +5,7 @@ import checkEmail from "../../assets/checkEmail.jpg";
 import Image from "next/image";
 import axios from "axios";
 import { toast } from "react-toastify"; // ✅ import toast
+import api from "@/api/axiosIntespter";
 
 const ForgotPasswordForm = ({ setActiveTab }) => {
   const [emailSent, setEmailSent] = useState(false);
@@ -17,8 +18,8 @@ const ForgotPasswordForm = ({ setActiveTab }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        "http://localhost:9000/api/Auth/forgot-password",
+      const response = await api.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}Auth/forgot-password`,
         { email: resetEmail }
       );
 
@@ -44,7 +45,7 @@ const ForgotPasswordForm = ({ setActiveTab }) => {
     if (!submittedEmail) return;
 
     try {
-      await axios.post("http://localhost:9000/api/Auth/forgot-password", {
+      await api.post(`${process.env.NEXT_PUBLIC_BASEURL}Auth/forgot-password`, {
         email: submittedEmail,
       });
 

@@ -13,11 +13,11 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
-
-// Lazy load components
-const ReviewsRatings = lazy(() => import("./ReviewsRatings"));
+import ReviewsRating from "./ReviewsRatings";
 import { addToCart, fetchProduct } from "@/service/productService";
-import axios from "axios";
+import { toast } from "react-toastify";
+import SimilarProduct from "./SimillarProduct";
+import api from "@/api/axiosIntespter";
 
 const ProductDetailPage = () => {
   const router = useRouter();
@@ -60,7 +60,6 @@ const ProductDetailPage = () => {
   // Default image if none provided
   const defaultImage = "https://via.placeholder.com/500x500?text=Product+Image";
 
-  const [showVideo, setShowVideo] = useState(false);
   const [selectedImage, setSelectedImage] = useState(
     product?.images?.[0]?.url || defaultImage
   );
@@ -88,7 +87,7 @@ const ProductDetailPage = () => {
   useEffect(() => {
     const fetchWishlistsAndCheckWishlist = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("accessToken");
         if (!token) {
           console.log("No token found - User not logged in");
           setIsWishlisted(false);
@@ -98,8 +97,8 @@ const ProductDetailPage = () => {
         setWishlistLoading(true);
         
         // Fetch wishlists
-        const res = await axios.get(
-          "http://localhost:9000/api/products/wishlists",
+        const res = await api.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -143,7 +142,7 @@ const ProductDetailPage = () => {
   // Add/Remove from wishlist API
   const handleWishlistToggle = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         // Redirect to login or show login modal
         router.push("/");
@@ -151,7 +150,7 @@ const ProductDetailPage = () => {
       }
 
       if (!defaultWishlistId) {
-        console.error("No default wishlist found");
+        toast.error("No default wishlist found");
         return;
       }
 
@@ -159,25 +158,27 @@ const ProductDetailPage = () => {
 
       if (isWishlisted) {
         // Remove from wishlist
-        await axios.delete(
-          "http://localhost:9000/api/products/wishlist/remove",
+        await api.delete(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
           {
             headers: { 
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
+            
             data: {
               wishlistId: defaultWishlistId,
               productId: product._id || id,
-            }
+            },
+            
           }
         );
         setIsWishlisted(false);
         console.log("Product removed from wishlist");
       } else {
         // Add to wishlist
-        await axios.post(
-          "http://localhost:9000/api/products/wishlist/add",
+        await api.post(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/add`,
           {
             wishlistId: defaultWishlistId,
             productId: product._id || id,
@@ -262,7 +263,7 @@ const ProductDetailPage = () => {
 
   const handleAddToCart = async () => {
     try {
-      const token = localStorage.getItem("token"); // assume JWT is saved
+      const token = localStorage.getItem("accessToken"); // assume JWT is saved
       console.log(id, "id");
       await addToCart(token, id, 1);
 
@@ -281,10 +282,34 @@ const ProductDetailPage = () => {
   const handleGoToCart = () => {
     router.push("/cart");
   };
+  
+const handleBuyNow = async () => {
+  try {
+    const token = localStorage.getItem("accessToken"); // JWT token
+    if (!token) {
+      router.push("/login"); // redirect to login if user not logged in
+      return;
+    }
 
-  const handleBuyNow = () => {
-      router.push("/checkout");
-  };
+    // Add to cart if not already in cart
+    if (!isInCart) {
+      await addToCart(token, id, 1);
+
+      // Update localStorage
+      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart.push({ productId: id, quantity: 1 });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      setIsInCart(true);
+    }
+
+    // Redirect to checkout with product id and quantity in query params
+    router.push(`/checkout?productId=${id}&quantity=1`);
+  } catch (error) {
+    console.error("Buy now failed:", error);
+    toast.error("Unable to proceed to checkout. Please try again.");
+  }
+};
+
 
   return (
     <div className="bg-gray-100 min-h-screen py-3 xs:py-4 sm:py-6 px-2 xs:px-3 sm:px-4">
@@ -511,21 +536,21 @@ const ProductDetailPage = () => {
             {isInCart ? (
               <button
                 onClick={handleGoToCart}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
+                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
               >
                 GO TO CART
               </button>
             ) : (
               <button
                 onClick={handleAddToCart}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
+                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
               >
                 ADD TO CART
               </button>
             )}
             <button
               onClick={handleBuyNow}
-              className="flex-1 bg-orange-600 text-white py-4 rounded-lg font-semibold hover:bg-orange-700 transition-colors text-base shadow-md"
+              className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors text-base shadow-md"
             >
               BUY NOW
             </button>
@@ -625,7 +650,8 @@ const ProductDetailPage = () => {
           <div className="h-48 xs:h-56 sm:h-64 bg-gray-100 mt-6 animate-pulse rounded-lg"></div>
         }
       >
-        <ReviewsRatings productId={id} />
+        <ReviewsRating productId={id} />
+        <SimilarProduct productId={id} />
       </Suspense>
     </div>
   );

@@ -8,15 +8,11 @@ import master from "../../assets/mastercard-icon-lg.png";
 import paypl from "../../assets/images (2).png";
 import amex from "../../assets/images (3).png";
 import Image from "next/image";
+import Link from "next/link";
 
 const Footer = () => {
- 
-
-
   return (
     <footer className="bg-gradient-to-b from-[#0d111c] to-[#111827] text-gray-300 px-4 md:px-16 py-10 md:py-12">
-      
-
       <div className="container mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
         {/* Logo + Contact Info */}
         <div className="sm:col-span-2 lg:col-span-1">
@@ -65,6 +61,8 @@ const Footer = () => {
                 href="https://instagram.com/montres.ae" 
                 className="bg-gray-800 hover:bg-pink-600 p-2 rounded-full transition-colors duration-300"
                 aria-label="Instagram"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 <FaInstagram className="text-lg" />
               </a>
@@ -117,19 +115,24 @@ const Footer = () => {
           </h3>
           <ul className="space-y-3 text-sm md:text-base">
             {[
-              "Privacy Policy", 
-              "Authentication & Watch Grading", 
-              "Frequently Asked Questions (FAQ)", 
-              "Refund And Returns Policy", 
-              "Terms And Conditions", 
-              "Warranty Policy", 
-              "About Us", 
-              "Contact Us", 
-              "Request Item"
+              { name: "Privacy Policy", path: "/privacy-policy" },
+              { name: "Authentication & Watch Grading", path: "/authentication" },
+              { name: "Frequently Asked Questions (FAQ)", path: "/faq" },
+              { name: "Refund And Returns Policy", path: "/ReturnPolicy" },
+              { name: "Terms And Conditions", path: "/TermsCondition" },
+              { name: "Warranty Policy", path: "/warranty" },
+              { name: "About Us", path: "/about" },
+              { name: "Contact Us", path: "/contact" },
+              { name: "Request Item", path: "/request-item" }
             ].map((item) => (
-              <li key={item} className="hover:text-white transition-colors duration-300 cursor-pointer group">
-                {item}
-                <span className="inline-block ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">→</span>
+              <li key={item.name}>
+                <Link 
+                  href={item.path}
+                  className="hover:text-white transition-colors duration-300 cursor-pointer group flex items-center"
+                >
+                  {item.name}
+                  <span className="inline-block ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">→</span>
+                </Link>
               </li>
             ))}
           </ul>

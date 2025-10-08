@@ -4,6 +4,7 @@ import { Eye, EyeOff, CheckCircle, Lock, Clock, User, Check } from 'lucide-react
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { useParams, useRouter } from "next/navigation";
+import api from '@/api/axiosIntespter'
 
 const ResetPassword = () => {
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -92,8 +93,8 @@ const ResetPassword = () => {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        const response = await axios.post(
-          `http://localhost:9000/api/Auth/reset-password/${id}/${token}`,
+        const response = await api.post(
+          `${process.env.NEXT_PUBLIC_BASEURL}Auth/reset-password/${id}/${token}`,
           { newPassword, confirmPassword }
         );
 

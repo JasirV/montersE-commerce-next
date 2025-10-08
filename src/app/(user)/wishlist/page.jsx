@@ -6,6 +6,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { FiPlus, FiHeart } from "react-icons/fi";
 import CreateWishlistModal from "../../../components/ui/createWishilist";
+import api from "@/api/axiosIntespter";
 
 export default function WishlistBasePage() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function WishlistBasePage() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+    const storedToken = localStorage.getItem("accessToken");
     if (storedToken) {
       setToken(storedToken);
     } else {
@@ -23,8 +24,6 @@ export default function WishlistBasePage() {
     }
   }, [router]);
 
-
-
   useEffect(() => {
     if (!token) return;
 
@@ -32,14 +31,14 @@ export default function WishlistBasePage() {
       try {
         setLoading(true);
 
-        const response = await axios.get(
-          "http://localhost:9000/api/products/wishlists",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+       const response = await api.get(
+      `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
         const wishlists = response.data.wishlists || [];
 
@@ -64,13 +63,10 @@ export default function WishlistBasePage() {
   }, [token, router]);
 
   const handleWishlistCreated = (newWishlist) => {
-    console.log("Wishlist created:", newWishlist); // Debug log
-    
     if (newWishlist && newWishlist.id) {
-      toast.success("🎉 Your first wishlist has been created!");
-      setTimeout(() => {
-        router.push(`/wishlist/${newWishlist.id}`);
-      }, 500);
+      toast.success("Your first wishlist has been created!");
+      // Navigate immediately to the new wishlist page
+      router.push(`/wishlist/${newWishlist.id}`);
     } else {
       console.log("Invalid wishlist data:", newWishlist);
     }
