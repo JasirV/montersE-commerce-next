@@ -83,28 +83,35 @@ const ShoppingCart = () => {
     return isWishlisted.includes(productId);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoadingOne(true);
-        await fetchCartItems();
-        await fetchWishlists(); // Fetch wishlists after cart items
-        setLoadingOne(false);
+useEffect(() => {
+  const fetchData = async () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.log("User not logged in — skipping cart/wishlist/recommendations");
+      setCartItems([]);
+      setRecommendedProducts([]);
+      return; // 🚫 Stop here if not logged in
+    }
 
-        setLoadingTwo(true);
-        const token = localStorage.getItem("accessToken");
-        const result = await Recommendations(token);
-        setRecommendedProducts(result?.recommended);
-        setLoadingTwo(false);
-      } catch (err) {
-        console.error("Failed to fetch recommendations:", err);
-        setLoadingOne(false);
-        setLoadingTwo(false);
-      }
-    };
+    try {
+      setLoadingOne(true);
+      await fetchCartItems();
+      await fetchWishlists();
+      setLoadingOne(false);
 
-    fetchData();
-  }, []);
+      setLoadingTwo(true);
+      const result = await Recommendations(token);
+      setRecommendedProducts(result?.recommended);
+      setLoadingTwo(false);
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+      setLoadingOne(false);
+      setLoadingTwo(false);
+    }
+  };
+
+  fetchData();
+}, []);
 
   const handleRemove = async (productId) => {
     setCartItems((prev) =>
@@ -134,17 +141,22 @@ const ShoppingCart = () => {
   };
 
   const syncCartWithBackend = async () => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      const items = cartItems.map((item) => ({
-        productId: item.productId._id,
-        quantity: item.quantity,
-      }));
-      await updateCart(token, items);
-    } catch (err) {
-      console.error("Failed to sync cart:", err.message);
-    }
-  };
+  const token = localStorage.getItem("accessToken");
+  if (!token) {
+    console.log("Guest user — skipping cart sync");
+    return; // 🚫 Don’t sync if guest
+  }
+
+  try {
+    const items = cartItems.map((item) => ({
+      productId: item.productId._id,
+      quantity: item.quantity,
+    }));
+    await updateCart(token, items);
+  } catch (err) {
+    console.error("Failed to sync cart:", err.message);
+  }
+};
 
   const handleCheckout = async () => {
     await syncCartWithBackend();

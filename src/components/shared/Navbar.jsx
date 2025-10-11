@@ -19,8 +19,10 @@ import { useSession, signOut } from "next-auth/react";
 import { fetchProductAll } from "@/service/productService";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCartCount } from "@/lib/store/cartSlice";
+import api from "@/api/axiosIntespter";
+import { toast } from "react-toastify";
 
-const Navbar = ({ onSignUpClick }) => {
+const Navbar = ({ onSignUpClick }) => { 
   const { data: session, status } = useSession()||{};
   // const dispatch = useDispatch();
   // const cartCount = useSelector((state) => state.cart.count);
@@ -137,17 +139,35 @@ const Navbar = ({ onSignUpClick }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileSearchOpen, userDropdownOpen]);
 
-  const handleLogout = useCallback(async () => {
-    if (user?.source === "session") {
-      await signOut({ redirect: false, callbackUrl: "/" });
-    } else {
-      localStorage.removeItem("user");
-      setLocalUser(null);
-      window.dispatchEvent(new Event("authChange"));
-    }
-    setUserDropdownOpen(false);
-    router.push("/");
-  }, [user, router]);
+  // const handleLogout = useCallback(async () => {
+  //   if (user?.source === "session") {
+  //     await signOut({ redirect: false, callbackUrl: "/" });
+  //   } else {
+  //     localStorage.removeItem("user");
+  //     setLocalUser(null);
+  //     window.dispatchEvent(new Event("authChange"));
+  //   }
+  //   setUserDropdownOpen(false);
+  //   router.push("/");
+  // }, [user, router]);
+
+ const handleLogout = async () => {
+  try {
+    await api.post("/auth/logout", {}, { withCredentials: true });
+
+    // ✅ Remove localStorage tokens
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
+
+    // ✅ Notify and redirect
+    toast.success("Logged out successfully!");
+    window.dispatchEvent(new Event("authChange"));
+    window.location.href = "/"; // redirect to home/login
+  } catch (error) {
+    console.error("Logout failed:", error);
+    toast.error("Logout failed!");
+  }
+};
 
   const handleUserDashboard = useCallback(() => {
     router.push("/UserProfile");
