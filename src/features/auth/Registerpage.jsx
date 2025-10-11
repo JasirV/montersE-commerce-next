@@ -36,7 +36,7 @@ const handleSubmit = async (e) => {
 
   try {
     const response = await api.post(
-      `${process.env.NEXT_PUBLIC_BASEURL}Auth/register`,
+      `${process.env.NEXT_PUBLIC_BASEURL}/Auth/register`,
       {
         name,
         email,

@@ -12,10 +12,16 @@ const ProductPage = () => {
   const [sortOption, setSortOption] = useState("featured");
   const [brandSearch, setBrandSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [products, setProducts] = useState({ products: [], totalPages: 0, currentPage: 1, totalProducts: 0 });
+  const [shouldApplyFilters, setShouldApplyFilters] = useState(false);
+  const [products, setProducts] = useState({
+    products: [],
+    totalPages: 0,
+    currentPage: 1,
+    totalProducts: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Ref for scroll target
   const productsSectionRef = useRef(null);
 
@@ -27,37 +33,54 @@ const ProductPage = () => {
     price: [],
     brand: [],
     discount: [],
-    rating: [],
     availability: [],
     badges: [],
+    gender:[]
   });
+  
 
   useEffect(() => {
     const loadProducts = async () => {
       try {
         setLoading(true);
         setError(null);
-        const { data } = await fetchProduct({ page: currentPage, limit: 15 });
-        setProducts(data || { products: [], totalPages: 0, currentPage: 1, totalProducts: 0 });
+        const { data } = await fetchProduct({
+          page: currentPage,
+          limit: 15,
+          category:activeFilters.category,
+          brand: activeFilters.brand,
+          price: activeFilters.price,
+          availability: activeFilters.availability,
+          badges: activeFilters.badges,
+          gender:activeFilters.gender
+        });
+        setProducts(
+          data || {
+            products: [],
+            totalPages: 0,
+            currentPage: 1,
+            totalProducts: 0,
+          }
+        );
       } catch (err) {
         console.error("Error fetching products:", err);
         setError("Failed to load products. Please try again later.");
       } finally {
         setLoading(false);
+        setShouldApplyFilters(false);
       }
     };
 
     loadProducts();
-  }, [currentPage]);
+  }, [currentPage,shouldApplyFilters]);
 
-  // Scroll to top when page changes
+  // Smooth scroll to products section when page changes
   useEffect(() => {
-    if (productsSectionRef.current) {
-      productsSectionRef.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      });
-    }
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "smooth",
+    });
   }, [currentPage]);
 
   const handlePageChange = (page) => {
@@ -83,8 +106,12 @@ const ProductPage = () => {
       rating: [],
       availability: [],
       badges: [],
+      gender:[]
     });
     setCurrentPage(1);
+    setShouldApplyFilters(true)
+    console.log('clear');
+    
   };
 
   // Fixed category filtering logic - now uses API products
@@ -175,12 +202,22 @@ const ProductPage = () => {
   // Calculate display range for pagination
   const getDisplayRange = () => {
     const startItem = (currentPage - 1) * productsPerPage + 1;
-    const endItem = Math.min(currentPage * productsPerPage, products.totalProducts || 0);
+    const endItem = Math.min(
+      currentPage * productsPerPage,
+      products.totalProducts || 0
+    );
     return { startItem, endItem };
   };
 
   const { startItem, endItem } = getDisplayRange();
 
+  const applyFilters = () => {
+  // This will trigger the useEffect that fetches products with the current filters
+  setCurrentPage(1);
+  // You can add any additional logic here if needed
+  setShouldApplyFilters(true)
+  console.log('Applying filters:', activeFilters); //got for this section for category
+};
   return (
     <div className="bg-[#f8f5f2] min-h-screen">
       <div className="container mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 py-4 xs:py-5 sm:py-6 md:py-8 lg:py-10">
@@ -221,6 +258,7 @@ const ProductPage = () => {
               brandSearch={brandSearch}
               setBrandSearch={setBrandSearch}
               clearAllFilters={clearAllFilters}
+              applyFilters={applyFilters}
             />
           </aside>
 
@@ -366,10 +404,10 @@ const ProductPage = () => {
 };
 
 // Mobile Responsive Pagination Component
-const MobileResponsivePagination = ({ 
-  currentPage, 
-  totalPages, 
-  onPageChange 
+const MobileResponsivePagination = ({
+  currentPage,
+  totalPages,
+  onPageChange,
 }) => {
   const generatePageNumbers = () => {
     if (totalPages <= 7) {
@@ -380,7 +418,7 @@ const MobileResponsivePagination = ({
     pages.push(1);
 
     if (currentPage > 3) {
-      pages.push('...');
+      pages.push("...");
     }
 
     const start = Math.max(2, currentPage - 1);
@@ -391,7 +429,7 @@ const MobileResponsivePagination = ({
     }
 
     if (currentPage < totalPages - 2) {
-      pages.push('...');
+      pages.push("...");
     }
 
     if (totalPages > 1) {
@@ -417,8 +455,8 @@ const MobileResponsivePagination = ({
           disabled={isFirstPage}
           className={`flex items-center justify-center w-8 h-8 rounded border ${
             isFirstPage
-              ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-              : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+              ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+              : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
           }`}
           aria-label="Previous page"
         >
@@ -429,18 +467,18 @@ const MobileResponsivePagination = ({
         <div className="flex items-center space-x-2">
           {pageNumbers.map((page, index) => (
             <React.Fragment key={index}>
-              {page === '...' ? (
+              {page === "..." ? (
                 <span className="px-2 py-1 text-sm text-gray-500">...</span>
               ) : (
                 <button
                   onClick={() => onPageChange(page)}
                   className={`flex items-center justify-center w-8 h-8 text-sm font-medium rounded border ${
                     currentPage === page
-                      ? 'bg-[#8b6b4a] text-white border-[#8b6b4a]'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                      ? "bg-[#8b6b4a] text-white border-[#8b6b4a]"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
                   }`}
                   aria-label={`Page ${page}`}
-                  aria-current={currentPage === page ? 'page' : undefined}
+                  aria-current={currentPage === page ? "page" : undefined}
                 >
                   {page}
                 </button>
@@ -455,8 +493,8 @@ const MobileResponsivePagination = ({
           disabled={isLastPage}
           className={`flex items-center justify-center w-8 h-8 rounded border ${
             isLastPage
-              ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-              : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+              ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+              : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
           }`}
           aria-label="Next page"
         >
@@ -473,8 +511,8 @@ const MobileResponsivePagination = ({
             disabled={isFirstPage}
             className={`flex items-center justify-center w-10 h-10 rounded-lg border ${
               isFirstPage
-                ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-                : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
             }`}
             aria-label="Previous page"
           >
@@ -484,9 +522,13 @@ const MobileResponsivePagination = ({
           {/* Current Page Display */}
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600">Page</span>
-            <span className="text-sm font-semibold text-gray-900">{currentPage}</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {currentPage}
+            </span>
             <span className="text-sm text-gray-600">of</span>
-            <span className="text-sm font-semibold text-gray-900">{totalPages}</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {totalPages}
+            </span>
           </div>
 
           {/* Next Button */}
@@ -495,8 +537,8 @@ const MobileResponsivePagination = ({
             disabled={isLastPage}
             className={`flex items-center justify-center w-10 h-10 rounded-lg border ${
               isLastPage
-                ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-                : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
             }`}
             aria-label="Next page"
           >
@@ -510,18 +552,18 @@ const MobileResponsivePagination = ({
             <div className="flex items-center space-x-1 overflow-x-auto scrollbar-hide max-w-full px-2 py-1">
               {pageNumbers.map((page, index) => (
                 <React.Fragment key={index}>
-                  {page === '...' ? (
+                  {page === "..." ? (
                     <span className="px-2 py-1 text-sm text-gray-500">...</span>
                   ) : (
                     <button
                       onClick={() => onPageChange(page)}
                       className={`flex items-center justify-center min-w-8 h-8 px-2 text-sm font-medium rounded border ${
                         currentPage === page
-                          ? 'bg-[#8b6b4a] text-white border-[#8b6b4a]'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                          ? "bg-[#8b6b4a] text-white border-[#8b6b4a]"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
                       }`}
                       aria-label={`Page ${page}`}
-                      aria-current={currentPage === page ? 'page' : undefined}
+                      aria-current={currentPage === page ? "page" : undefined}
                     >
                       {page}
                     </button>
