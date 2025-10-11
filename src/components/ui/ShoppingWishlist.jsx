@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef,useContext } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   FiLock,
@@ -23,8 +23,10 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import newCurrency from "../../assets/newSymbole.png";
 import api from "@/api/axiosIntespter";
+import { GlobalContext } from "../shared/context/GlobalContext";
 
 const ShoppingWishlist = () => {
+  const { incrementCart,decrementWishlist } = useContext(GlobalContext);
   const router = useRouter();
   const params = useParams();
   const [activeWishlist, setActiveWishlist] = useState(null);
@@ -80,7 +82,7 @@ const ShoppingWishlist = () => {
           },
         }
       );
-
+     incrementCart()
       if (response.status === 200) {
         toast.success("Item added to cart successfully");
       }
@@ -256,7 +258,7 @@ const ShoppingWishlist = () => {
           },
         }
       );
-
+      decrementWishlist()
       toast.success("Item removed from wishlist successfully!");
       // Refresh wishlists after deleting item
       fetchWishlists();

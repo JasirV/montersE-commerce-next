@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback ,useContext} from "react";
 import {
   FaShoppingCart,
   FaUser,
@@ -16,16 +16,20 @@ import logo from "../../assets/montreslogo.png";
 import SubNavbar from "./SubNavabar";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import axios from "axios";
+import { GlobalContext } from "./context/GlobalContext";
 import { fetchProductAll } from "@/service/productService";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchCartCount } from "@/lib/store/cartSlice";
 
 const Navbar = ({ onSignUpClick }) => {
-  const { data: session, status } = useSession()||{};
-  const dispatch = useDispatch();
-  const cartCount = useSelector((state) => state.cart.count);
-  const wishlistCount = useSelector((state) => state.wishlist.count);
-  console.log(wishlistCount, "wish");
+  const global = useContext(GlobalContext);
+ 
+   if (!global) return null; // Prevent SSR crash
+  
+  const { cartCount, wishlistCount,clearAll }  = global;
+  
+  
+
+  const { data: session, status } = useSession() || {};
   const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);
@@ -63,9 +67,9 @@ const Navbar = ({ onSignUpClick }) => {
     loadUserFromStorage();
   }, [loadUserFromStorage]);
 
-  useEffect(() => {
-    dispatch(fetchCartCount());
-  }, [dispatch]); // fix this iisue i have using token
+  // useEffect(() => {
+  //   dispatch(fetchCartCount());
+  // }, [dispatch]); // fix this iisue i have using token
 
   // Auth update listener
   useEffect(() => {
@@ -138,17 +142,24 @@ const Navbar = ({ onSignUpClick }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileSearchOpen, userDropdownOpen]);
 
+
+
   const handleLogout = useCallback(async () => {
     if (user?.source === "session") {
       await signOut({ redirect: false, callbackUrl: "/" });
+       clearAll(); // ✅ reset counts
     } else {
       localStorage.removeItem("user");
+      clearAll(); // ✅ reset counts
       setLocalUser(null);
       window.dispatchEvent(new Event("authChange"));
     }
     setUserDropdownOpen(false);
     router.push("/");
-  }, [user, router]);
+  }, [user, router,clearAll]);
+
+
+
 
   const handleUserDashboard = useCallback(() => {
     router.push("/UserProfile");
@@ -314,6 +325,7 @@ const Navbar = ({ onSignUpClick }) => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-4">
+              {/* Wishlist */}
               <Link
                 href="/wishlist"
                 className="relative flex items-center justify-center p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
@@ -322,27 +334,26 @@ const Navbar = ({ onSignUpClick }) => {
                   size={20}
                   className="text-gray-700 hover:text-[#1e518e]"
                 />
-
-                {/* Wishlist Count Badge */}
                 {wishlistCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-red-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
-                    {wishlistCount > 99 ? "99+" : wishlistCount}
+                    {wishlistCount}
                   </span>
                 )}
               </Link>
+
+              {/* Cart */}
               <Link
                 href="/cart"
-                className="relative flex items-center justify-center rounded-full bg-gradient-to-br p-2.5 hover:shadow-md"
+                className="relative flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 p-2.5 hover:shadow-md"
               >
-                <FaShoppingCart size={20} />
-
-                {/* Cart Count Badge */}
+                <FaShoppingCart size={20} className="text-white" />
                 {cartCount > 0 && (
-                  <span className="absolute text-center -top-1 -right-1 max-w-5 min-w-[12px] h-5 px-1.5 bg-red-600 text-white text-xs  rounded-full flex items-center justify-center">
-                    {cartCount > 99 ? "99+" : cartCount}
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-red-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
+                    {cartCount}
                   </span>
                 )}
               </Link>
+
               {status === "loading" ? (
                 <div className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-full animate-pulse">
                   <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
@@ -432,17 +443,34 @@ const Navbar = ({ onSignUpClick }) => {
               >
                 <FaSearch />
               </button>
-              <Link
+
+              
+                 <Link
                 href="/wishlist"
-                className="p-2.5 rounded-full hover:bg-gray-100"
+                className="relative flex items-center justify-center p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               >
-                <FaHeart />
+                <FaHeart
+                  size={20}
+                  className="text-gray-700 hover:text-[#1e518e]"
+                />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-red-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
               </Link>
+
+              {/* Cart */}
               <Link
                 href="/cart"
-                className="p-2.5 rounded-full hover:bg-gray-100"
+                className="relative flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 p-2.5 hover:shadow-md"
               >
-                <FaShoppingCart />
+                <FaShoppingCart size={20} className="text-white" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-red-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
               </Link>
 
               {user ? (

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useContext } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import newCurrency from "../../assets/newSymbole.png";
 import { useCurrency } from "@/app/CurrencyContext";
 import api from "@/api/axiosIntespter";
+import { GlobalContext } from "@/components/shared/context/GlobalContext";
 
 // Wishlist icon component with filled and outline states
 const WishlistIcon = ({ isWishlisted, onClick, className = "" }) => {
@@ -86,6 +87,7 @@ const PriceDisplay = ({ price, mrp }) => {
 };
 
 const ProductCard = ({ product }) => {
+  const { decrementWishlist,incrementWishlist } = useContext(GlobalContext);
   const imageUrl = product?.images?.[0]?.url;
   const router = useRouter();
   const { currency, rate } = useCurrency();
@@ -173,6 +175,7 @@ const ProductCard = ({ product }) => {
             },
           }
         );
+        decrementWishlist()
 
         if (response.status === 200) {
           setIsWishlisted(false);
@@ -193,9 +196,10 @@ const ProductCard = ({ product }) => {
           }
         );
 
+        incrementWishlist()
         if (response.status === 200) {
           setIsWishlisted(true);
-          toast.success("Added to wishlist!");
+          // toast.success("Added to wishlist!");
         }
       }
     } catch (error) {

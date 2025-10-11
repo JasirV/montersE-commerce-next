@@ -1,13 +1,15 @@
 import Image from "next/image";
-import React, { Suspense, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import Dummy1 from "../../assets/Omega Seamaster.jpg";
 import newCurrency from "../../assets/newSymbole.png";
 import { toast } from "react-toastify";
 import api from "@/api/axiosIntespter";
+import { GlobalContext } from "../shared/context/GlobalContext";
 
 // Single product card component
 const ProductCard = ({ product }) => {
+  const { decrementWishlist,incrementWishlist ,incrementCart} = useContext(GlobalContext)
   const [isWishlisted, setIsWishlisted] = useState([]);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +35,7 @@ const ProductCard = ({ product }) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
 
       if (res.data && res.data.wishlists?.length > 0) {
         const defaultWishlist =
@@ -128,7 +131,8 @@ const ProductCard = ({ product }) => {
           },
         }
       );
-
+     
+      incrementWishlist()
       if (response.status === 200) {
         // Add to local wishlist state
         setIsWishlisted((prev) => [...prev, productId]);
@@ -161,10 +165,11 @@ const ProductCard = ({ product }) => {
         }
       );
 
+      decrementWishlist()
       if (response.status === 200) {
         // Remove from local wishlist state
         setIsWishlisted((prev) => prev.filter((id) => id !== productId));
-        toast.success("Product removed from wishlist");
+        // toast.success("Product removed from wishlist");
       }
     } catch (error) {
       console.error("Error removing from wishlist:", error);
@@ -199,8 +204,10 @@ const ProductCard = ({ product }) => {
         }
       );
 
+      incrementCart()
+
       if (response.status === 200) {
-        toast.success(` added to cart`);
+        // toast.success(` added to cart`);
       } else {
         toast.error("Failed to add to cart. Try again!");
       }
@@ -280,14 +287,7 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-        {/* Categories */}
-        {product.categories && product.categories.length > 0 && (
-          <div className="mb-3">
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              {product.categories[0]}
-            </span>
-          </div>
-        )}
+
 
         {/* Add to Cart Button */}
         <button
@@ -320,13 +320,13 @@ const SimilarProduct = ({ productId }) => {
         setLoading(true);
         setError(null);
         
-        console.log("Fetching similar products for ID:", productId);
+        
         
         const response = await api.get(
           `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`
         );
 
-        console.log("API Response:", response.data);
+
         
         if (response.data.success) {
           // ✅ FIX: Access the correct property from backend
