@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef,useContext } from "react";
 import { FiTrash2, FiHeart, FiShoppingCart } from "react-icons/fi";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,8 +12,12 @@ import {
 } from "@/service/productService";
 import { toast } from "react-toastify";
 import api from "@/api/axiosIntespter";
+import { useRouter } from "next/navigation";
+import { GlobalContext } from "@/components/shared/context/GlobalContext";
 
 const ShoppingCart = () => {
+  const { incrementCart,decrementCart,incrementWishlist,decrementWishlist, } = useContext(GlobalContext);
+  const router = useRouter();
   const [cartItems, setCartItems] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
@@ -25,6 +29,7 @@ const ShoppingCart = () => {
   const [wishlistLoading, setWishlistLoading] = useState({});
 
   const syncTimeout = useRef(null);
+
 
   const fetchCartItems = async () => {
     try {
@@ -120,6 +125,7 @@ useEffect(() => {
 
     const token = localStorage.getItem("accessToken");
     removeFromCart(token, productId);
+    decrementCart()
 
     if (syncTimeout.current) clearTimeout(syncTimeout.current);
     syncTimeout.current = setTimeout(syncCartWithBackend, 1000);
@@ -207,7 +213,7 @@ useEffect(() => {
       }
 
       // Set loading state for this specific product
-      setWishlistLoading(prev => ({ ...prev, [productId]: true }));
+      setWishlistLoading((prev) => ({ ...prev, [productId]: true }));
 
       const isAlreadyWishlisted = isWishlisted.includes(productId);
 
@@ -225,6 +231,7 @@ useEffect(() => {
             },
           }
         );
+        decrementWishlist()
 
         if (response.status === 200) {
           setIsWishlisted((prev) => prev.filter((id) => id !== productId));
@@ -244,6 +251,7 @@ useEffect(() => {
             },
           }
         );
+        incrementWishlist()
 
         if (response.status === 200) {
           setIsWishlisted((prev) => [...prev, productId]);
@@ -252,7 +260,7 @@ useEffect(() => {
       }
     } catch (error) {
       console.log("Error toggling wishlist:", error);
-      
+
       if (error.response?.status === 400) {
         toast.warning("Product is already in your wishlist!");
       } else {
@@ -260,7 +268,10 @@ useEffect(() => {
       }
     } finally {
       // Clear loading state for this product
-      setWishlistLoading(prev => ({ ...prev, [product._id || product.productId?._id]: false }));
+      setWishlistLoading((prev) => ({
+        ...prev,
+        [product._id || product.productId?._id]: false,
+      }));
     }
   };
 
@@ -290,6 +301,8 @@ useEffect(() => {
           },
         }
       );
+         // ✅ Immediately update the cart count in the navbar
+      incrementCart();
 
       if (response.status === 200) {
         toast.success(` added to cart`);
@@ -403,21 +416,24 @@ useEffect(() => {
                               isInWishlist
                                 ? "text-green-600 cursor-default"
                                 : "text-gray-600 hover:text-red-600"
-                            } ${isLoadingWishlist ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${
+                              isLoadingWishlist
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
                           >
                             <FiHeart
                               className={`text-base ${
                                 isInWishlist
                                   ? "text-green-600 fill-green-600"
                                   : ""
-                              } ${isLoadingWishlist ? 'animate-pulse' : ''}`}
+                              } ${isLoadingWishlist ? "animate-pulse" : ""}`}
                             />
-                            {isLoadingWishlist 
-                              ? "Processing..." 
+                            {isLoadingWishlist
+                              ? "Processing..."
                               : isInWishlist
-                                ? "Added to Wishlist"
-                                : "Move to Wishlist"
-                            }
+                              ? "Added to Wishlist"
+                              : "Move to Wishlist"}
                           </button>
                         </div>
                       </div>
@@ -511,10 +527,16 @@ useEffect(() => {
                                 isInWishlist
                                   ? "text-green-600 bg-white shadow-md"
                                   : "text-gray-400 hover:text-red-500 bg-white/80 hover:bg-white"
-                              } ${isLoadingWishlist ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              } ${
+                                isLoadingWishlist
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
                             >
                               <FiHeart
-                                className={`${isInWishlist ? "fill-green-600" : ""} ${isLoadingWishlist ? 'animate-pulse' : ''}`}
+                                className={`${
+                                  isInWishlist ? "fill-green-600" : ""
+                                } ${isLoadingWishlist ? "animate-pulse" : ""}`}
                               />
                             </button>
                           </div>
