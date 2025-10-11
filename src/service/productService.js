@@ -1,24 +1,50 @@
 import api from "../api/axiosIntespter";
-
-export async function fetchProduct({ id, page = 1, limit = 15 } = {}) {
+export async function fetchProduct({
+  id,
+  page = 1,
+  limit = 15,
+  category,
+  brand,
+  price,
+  availability,
+  badges,
+  gender,
+  featured,
+  search,
+  sortBy, // ✅ optional sorting param
+} = {}) {
   try {
     let endpoint = "products";
+    const params = new URLSearchParams();
 
-    if (id) {
-      endpoint += `?id=${id}`;
-    } else {
-      endpoint += `?page=${page}&limit=${limit}`;
+    // ✅ Add query params dynamically
+    if (id) params.append("id", id);
+    else {
+      params.append("page", page);
+      params.append("limit", limit);
     }
 
-    const response = await api.get(endpoint);
+    if (category) params.append("category", category);  
+    if (brand) params.append("brand", brand);
+    if (price) params.append("price", price);
+    if (availability) params.append("availability", availability);
+    if (badges) params.append("badges", badges);
+    if (gender) params.append("gender", gender);
+    if (featured !== undefined) params.append("featured", featured);
+    if (search) params.append("search", search);
+    if (sortBy) params.append("sortBy", sortBy);
+    const response = await api.get(`${endpoint}?${params.toString()}`);
     return { data: response.data, error: null, isLoading: false };
   } catch (error) {
+    console.error("❌ fetchProduct error:", error);
     return { data: null, error, isLoading: false };
   }
 }
 
 
-export async function LandingPageProduct(){
+
+
+export async function LandingPageProduct() {
   try {
     const response = await api.get("products/home");
     return { data: response.data, error: null, isLoading: false };
@@ -34,29 +60,35 @@ export async function WatchBycategory(category, { page = 1, limit = 15 } = {}) {
     return { data: response.data, error: null, isLoading: false };
   } catch (error) {
     return { data: null, error, isLoading: false };
-  } 
+  }
 }
-export async function LeatherBycategory(category, { page = 1, limit = 15 } = {}) {
+export async function LeatherBycategory(
+  category,
+  { page = 1, limit = 15 } = {}
+) {
   try {
     const endpoint = `/leather/category/${category}?page=${page}&limit=${limit}`;
     const response = await api.get(endpoint);
     return { data: response.data, error: null, isLoading: false };
   } catch (error) {
     return { data: null, error, isLoading: false };
-  } 
+  }
 }
-export async function AccessoriesBycategory(category, { page = 1, limit = 15 } = {}) {
+export async function AccessoriesBycategory(
+  category,
+  { page = 1, limit = 15 } = {}
+) {
   try {
     const endpoint = `/accessories/category/${category}?page=${page}&limit=${limit}`;
     const response = await api.get(endpoint);
     return { data: response.data, error: null, isLoading: false };
   } catch (error) {
     return { data: null, error, isLoading: false };
-  } 
+  }
 }
 
 export const addToCart = async (token, productId, quantity = 1) => {
-  console.log(productId)
+  console.log(productId);
   try {
     const response = await api.post(
       `/cart/add`,
@@ -86,29 +118,25 @@ export const getCart = async (token) => {
   }
 };
 
-
 // Remove product from cart
 export const removeFromCart = async (token, productId) => {
   try {
-    const response = await api.delete(
-      "/cart/remove",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-         data: { productId }
-      }
-    );
+    const response = await api.delete("/cart/remove", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      data: { productId },
+    });
     return response.data; // { message, cart }
   } catch (error) {
     throw error.response?.data || { message: "Something went wrong" };
   }
 };
 
-// upateCart 
+// upateCart
 export const updateCart = async (token, items) => {
-  console.log('hello')
+  console.log("hello");
   try {
     const res = await api.put(
       `/cart/update-cart`,
@@ -126,15 +154,14 @@ export const updateCart = async (token, items) => {
   }
 };
 
-
-export const Recommendations =async (token)=>{
+export const Recommendations = async (token) => {
   try {
-    const res=await api.get('/cart/recommendations',{headers:{Authorization:`Bearer ${token}`}})
-    return res.data
-  } catch (error) {
-    
-  }
-}
+    const res = await api.get("/cart/recommendations", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data;
+  } catch (error) {}
+};
 
 export async function fetchProductAll({ search = "" } = {}) {
   try {
