@@ -35,7 +35,7 @@ const handleSubmit = async (e) => {
   setLoading(true);
 
   try {
-    const response = await api.post(
+    const response = await axios.post(
       `${process.env.NEXT_PUBLIC_BASEURL}/Auth/register`,
       {
         name,
