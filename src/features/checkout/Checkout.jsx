@@ -142,7 +142,7 @@ const CheckoutPage = () => {
 
       // Use the updated endpoint that handles calculateOnly
       const response = await axios.post(
-        "http://localhost:9000/api/order/", // Same endpoint, but with calculateOnly flag
+        `${process.env.NEXT_PUBLIC_BASEURL}/order/`, // Same endpoint, but with calculateOnly flag
         {
           items,
           shippingAddress,
@@ -354,7 +354,7 @@ const CheckoutPage = () => {
       console.log("Creating order with data:", orderData);
 
       const response = await axios.post(
-        "http://localhost:9000/api/order/",
+        `${process.env.NEXT_PUBLIC_BASEURL}/order/`,
         orderData,
         {
           headers: {
@@ -412,7 +412,7 @@ const CheckoutPage = () => {
         setCheckoutProducts(cartResult.cart || []);
 
         const res = await axios.get(
-          "http://localhost:9000/api/order/shipping-addresses",
+          `${process.env.NEXT_PUBLIC_BASEURL}/order/shipping-addresses`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

@@ -19,6 +19,7 @@ import { toast } from "react-toastify";
 import SimilarProduct from "./SimillarProduct";
 import api from "@/api/axiosIntespter";
 import { GlobalContext } from "../shared/context/GlobalContext";
+import axios from "axios";
 
 const ProductDetailPage = () => {
     const { incrementWishlist,decrementWishlist,incrementCart } = useContext(GlobalContext);
@@ -100,7 +101,8 @@ const ProductDetailPage = () => {
         setWishlistLoading(true);
         
         // Fetch wishlists
-        const res = await api.get(
+        const res = await axios
+        .get(
           `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -161,7 +163,7 @@ const ProductDetailPage = () => {
 
       if (isWishlisted) {
         // Remove from wishlist
-        await api.delete(
+        await axios.delete(
           `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
           {
             headers: { 
@@ -181,7 +183,7 @@ const ProductDetailPage = () => {
         console.log("Product removed from wishlist");
       } else {
         // Add to wishlist
-        await api.post(
+        await axios.post(
           `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/add`,
           {
             wishlistId: defaultWishlistId,

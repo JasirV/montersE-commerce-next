@@ -23,7 +23,7 @@ const CreateWishlistModal = ({ isOpen, onClose, onWishlistCreated }) => {
       console.log(token,"My token");
       
 
-      const { data } = await api.post(
+      const { data } = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/create`,
         { name: wishlistName, isDefault },
         {

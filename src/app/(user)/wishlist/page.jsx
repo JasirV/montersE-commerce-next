@@ -6,7 +6,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { FiPlus, FiHeart } from "react-icons/fi";
 import CreateWishlistModal from "../../../components/ui/createWishilist";
-import api from "@/api/axiosIntespter";
+
 
 export default function WishlistBasePage() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function WishlistBasePage() {
       try {
         setLoading(true);
 
-       const response = await api.get(
+       const response = await axios.get(
       `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
       {
         headers: {

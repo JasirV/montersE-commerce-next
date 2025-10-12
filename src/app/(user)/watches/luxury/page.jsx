@@ -163,7 +163,7 @@ const Page = () => {
 
   const toggleFilter = (type, value) => {
     setActiveFilters((prev) => {
-      const updated = prev[type].includes(value)
+      const updated = prev[type]?.includes(value)
         ? prev[type].filter((v) => v !== value)
         : [...prev[type], value];
       return { ...prev, [type]: updated };

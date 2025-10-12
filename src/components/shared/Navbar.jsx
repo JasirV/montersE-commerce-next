@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback ,useContext} from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import {
   FaShoppingCart,
   FaUser,
@@ -24,22 +24,18 @@ import { fetchCartCount } from "@/lib/store/cartSlice";
 import api from "@/api/axiosIntespter";
 import { toast } from "react-toastify";
 
-
-
-
-
-const Navbar = ({ onSignUpClick }) => { 
-  const { data: session, status } = useSession()||{};
+const Navbar = ({ onSignUpClick }) => {
+  const { data: session, status } = useSession() || {};
   // const dispatch = useDispatch();
   // const cartCount = useSelector((state) => state.cart.count);
   // const wishlistCount = useSelector((state) => state.wishlist.count);
   // console.log(wishlistCount, "wish");
 
-const global = useContext(GlobalContext);
- 
-   if (!global) return null; // Prevent SSR crash
-  
-  const { cartCount, wishlistCount,clearAll }  = global;
+  const global = useContext(GlobalContext);
+
+  if (!global) return null; // Prevent SSR crash
+
+  const { cartCount, wishlistCount, clearAll } = global;
   const router = useRouter();
 
   const [scrolled, setScrolled] = useState(false);
@@ -80,7 +76,7 @@ const global = useContext(GlobalContext);
   // useEffect(() => {
   //   dispatch(fetchCartCount());
 
-  // }, [dispatch,isClient]); 
+  // }, [dispatch,isClient]);
 
   // Auth update listener
   useEffect(() => {
@@ -153,10 +149,6 @@ const global = useContext(GlobalContext);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileSearchOpen, userDropdownOpen]);
 
-
-
-
-  
   // const handleLogout = useCallback(async () => {
   //   if (user?.source === "session") {
   //     await signOut({ redirect: false, callbackUrl: "/" });
@@ -169,24 +161,24 @@ const global = useContext(GlobalContext);
   //   router.push("/");
   // }, [user, router]);
 
- const handleLogout = async () => {
-  try {
-    await api.post("/auth/logout", {}, { withCredentials: true });
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout", {}, { withCredentials: true });
 
-    // ✅ Remove localStorage tokens
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
+      // ✅ Remove localStorage tokens
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
+      clearAll();
 
-    // ✅ Notify and redirect
-    toast.success("Logged out successfully!");
-    window.dispatchEvent(new Event("authChange"));
-    window.location.href = "/"; // redirect to home/login
-  } catch (error) {
-    console.error("Logout failed:", error);
-    toast.error("Logout failed!");
-  }
-};
-
+      // ✅ Notify and redirect
+      toast.success("Logged out successfully!");
+      window.dispatchEvent(new Event("authChange"));
+      window.location.href = "/"; // redirect to home/login
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Logout failed!");
+    }
+  };
 
   const handleUserDashboard = useCallback(() => {
     router.push("/UserProfile");
@@ -362,30 +354,26 @@ const global = useContext(GlobalContext);
                   className="text-gray-700 hover:text-[#1e518e]"
                 />
 
-
                 {/* Wishlist Count Badge */}
-               {wishlistCount > 0 && (
-
+                {wishlistCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-red-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
                     {wishlistCount}
                   </span>
                 )}
               </Link>
-
               {/* Cart */}
               <Link
                 href="/cart"
-                className="relative flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 p-2.5 hover:shadow-md"
+                className="relative flex items-center justify-center p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               >
-
-                <FaShoppingCart size={20} className="text-white" />
+                <FaShoppingCart
+                  size={20}
+                  className="text-gray-700 hover:text-[#1e518e]" // ✅ updated to match Wishlist hover color
+                />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-red-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
                     {cartCount}
                   </span>
-                  
-
-          
                 )}
               </Link>
 
@@ -479,8 +467,7 @@ const global = useContext(GlobalContext);
                 <FaSearch />
               </button>
 
-              
-                 <Link
+              <Link
                 href="/wishlist"
                 className="relative flex items-center justify-center p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               >
@@ -498,9 +485,12 @@ const global = useContext(GlobalContext);
               {/* Cart */}
               <Link
                 href="/cart"
-                className="relative flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 p-2.5 hover:shadow-md"
+                className="relative flex items-center justify-center p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               >
-                <FaShoppingCart size={20} className="text-white" />
+                <FaShoppingCart
+                  size={20}
+                  className="text-gray-700 hover:text-[#1e518e]"
+                />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-red-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
                     {cartCount}
