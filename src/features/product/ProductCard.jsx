@@ -108,7 +108,7 @@ const ProductCard = ({ product }) => {
         }
 
         setIsLoading(true);
-        const res = await api.get(
+        const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BASEURL}/wishlists`,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -163,7 +163,7 @@ const ProductCard = ({ product }) => {
 
       if (isWishlisted) {
         // ✅ Remove from wishlist API call
-        const response = await api.delete(
+        const response = await axios.delete(
           `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
           {
             data: {
@@ -183,7 +183,7 @@ const ProductCard = ({ product }) => {
         }
       } else {
         // ✅ Add to wishlist API call
-        const response = await api.post(
+        const response = await axios.post(
           `${process.env.NEXT_PUBLIC_BASEURL}/wishlist/add`,
           {
             wishlistId: defaultWishlistId,

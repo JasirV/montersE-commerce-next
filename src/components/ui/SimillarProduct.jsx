@@ -6,6 +6,7 @@ import newCurrency from "../../assets/newSymbole.png";
 import { toast } from "react-toastify";
 import api from "@/api/axiosIntespter";
 import { GlobalContext } from "../shared/context/GlobalContext";
+import axios from "axios";
 
 // Single product card component
 const ProductCard = ({ product }) => {
@@ -29,7 +30,7 @@ const ProductCard = ({ product }) => {
       }
 
       setIsLoading(true);
-      const res = await api.get(
+      const res = await axios.get(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -119,7 +120,7 @@ const ProductCard = ({ product }) => {
         return;
       }
 
-      const response = await api.post(
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/add`,
         {
           wishlistId: defaultWishlistId,
@@ -152,7 +153,7 @@ const ProductCard = ({ product }) => {
       const token = localStorage.getItem("accessToken");
       if (!token) return;
 
-      const response = await api.delete(
+      const response = await axios.delete(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
         {
           headers: {
@@ -191,7 +192,7 @@ const ProductCard = ({ product }) => {
         return;
       }
 
-      const response = await api.post(
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/cart/add`,
         {
           productId: productId,
@@ -322,7 +323,7 @@ const SimilarProduct = ({ productId }) => {
         
         
         
-        const response = await api.get(
+        const response = await axios.get(
           `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`
         );
 

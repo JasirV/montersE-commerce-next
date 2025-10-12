@@ -18,7 +18,7 @@ const ForgotPasswordForm = ({ setActiveTab }) => {
     setLoading(true);
 
     try {
-      const response = await api.post(
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}Auth/forgot-password`,
         { email: resetEmail }
       );
@@ -45,7 +45,7 @@ const ForgotPasswordForm = ({ setActiveTab }) => {
     if (!submittedEmail) return;
 
     try {
-      await api.post(`${process.env.NEXT_PUBLIC_BASEURL}Auth/forgot-password`, {
+      await axios.post(`${process.env.NEXT_PUBLIC_BASEURL}Auth/forgot-password`, {
         email: submittedEmail,
       });
 
