@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Navbar from "@/components/shared/Navbar";
 import AuthModal from "@/features/auth/AuthModal";
-import Landing from "@/components/shared/Landing";
+import Landing from "@/components/shared/BannerPage";
 import Home from "@/pages/Home";
 import AddSection from "@/layouts/addsSection";
 import WatchBrand from "@/layouts/WatchBrand";
