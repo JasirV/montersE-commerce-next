@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect,useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
@@ -7,7 +7,6 @@ import { FiHeart } from "react-icons/fi";
 import { toast } from "react-toastify";
 import newCurrency from "../../assets/newSymbole.png";
 import { useCurrency } from "@/app/CurrencyContext";
-import api from "@/api/axiosIntespter";
 import { GlobalContext } from "@/components/shared/context/GlobalContext";
 
 // Wishlist icon component with filled and outline states
@@ -87,7 +86,7 @@ const PriceDisplay = ({ price, mrp }) => {
 };
 
 const ProductCard = ({ product }) => {
-  const { decrementWishlist,incrementWishlist } = useContext(GlobalContext);
+  const { decrementWishlist, incrementWishlist } = useContext(GlobalContext);
   const imageUrl = product?.images?.[0]?.url;
   const router = useRouter();
   const { currency, rate } = useCurrency();
@@ -175,7 +174,7 @@ const ProductCard = ({ product }) => {
             },
           }
         );
-        decrementWishlist()
+        decrementWishlist();
 
         if (response.status === 200) {
           setIsWishlisted(false);
@@ -196,7 +195,7 @@ const ProductCard = ({ product }) => {
           }
         );
 
-        incrementWishlist()
+        incrementWishlist();
         if (response.status === 200) {
           setIsWishlisted(true);
           // toast.success("Added to wishlist!");
@@ -210,26 +209,16 @@ const ProductCard = ({ product }) => {
     }
   };
 
-
   return (
     <div className="group bg-white rounded-md sm:rounded-lg overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition duration-300 transform hover:-translate-y-0.5 xs:hover:-translate-y-1 relative">
       <div className="relative w-full pb-[100%] sm:pb-[90%] md:pb-[85%] lg:pb-[80%] xl:pb-[76%] overflow-hidden">
-        {imageUrl ? (
+        {imageUrl && (
           <Image
             src={imageUrl}
             alt={product?.name || "Product image"}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="absolute top-0 left-0 w-full h-full object-cover object-center group-hover:scale-105 transition duration-500"
-            priority={false}
-          />
-        ) : (
-          <Image
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQeJQeJyzgAzTEVqXiGe90RGBFhfp_4RcJJMQ&s"
-            alt="No image available"
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="absolute top-0 left-0 w-full h-full object-cover object-center"
             priority={false}
           />
         )}

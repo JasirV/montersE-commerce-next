@@ -10,7 +10,8 @@ import axios from "axios";
 
 // Single product card component
 const ProductCard = ({ product }) => {
-  const { decrementWishlist,incrementWishlist ,incrementCart} = useContext(GlobalContext)
+  const { decrementWishlist, incrementWishlist, incrementCart } =
+    useContext(GlobalContext);
   const [isWishlisted, setIsWishlisted] = useState([]);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +37,6 @@ const ProductCard = ({ product }) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
 
       if (res.data && res.data.wishlists?.length > 0) {
         const defaultWishlist =
@@ -132,8 +132,8 @@ const ProductCard = ({ product }) => {
           },
         }
       );
-     
-      incrementWishlist()
+
+      incrementWishlist();
       if (response.status === 200) {
         // Add to local wishlist state
         setIsWishlisted((prev) => [...prev, productId]);
@@ -166,7 +166,7 @@ const ProductCard = ({ product }) => {
         }
       );
 
-      decrementWishlist()
+      decrementWishlist();
       if (response.status === 200) {
         // Remove from local wishlist state
         setIsWishlisted((prev) => prev.filter((id) => id !== productId));
@@ -205,7 +205,7 @@ const ProductCard = ({ product }) => {
         }
       );
 
-      incrementCart()
+      incrementCart();
 
       if (response.status === 200) {
         // toast.success(` added to cart`);
@@ -288,8 +288,6 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-
-
         {/* Add to Cart Button */}
         <button
           onClick={() => addToCart(product)}
@@ -308,48 +306,53 @@ const SimilarProduct = ({ productId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch similar products
-  useEffect(() => {
-    const fetchSimilarProducts = async () => {
-      if (!productId) {
-        console.log("No product ID provided");
-        setLoading(false);
-        return;
-      }
+   useEffect(() => {
+  const fetchSimilarProducts = async () => {
+    if (!productId) {
+      console.log("No product ID provided");
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError(null);
-        
-        
-        
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`
-        );
+    try {
+      setLoading(true);
+      setError(null);
 
+      // Get token from localStorage (or wherever you store it)
+      const token = localStorage.getItem("accessToken");
 
-        
-        if (response.data.success) {
-          // ✅ FIX: Access the correct property from backend
-          const products = response.data.products || response.data.similarProducts || [];
-          console.log("Products found:", products.length);
-          setSimilarProducts(products);
-        } else {
-          console.log("API returned success: false");
-          setSimilarProducts([]);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json",
+          },
         }
-      } catch (err) {
-        console.error("Error fetching similar products:", err);
-        console.error("Error details:", err.response?.data);
-        setError("Failed to load similar products");
-        setSimilarProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      );
 
-    fetchSimilarProducts();
-  }, [productId]);
+      if (response.data.success) {
+        const products =
+          response.data.products || response.data.similarProducts || [];
+        console.log("Products found:", products.length);
+        setSimilarProducts(products);
+      } else {
+        console.log("API returned success: false");
+        setSimilarProducts([]);
+      }
+    } catch (err) {
+      console.error("Error fetching similar products:", err);
+      console.error("Error details:", err.response?.data);
+      setError("Failed to load similar products");
+      setSimilarProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchSimilarProducts();
+}, [productId]);
+
 
   // Show loading state
   if (loading) {

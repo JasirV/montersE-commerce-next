@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo,  Suspense, useEffect ,useContext} from "react";
+import React, { useState, useMemo, Suspense, useEffect, useContext } from "react";
 import { FaHeart, FaShareAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import {
   FaShieldAlt,
@@ -22,9 +22,9 @@ import { GlobalContext } from "../shared/context/GlobalContext";
 import axios from "axios";
 
 const ProductDetailPage = () => {
-    const { incrementWishlist,decrementWishlist,incrementCart } = useContext(GlobalContext);
+  const { incrementWishlist, decrementWishlist, incrementCart } = useContext(GlobalContext);
   const router = useRouter();
-  const [product, setProducts] = useState({});
+  const [product, setProducts] = useState(null);
   const [isLoading, setLoading] = useState(true);
   const [isInCart, setIsInCart] = useState(false);
   const [error, setError] = useState(null);
@@ -40,33 +40,31 @@ const ProductDetailPage = () => {
   useEffect(() => {
     const loadProducts = async () => {
       setLoading(true);
+      setError(null);
       try {
         const { data } = await fetchProduct({ id });
-        setProducts(data || {});
-        setSelectedImage(data?.images?.[0]?.url || defaultImage);
+        setProducts(data || null);
+        setSelectedImage(data?.images?.[0]?.url);
       } catch (err) {
         setError("Failed to load products");
+        console.error("Error loading product:", err);
       } finally {
         setLoading(false);
       }
     };
-    loadProducts();
+    
+    if (id) {
+      loadProducts();
+    }
   }, [id]);
 
   useEffect(() => {
     if (product?.images?.length) {
-      setSelectedImage(product.images[0].url || defaultImage);
-    } else {
-      setSelectedImage(defaultImage);
+      setSelectedImage(product.images[0].url);
     }
   }, [product]);
 
-  // Default image if none provided
-  const defaultImage = "https://via.placeholder.com/500x500?text=Product+Image";
-
-  const [selectedImage, setSelectedImage] = useState(
-    product?.images?.[0]?.url || defaultImage
-  );
+  const [selectedImage, setSelectedImage] = useState(null);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
 
@@ -102,12 +100,12 @@ const ProductDetailPage = () => {
         
         // Fetch wishlists
         const res = await axios
-        .get(
-          `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+          .get(
+            `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
 
         // Correct way to access response data
         if (res.data && res.data.wishlists?.length > 0) {
@@ -170,15 +168,13 @@ const ProductDetailPage = () => {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
-            
             data: {
               wishlistId: defaultWishlistId,
               productId: product._id || id,
             },
-            
           }
         );
-       decrementWishlist()
+        decrementWishlist()
         setIsWishlisted(false);
         console.log("Product removed from wishlist");
       } else {
@@ -198,7 +194,6 @@ const ProductDetailPage = () => {
         );
         incrementWishlist()
         setIsWishlisted(true);
-  
         console.log("Product added to wishlist");
       }
     } catch (error) {
@@ -215,21 +210,13 @@ const ProductDetailPage = () => {
     }
   };
 
-  if (!product || Object.keys(product).length === 0) {
-    return (
-      <div className="text-center mt-10 text-red-500">
-        Product not found. Please go back and try again.
-      </div>
-    );
-  }
-
   // Handle share button click
   const handleShareClick = () => {
     setShowShareOptions(!showShareOptions);
     if (navigator.share) {
       navigator
         .share({
-          title: product.title || "Hermès Watch",
+          title: product?.title || "Hermès Watch",
           text: "Check out this beautiful Hermès watch!",
           url: window.location.href,
         })
@@ -241,7 +228,7 @@ const ProductDetailPage = () => {
   const handleSocialShare = (platform) => {
     let shareUrl = "";
     const productUrl = encodeURIComponent(window.location.href);
-    const productTitle = encodeURIComponent(product.title || "Hermès Watch");
+    const productTitle = encodeURIComponent(product?.title || "Hermès Watch");
 
     switch (platform) {
       case "facebook":
@@ -271,7 +258,7 @@ const ProductDetailPage = () => {
 
   const handleAddToCart = async () => {
     try {
-      const token = localStorage.getItem("accessToken"); // assume JWT is saved
+      const token = localStorage.getItem("accessToken");
       console.log(id, "id");
       await addToCart(token, id, 1);
       incrementCart()
@@ -283,7 +270,6 @@ const ProductDetailPage = () => {
       setIsInCart(true);
     } catch (error) {
       console.error("Add to cart failed:", error);
-      // alert("Failed to add to cart. Please try again.");
     }
   };
 
@@ -291,33 +277,88 @@ const ProductDetailPage = () => {
     router.push("/cart");
   };
   
-const handleBuyNow = async () => {
-  try {
-    const token = localStorage.getItem("accessToken"); // JWT token
-    if (!token) {
-      router.push("/login"); // redirect to login if user not logged in
-      return;
+  const handleBuyNow = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      if (!isInCart) {
+        await addToCart(token, id, 1);
+        const cart = JSON.parse(localStorage.getItem("cart")) || [];
+        cart.push({ productId: id, quantity: 1 });
+        localStorage.setItem("cart", JSON.stringify(cart));
+        setIsInCart(true);
+      }
+
+      router.push(`/checkout?productId=${id}&quantity=1`);
+    } catch (error) {
+      console.error("Buy now failed:", error);
+      toast.error("Unable to proceed to checkout. Please try again.");
     }
+  };
 
-    // Add to cart if not already in cart
-    if (!isInCart) {
-      await addToCart(token, id, 1);
-
-      // Update localStorage
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
-      cart.push({ productId: id, quantity: 1 });
-      localStorage.setItem("cart", JSON.stringify(cart));
-      setIsInCart(true);
-    }
-
-    // Redirect to checkout with product id and quantity in query params
-    router.push(`/checkout?productId=${id}&quantity=1`);
-  } catch (error) {
-    console.error("Buy now failed:", error);
-    toast.error("Unable to proceed to checkout. Please try again.");
+  // Loading State
+  if (isLoading) {
+    return (
+      <div className="bg-gray-100 min-h-screen py-3 xs:py-4 sm:py-6 px-2 xs:px-3 sm:px-4">
+        <div className="max-w-7xl mx-auto bg-white shadow-md rounded-lg p-3 xs:p-4 sm:p-6">
+          <div className="animate-pulse">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
+              {/* Image Section Skeleton */}
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                  <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                </div>
+                <div className="w-full h-72 xs:h-80 sm:h-96 md:h-[500px] bg-gray-300 rounded-lg"></div>
+                <div className="flex gap-2 justify-center">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 bg-gray-300 rounded-md"></div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Content Section Skeleton */}
+              <div className="space-y-6">
+                <div className="h-8 bg-gray-300 rounded w-3/4"></div>
+                <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+                <div className="h-12 bg-gray-300 rounded w-1/3"></div>
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-300 rounded"></div>
+                  <div className="h-4 bg-gray-300 rounded"></div>
+                  <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+                </div>
+                <div className="h-12 bg-gray-300 rounded"></div>
+                <div className="h-24 bg-gray-300 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
-};
 
+  // Error State
+  if (error || !product) {
+    return (
+      <div className="bg-gray-100 min-h-screen flex items-center justify-center py-3 xs:py-4 sm:py-6 px-2 xs:px-3 sm:px-4">
+        <div className="max-w-md mx-auto bg-white shadow-md rounded-lg p-6 text-center">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Product Not Available</h2>
+          <p className="text-gray-600 mb-4">The product you're looking for is currently unavailable.</p>
+          <button
+            onClick={() => router.back()}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-100 min-h-screen py-3 xs:py-4 sm:py-6 px-2 xs:px-3 sm:px-4">
@@ -407,7 +448,7 @@ const handleBuyNow = async () => {
           {/* Main Product Image */}
           <div className="w-full h-72 xs:h-80 sm:h-96 md:h-[500px] bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200">
             <Image
-              src={selectedImage || defaultImage}
+              src={selectedImage}
               alt={product.title || "Product Image"}
               width={600}
               height={600}
@@ -460,9 +501,6 @@ const handleBuyNow = async () => {
                     width={80}
                     height={80}
                     className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 object-cover rounded-md"
-                    onError={(e) => {
-                      e.target.src = defaultImage;
-                    }}
                   />
                 </div>
               ))}
@@ -536,8 +574,6 @@ const handleBuyNow = async () => {
               </span>
             </div>
           </div>
-
-         
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
