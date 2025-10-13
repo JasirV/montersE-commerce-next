@@ -40,7 +40,7 @@ export default function IndexPage() {
         defaultAction={authAction}
       />
 
-      <Landing />
+      {/* <Landing /> */}
       <Home />
       <AddSection />
       <WatchBrand />
