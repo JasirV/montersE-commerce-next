@@ -30,7 +30,7 @@ import axios from "axios";
 
 // Import the MegaMenu component
 import MegaMenu from "./MegaMenu";
-import api from "@/api/axiosIntespter";
+
 
 const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currency, setCurrency, setRate } = useCurrency();

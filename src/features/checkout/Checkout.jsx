@@ -8,6 +8,7 @@ import {
   FaHome,
   FaBriefcase,
   FaPlus,
+  FaSpinner,
 } from "react-icons/fa";
 import Image from "next/image";
 import { getCart } from "@/service/productService";
@@ -28,6 +29,7 @@ const CheckoutPage = () => {
   const [shippingAddresses, setShippingAddresses] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cartLoading, setCartLoading] = useState(true); // New loading state for cart
 
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -404,6 +406,7 @@ const CheckoutPage = () => {
 
     const fetchData = async () => {
       try {
+        setCartLoading(true); // Start loading
         const token = localStorage.getItem("accessToken");
         if (!token) return;
 
@@ -427,6 +430,8 @@ const CheckoutPage = () => {
         }
       } catch (err) {
         console.log("Error fetching data:", err.message);
+      } finally {
+        setCartLoading(false); // End loading
       }
     };
 
@@ -434,6 +439,23 @@ const CheckoutPage = () => {
   }, []);
 
   if (!isMounted) return null;
+
+  // Loading state for entire checkout page
+  if (cartLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-4 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="max-w-6xl mx-auto w-full text-center">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <FaSpinner className="w-8 h-8 text-blue-600 animate-spin" />
+              <h2 className="text-xl font-semibold text-gray-700">Loading Your Cart...</h2>
+              <p className="text-gray-500">Please wait while we prepare your checkout</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 px-4 sm:px-6 lg:px-8">
@@ -873,108 +895,123 @@ const CheckoutPage = () => {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
                 <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
 
-                <div className="space-y-4 mb-6 max-h-80 overflow-y-auto">
-                  {checkoutProducts.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-b-0"
-                    >
-                      <div className="flex items-start space-x-3 flex-1">
-                        <div className="relative w-16 h-16 flex-shrink-0">
-                          <Image
-                            src={
-                              item.productId.images?.[0]?.url ||
-                              "/placeholder.png"
-                            }
-                            alt={item.productId.name}
-                            fill
-                            className="rounded-lg object-cover border border-gray-200"
-                          />
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <FaSpinner className="w-6 h-6 text-blue-600 animate-spin" />
+                    <span className="ml-2 text-gray-600">Calculating totals...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4 mb-6 max-h-80 overflow-y-auto">
+                      {checkoutProducts.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          Your cart is empty
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-gray-900 line-clamp-2">
-                            {item.productId.name}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Qty: {item.quantity}
-                          </p>
-                          {item.productId.color && (
-                            <p className="text-xs text-gray-500">
-                              Color: {item.productId.color}
-                            </p>
-                          )}
-                          {item.productId.size && (
-                            <p className="text-xs text-gray-500">
-                              Size: {item.productId.size}
-                            </p>
-                          )}
-                        </div>
+                      ) : (
+                        checkoutProducts.map((item, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-b-0"
+                          >
+                            <div className="flex items-start space-x-3 flex-1">
+                              <div className="relative w-16 h-16 flex-shrink-0">
+                                <Image
+                                  src={
+                                    item.productId.images?.[0]?.url ||
+                                    "/placeholder.png"
+                                  }
+                                  alt={item.productId.name}
+                                  fill
+                                  className="rounded-lg object-cover border border-gray-200"
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-gray-900 line-clamp-2">
+                                  {item.productId.name}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Qty: {item.quantity}
+                                </p>
+                                {item.productId.color && (
+                                  <p className="text-xs text-gray-500">
+                                    Color: {item.productId.color}
+                                  </p>
+                                )}
+                                {item.productId.size && (
+                                  <p className="text-xs text-gray-500">
+                                    Size: {item.productId.size}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right flex-shrink-0 ml-3">
+                              <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                                {(
+                                  (item.productId.salePrice ||
+                                    item.productId.price ||
+                                    0) * item.quantity
+                                ).toFixed(2)}{" "}
+                                AED
+                              </p>
+                              <p className="text-xs text-gray-500 whitespace-nowrap">
+                                {(
+                                  item.productId.salePrice ||
+                                  item.productId.price ||
+                                  0
+                                ).toFixed(2)}{" "}
+                                AED each
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Price Breakdown */}
+                    <div className="border-t border-gray-200 pt-4 space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Subtotal</span>
+                        <span className="font-medium">
+                          {subtotal.toFixed(2)} AED
+                        </span>
                       </div>
-                      <div className="text-right flex-shrink-0 ml-3">
-                        <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
-                          {(
-                            (item.productId.salePrice ||
-                              item.productId.price ||
-                              0) * item.quantity
-                          ).toFixed(2)}{" "}
-                          AED
-                        </p>
-                        <p className="text-xs text-gray-500 whitespace-nowrap">
-                          {(
-                            item.productId.salePrice ||
-                            item.productId.price ||
-                            0
-                          ).toFixed(2)}{" "}
-                          AED each
-                        </p>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Shipping</span>
+                        <span
+                          className={`font-medium ${
+                            shippingFee === 0 ? "text-green-600" : "text-gray-900"
+                          }`}
+                        >
+                          {shippingFee === 0
+                            ? "Free"
+                            : `${shippingFee.toFixed(2)} AED`}
+                        </span>
+                        <button
+                          onClick={() => setIsShippingModalOpen(true)}
+                          className="text-blue-600 text-xs underline hover:text-blue-700"
+                        >
+                          View Terms
+                        </button>
+                        {/* Modal is rendered outside of button */}
+                        <ShippingTermsModal
+                          isOpen={isShippingModalOpen}
+                          onClose={() => setIsShippingModalOpen(false)}
+                        />
+                      </div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-600">VAT</span>
+                        <span className="font-medium">
+                          {vatAmount.toFixed(2)} AED
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between text-lg font-semibold border-t border-gray-200 pt-3">
+                        <span>Total</span>
+                        <span>{finalTotal.toFixed(2)} AED</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Price Breakdown */}
-                <div className="border-t border-gray-200 pt-4 space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-medium">
-                      {subtotal.toFixed(2)} AED
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Shipping</span>
-                    <span
-                      className={`font-medium ${
-                        shippingFee === 0 ? "text-green-600" : "text-gray-900"
-                      }`}
-                    >
-                      {shippingFee === 0
-                        ? "Free"
-                        : `${shippingFee.toFixed(2)} AED`}
-                    </span>
-                    <button
-                      onClick={() => setIsShippingModalOpen(true)}
-                      className="text-blue-600 text-xs underline hover:text-blue-700"
-                    >
-                      View Terms
-                    </button>
-                    {/* Modal is rendered outside of button */}
-                    <ShippingTermsModal
-                      isOpen={isShippingModalOpen}
-                      onClose={() => setIsShippingModalOpen(false)}
-                    />
-                  </div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-gray-600">VAT</span>
-                    <span className="font-medium">
-                      {vatAmount.toFixed(2)} AED
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between text-lg font-semibold border-t border-gray-200 pt-3">
-                    <span>Total</span>
-                    <span>{finalTotal.toFixed(2)} AED</span>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
 
               {/* Payment Method Section */}
@@ -1040,20 +1077,32 @@ const CheckoutPage = () => {
                     !privacyAccepted ||
                     !hasValidAddress() ||
                     isLoading ||
-                    loading
+                    loading ||
+                    checkoutProducts.length === 0
                   }
-                  className={`w-full mt-4 text-white py-3 rounded-lg font-medium transition-colors ${
+                  className={`w-full mt-4 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${
                     privacyAccepted &&
                     hasValidAddress() &&
                     !isLoading &&
-                    !loading
+                    !loading &&
+                    checkoutProducts.length > 0
                       ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
                       : "bg-gray-400 cursor-not-allowed"
                   }`}
                 >
-                  {isLoading || loading
-                    ? "Processing..."
-                    : `Place Order - ${finalTotal.toFixed(2)} AED`}
+                  {isLoading ? (
+                    <>
+                      <FaSpinner className="w-4 h-4 animate-spin mr-2" />
+                      Processing Order...
+                    </>
+                  ) : loading ? (
+                    <>
+                      <FaSpinner className="w-4 h-4 animate-spin mr-2" />
+                      Calculating...
+                    </>
+                  ) : (
+                    `Place Order - ${finalTotal.toFixed(2)} AED`
+                  )}
                 </button>
               </div>
             </div>

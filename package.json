@@ -31,12 +31,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
     "tailwindcss": "^4.1.13"
-  },
+  }
 
-  "browserslist": [
-  "defaults",
-  "last 2 iOS major versions",
-  "not IE 11"
-]
-
+  
 }

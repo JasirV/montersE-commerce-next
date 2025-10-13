@@ -90,17 +90,16 @@ const ProductGridEdit = () => {
 
                       <div className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 relative">
                         <Link href={`/ProductDetailPage/${product._id}`}>
-                          <Image
-                            src={
-                              product.images?.[0]?.url ||
-                              "https://via.placeholder.com/300x300?text=No+Image"
-                            }
-                            alt={product.name || "Product"}
-                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                            width={300}
-                            height={300}
-                            loading="lazy"
-                          />
+                          {product.images?.[0]?.url && (
+                            <Image
+                              src={product.images[0].url}
+                              alt={product.name || "Product"}
+                              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                              width={300}
+                              height={300}
+                              loading="lazy"
+                            />
+                          )}
                         </Link>
                       </div>
                       <p className="mt-2 text-sm font-semibold text-gray-800">

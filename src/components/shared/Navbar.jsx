@@ -15,25 +15,14 @@ import Image from "next/image";
 import logo from "../../assets/montreslogo.png";
 import SubNavbar from "./SubNavabar";
 import { useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
-import axios from "axios";
 import { GlobalContext } from "./context/GlobalContext";
 import { fetchProductAll } from "@/service/productService";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchCartCount } from "@/lib/store/cartSlice";
 import api from "@/api/axiosIntespter";
 import { toast } from "react-toastify";
 
 const Navbar = ({ onSignUpClick }) => {
-  const { data: session, status } = useSession() || {};
-  // const dispatch = useDispatch();
-  // const cartCount = useSelector((state) => state.cart.count);
-  // const wishlistCount = useSelector((state) => state.wishlist.count);
-  // console.log(wishlistCount, "wish");
-
   const global = useContext(GlobalContext);
-
-  if (!global) return null; // Prevent SSR crash
+  if (!global) return null;
 
   const { cartCount, wishlistCount, clearAll } = global;
   const router = useRouter();
@@ -58,12 +47,11 @@ const Navbar = ({ onSignUpClick }) => {
     }
   }, []);
 
-  // Get combined user data
+  // Get user data only from localStorage
   const getUserData = useCallback(() => {
-    if (session?.user) return { ...session.user, source: "session" };
     if (isClient && localUser) return { ...localUser, source: "localStorage" };
     return null;
-  }, [session, isClient, localUser]);
+  }, [isClient, localUser]);
 
   const user = getUserData();
 
@@ -72,11 +60,6 @@ const Navbar = ({ onSignUpClick }) => {
     setIsClient(true);
     loadUserFromStorage();
   }, [loadUserFromStorage]);
-
-  // useEffect(() => {
-  //   dispatch(fetchCartCount());
-
-  // }, [dispatch,isClient]);
 
   // Auth update listener
   useEffect(() => {
@@ -89,16 +72,12 @@ const Navbar = ({ onSignUpClick }) => {
       if (e.key === "user") handleAuthChange();
     };
 
-    window.triggerNavbarAuthUpdate = handleAuthChange;
-    window.addEventListener("authChange", handleAuthChange);
     window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("localStorageUpdated", handleStorageChange);
+    window.addEventListener("authChange", handleAuthChange);
 
     return () => {
-      window.removeEventListener("authChange", handleAuthChange);
       window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("localStorageUpdated", handleStorageChange);
-      delete window.triggerNavbarAuthUpdate;
+      window.removeEventListener("authChange", handleAuthChange);
     };
   }, [loadUserFromStorage]);
 
@@ -117,7 +96,6 @@ const Navbar = ({ onSignUpClick }) => {
       setLoading(true);
       try {
         const res = await fetchProductAll({ search: searchQuery });
-        console.log(res, "res");
         setResults(res.data.products || []);
       } catch (err) {
         console.error("Search failed:", err);
@@ -149,31 +127,19 @@ const Navbar = ({ onSignUpClick }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileSearchOpen, userDropdownOpen]);
 
-  // const handleLogout = useCallback(async () => {
-  //   if (user?.source === "session") {
-  //     await signOut({ redirect: false, callbackUrl: "/" });
-  //   } else {
-  //     localStorage.removeItem("user");
-  //     setLocalUser(null);
-  //     window.dispatchEvent(new Event("authChange"));
-  //   }
-  //   setUserDropdownOpen(false);
-  //   router.push("/");
-  // }, [user, router]);
-
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout", {}, { withCredentials: true });
 
-      // ✅ Remove localStorage tokens
+      // Remove localStorage tokens
       localStorage.removeItem("accessToken");
       localStorage.removeItem("user");
       clearAll();
 
-      // ✅ Notify and redirect
+      // Notify and redirect
       toast.success("Logged out successfully!");
       window.dispatchEvent(new Event("authChange"));
-      window.location.href = "/"; // redirect to home/login
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
       toast.error("Logout failed!");
@@ -214,19 +180,6 @@ const Navbar = ({ onSignUpClick }) => {
     { term: "Audemars Piguet", path: "/search?q=audemars+piguet" },
     { term: "Luxury Watches for Men", path: "/search?q=luxury+watches+men" },
   ];
-
-  // if (status === "loading") {
-  //   return (
-  //     <header className="w-full bg-white sticky top-0 z-50 shadow-sm">
-  //       <div className="container mx-auto px-4 md:px-6 lg:px-8">
-  //         <div className="flex justify-between items-center h-16">
-  //           <div className="h-8 w-32 bg-gray-200 animate-pulse rounded" />
-  //           <div className="h-8 w-8 bg-gray-200 animate-pulse rounded-full" />
-  //         </div>
-  //       </div>
-  //     </header>
-  //   );
-  // }
 
   return (
     <>
@@ -361,6 +314,7 @@ const Navbar = ({ onSignUpClick }) => {
                   </span>
                 )}
               </Link>
+              
               {/* Cart */}
               <Link
                 href="/cart"
@@ -368,7 +322,7 @@ const Navbar = ({ onSignUpClick }) => {
               >
                 <FaShoppingCart
                   size={20}
-                  className="text-gray-700 hover:text-[#1e518e]" // ✅ updated to match Wishlist hover color
+                  className="text-gray-700 hover:text-[#1e518e]"
                 />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1.5 bg-red-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
@@ -377,34 +331,15 @@ const Navbar = ({ onSignUpClick }) => {
                 )}
               </Link>
 
-              {status === "loading" ? (
-                <div className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-full animate-pulse">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-                  <div className="flex flex-col gap-1">
-                    <div className="w-20 h-3 bg-gray-300 rounded"></div>
-                    <div className="w-12 h-2 bg-gray-200 rounded"></div>
-                  </div>
-                  <div className="w-4 h-4 bg-gray-300 rounded-full ml-2"></div>
-                </div>
-              ) : user ? (
+              {user ? (
                 <div className="relative user-dropdown-container">
                   <button
                     onClick={toggleUserDropdown}
                     className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-full"
                   >
-                    {user.image ? (
-                      <Image
-                        src={user.image}
-                        alt={user.name || "User"}
-                        className="w-8 h-8 rounded-full"
-                        width={32}
-                        height={32}
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm">
-                        {user.name ? user.name.charAt(0) : "U"}
-                      </div>
-                    )}
+                    <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm">
+                      {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                    </div>
                     <span className="text-sm font-medium truncate">
                       {user.name?.split(" ")[0] || "User"}
                     </span>
@@ -423,11 +358,6 @@ const Navbar = ({ onSignUpClick }) => {
                         </p>
                         <p className="text-xs text-gray-500">
                           {user.email || ""}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {user.source === "session"
-                            ? "NextAuth"
-                            : "Local Storage"}
                         </p>
                       </div>
                       <button
@@ -504,19 +434,9 @@ const Navbar = ({ onSignUpClick }) => {
                     onClick={toggleUserDropdown}
                     className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center"
                   >
-                    {user.image ? (
-                      <Image
-                        src={user.image}
-                        alt={user.name || "User"}
-                        className="w-6 h-6 rounded-full"
-                        width={24}
-                        height={24}
-                      />
-                    ) : (
-                      <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs">
-                        {user.name?.charAt(0) || "U"}
-                      </div>
-                    )}
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs">
+                      {user.name?.charAt(0).toUpperCase() || "U"}
+                    </div>
                   </button>
                   {userDropdownOpen && (
                     <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border py-2 z-50">
@@ -530,15 +450,16 @@ const Navbar = ({ onSignUpClick }) => {
                       </div>
                       <button
                         onClick={handleUserDashboard}
-                        className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 border-b"
+                        className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 border-b hover:bg-gray-50"
                       >
                         <FaUser size={14} />
                         My Dashboard
                       </button>
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 py-3 text-sm text-red-600 flex items-center gap-2"
+                        className="w-full text-left px-4 py-3 text-sm text-red-600 flex items-center gap-2 hover:bg-gray-50"
                       >
+                        <FaSignOutAlt size={14} />
                         Sign Out
                       </button>
                     </div>
@@ -577,7 +498,7 @@ const Navbar = ({ onSignUpClick }) => {
                   <FaSearch />
                 </button>
               </form>
-              {searchQuery && isSearchFocused && (
+              {searchQuery && (
                 <div className="absolute top-full mt-1 w-full bg-white shadow-lg rounded-xl py-2 z-50 border max-h-80 overflow-y-auto">
                   <div className="px-4 py-2 text-xs text-gray-500 font-medium border-b">
                     Search Results
@@ -614,7 +535,7 @@ const Navbar = ({ onSignUpClick }) => {
                     ))
                   )}
 
-                  {/* Optional: Popular searches below */}
+                  {/* Popular searches */}
                   <div className="px-4 py-2 text-xs text-gray-500 font-medium border-t mt-2">
                     Popular Searches
                   </div>
@@ -623,7 +544,7 @@ const Navbar = ({ onSignUpClick }) => {
                       key={search.term}
                       href={search.path}
                       className="block px-4 py-2 text-sm hover:bg-gray-50"
-                      onClick={() => setIsSearchFocused(false)}
+                      onClick={() => setIsMobileSearchOpen(false)}
                     >
                       {search.term}
                     </Link>
@@ -646,20 +567,6 @@ const Navbar = ({ onSignUpClick }) => {
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
-
-      {/* Search results dropdown */}
-      {/* {searchQuery && (
-        <div className="absolute w-full bg-white shadow-lg rounded-xl py-2 z-50 border mt-1 max-h-80 overflow-y-auto">
-          {loading ? <div className="px-4 py-3 text-sm text-gray-500">Loading...</div> :
-            results.length === 0 ? <div className="px-4 py-3 text-sm text-gray-500">No results found</div> :
-              results.map(product => (
-                <div key={product._id} onClick={() => handleSelect(product._id)} className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-50">
-                  {product.images?.[0]?.url ? <img src={product.images[0].url} alt={product.name} className="w-10 h-10 object-cover rounded" /> : <div className="w-10 h-10 bg-gray-200 rounded" />}
-                  <div className="text-sm text-gray-700 truncate">{product.name}</div>
-                </div>
-              ))}
-        </div>
-      )} */}
     </>
   );
 };

@@ -28,10 +28,7 @@ const ReviewsRatings = () => {
         title: "Excellent product quality!",
         comment:
           "The watch looks even better in person. The build quality is premium and it keeps perfect time. Highly recommended!",
-        images: [
-          "https://via.placeholder.com/100x100?text=Review+1",
-          "https://via.placeholder.com/100x100?text=Review+2",
-        ],
+       
         likes: 24,
         dislikes: 2,
         featured: true,
@@ -57,7 +54,7 @@ const ReviewsRatings = () => {
         title: "Perfect gift",
         comment:
           "Bought this as a gift for my father. He loved it! The packaging was excellent and delivery was fast.",
-        images: ["https://via.placeholder.com/100x100?text=Review+3"],
+    
         likes: 8,
         dislikes: 0,
       },
@@ -83,10 +80,7 @@ const ReviewsRatings = () => {
         title: "Outstanding quality!",
         comment:
           "This watch exceeded my expectations. The craftsmanship is excellent and it gets compliments everywhere I go.",
-        images: [
-          "https://via.placeholder.com/100x100?text=Review+4",
-          "https://via.placeholder.com/100x100?text=Review+5",
-        ],
+        
         likes: 31,
         dislikes: 1,
       },
