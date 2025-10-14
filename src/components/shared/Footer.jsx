@@ -122,7 +122,7 @@ const Footer = () => {
               { name: "Terms And Conditions", path: "/TermsCondition" },
               { name: "Warranty Policy", path: "/warranty" },
               { name: "About Us", path: "/about" },
-              { name: "Contact Us", path: "/contact" },
+              { name: "Contact Us", path: "/contact-us" },
               { name: "Request Item", path: "/request-item" }
             ].map((item) => (
               <li key={item.name}>

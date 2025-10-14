@@ -4,7 +4,9 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-toastify";
-import api from "@/api/axiosIntespter";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
+
 
 const RegisterForm = ({ setActiveTab }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,14 +17,6 @@ const RegisterForm = ({ setActiveTab }) => {
   const [password, setPassword] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState("");
 
-  // // ✅ Handle input change
-  // const handleInputChange = useCallback((e) => {
-  //   const { name, value, type, checked } = e.target;
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     [name]: type === "checkbox" ? checked : value,
-  //   }));
-  // }, []);
 
   // ✅ Toggle password visibility
   const togglePasswordVisibility = useCallback(() => {
@@ -54,7 +48,16 @@ const handleSubmit = async (e) => {
       
       localStorage.setItem("user", JSON.stringify(userData));
 
-      toast.success(" Registration successful");
+   Toastify({
+      text: "Login successful!",
+      duration: 3000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #00b09b, #96c93d)",
+      },
+    }).showToast();
       setActiveTab("login"); // go to login tab
     }
   } catch (error) {
