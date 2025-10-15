@@ -600,7 +600,7 @@ const ProductDetailPage = () => {
             </button>
           </div>
 
-          {/* Delivery Details */}
+          {/* Delivery Details
           <div className="border rounded-lg p-4 bg-gray-50">
             <h2 className="font-semibold text-base mb-3">Delivery Details</h2>
             <div className="flex gap-2">
@@ -617,7 +617,7 @@ const ProductDetailPage = () => {
             <p className="text-sm text-green-600 mt-2">
               ✓ Free delivery available for this location
             </p>
-          </div>
+          </div> */}
 
           {/* About Product */}
           <div>

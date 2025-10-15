@@ -17,6 +17,17 @@ const RegisterForm = ({ setActiveTab }) => {
   const [password, setPassword] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState("");
 
+    const handleGoogleLogin = () => {
+    // Redirect user to backend Google OAuth endpoint
+    window.location.href = "https://api.montres.ae/api/Auth/google";
+  };
+
+  const handleFacebookLogin = () => {
+    // Redirect user to backend Facebook OAuth endpoint
+    window.location.href = "https://api.montres.ae/api/Auth/facebook";
+  };
+
+
 
   // ✅ Toggle password visibility
   const togglePasswordVisibility = useCallback(() => {
@@ -187,11 +198,19 @@ const handleSubmit = async (e) => {
 
       {/* Social buttons */}
       <div className="grid grid-cols-2 gap-3">
-        <button className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 px-4 hover:bg-gray-50 transition-colors text-sm">
+
+        <button
+         type="button"
+         onClick={handleGoogleLogin}
+         className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 px-4 hover:bg-gray-50 transition-colors text-sm">
           <FcGoogle size={18} />
           <span className="font-medium">Google</span>
         </button>
-        <button className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 px-4 hover:bg-gray-50 transition-colors text-sm">
+
+        <button
+          type="button"
+          onClick={handleFacebookLogin}
+         className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 px-4 hover:bg-gray-50 transition-colors text-sm">
           <FaFacebook size={18} className="text-blue-600" />
           <span className="font-medium">Facebook</span>
         </button>

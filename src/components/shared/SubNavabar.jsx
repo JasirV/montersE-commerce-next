@@ -31,7 +31,6 @@ import axios from "axios";
 // Import the MegaMenu component
 import MegaMenu from "./MegaMenu";
 
-
 const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currency, setCurrency, setRate } = useCurrency();
   const [dropdown, setDropdown] = useState(null);
@@ -672,15 +671,15 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         </div>
       </header>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Updated for half-screen */}
       <div
-        className={`fixed inset-y-0 left-0 w-full sm:w-4/5 bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 w-4/5 max-w-sm bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         } lg:hidden`}
       >
         {/* Mobile Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-300 bg-gradient-to-r from-gray-50 to-white">
-          <h2 className="text-xl font-bold text-gray-800">Montres Boutique</h2>
+          <h2 className="text-xl font-bold text-gray-800">Montres store</h2>
           <button
             onClick={closeMobileMenu}
             className="p-3 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
