@@ -1,15 +1,25 @@
 "use client";
 import React, { useState, useMemo, Suspense, useEffect, useContext } from "react";
-import { FaHeart, FaShareAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import {
+import { 
+  FaHeart, 
+  FaShareAlt, 
+  FaChevronLeft, 
+  FaChevronRight,
   FaShieldAlt,
   FaHeadset,
   FaUndo,
   FaQuestionCircle,
   FaExchangeAlt,
   FaBoxOpen,
-  FaThumbsDown,
+  FaThumbsDown
 } from "react-icons/fa";
+import {
+  FaFacebookF,
+  FaTwitter,
+  FaPinterest,
+  FaWhatsapp,
+  FaLink
+} from "react-icons/fa6";
 import { useParams, useRouter } from "next/navigation";
 import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
@@ -210,17 +220,30 @@ const ProductDetailPage = () => {
     }
   };
 
-  // Handle share button click
+  // Enhanced Handle share button click for mobile
   const handleShareClick = () => {
-    setShowShareOptions(!showShareOptions);
-    if (navigator.share) {
-      navigator
-        .share({
-          title: product?.title || "Hermès Watch",
-          text: "Check out this beautiful Hermès watch!",
-          url: window.location.href,
-        })
-        .catch((error) => console.log("Error sharing:", error));
+    // Check if it's a mobile device and if Web Share API is supported
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile && navigator.share) {
+      // Use native share dialog on mobile
+      navigator.share({
+        title: product?.title || "Hermès Watch",
+        text: "Check out this beautiful Hermès watch!",
+        url: window.location.href,
+      })
+      .then(() => {
+        console.log("Successful share");
+        setShowShareOptions(false);
+      })
+      .catch((error) => {
+        console.log("Error sharing:", error);
+        // Fallback to custom share options if native share fails
+        setShowShareOptions(!showShareOptions);
+      });
+    } else {
+      // Show custom share options on desktop or when native share isn't available
+      setShowShareOptions(!showShareOptions);
     }
   };
 
@@ -373,11 +396,12 @@ const ProductDetailPage = () => {
         <div className="space-y-4">
           {/* Wishlist & Share Buttons */}
           <div className="flex justify-between items-start">
-            <div className="flex gap-2">
+            <div className="flex gap-2 xs:gap-3">
+              {/* Wishlist Button */}
               <button
                 onClick={handleWishlistToggle}
                 disabled={wishlistLoading}
-                className={`bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors border border-gray-200 ${
+                className={`bg-white p-2 xs:p-2.5 rounded-full shadow-md hover:bg-gray-100 transition-colors border border-gray-200 flex items-center justify-center ${
                   wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 aria-label={
@@ -394,51 +418,104 @@ const ProductDetailPage = () => {
                 )}
               </button>
 
-              {/* Share Button */}
+              {/* Enhanced Share Button with Mobile & Desktop Responsiveness */}
               <div className="relative">
                 <button
                   onClick={handleShareClick}
-                  className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors border border-gray-200"
+                  className="bg-white p-2 xs:p-2.5 rounded-full shadow-md hover:bg-gray-100 transition-colors border border-gray-200 flex items-center gap-2 xs:gap-1"
                   aria-label="Share product"
                 >
                   <FaShareAlt size={18} className="text-gray-600" />
+                  {/* Show text on mobile */}
+                  <span className="text-sm font-medium text-gray-700 block xs:hidden">
+                    Share
+                  </span>
                 </button>
 
-                {/* Dropdown for Share */}
+                {/* Enhanced Dropdown for Share - Mobile Left Side, Desktop Right Side */}
                 {showShareOptions && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-200">
-                    <button
-                      onClick={() => handleSocialShare("facebook")}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      Share on Facebook
-                    </button>
-                    <button
-                      onClick={() => handleSocialShare("twitter")}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      Share on Twitter
-                    </button>
-                    <button
-                      onClick={() => handleSocialShare("pinterest")}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      Share on Pinterest
-                    </button>
-                    <button
-                      onClick={() => handleSocialShare("whatsapp")}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      Share on WhatsApp
-                    </button>
-                    <button
-                      onClick={() =>
-                        navigator.clipboard.writeText(window.location.href)
-                      }
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      Copy Link
-                    </button>
+                  <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 xs:w-64 sm:w-64 bg-white rounded-lg shadow-xl py-3 z-50 border border-gray-200">
+                    <div className="flex flex-col">
+                      {/* Header */}
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <h3 className="text-sm font-semibold text-gray-700">Share this product</h3>
+                      </div>
+
+                      {/* Native Web Share API for Mobile */}
+                      {navigator.share && (
+                        <button
+                          onClick={() => {
+                            navigator.share({
+                              title: product?.title || "Hermès Watch",
+                              text: "Check out this beautiful Hermès watch!",
+                              url: window.location.href,
+                            })
+                            .then(() => setShowShareOptions(false))
+                            .catch((error) => console.log("Error sharing:", error));
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 w-full text-left border-b border-gray-100 sm:hidden"
+                        >
+                          <FaShareAlt className="text-blue-500 text-base" />
+                          <span>Share via...</span>
+                        </button>
+                      )}
+
+                      {/* Social Media Options with React Icons */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3">
+                        <button
+                          onClick={() => handleSocialShare("facebook")}
+                          className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                        >
+                          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                            <FaFacebookF className="text-white text-sm" />
+                          </div>
+                          <span className="text-xs">Facebook</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleSocialShare("twitter")}
+                          className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                        >
+                          <div className="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center">
+                            <FaTwitter className="text-white text-sm" />
+                          </div>
+                          <span className="text-xs">Twitter</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleSocialShare("pinterest")}
+                          className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                        >
+                          <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
+                            <FaPinterest className="text-white text-sm" />
+                          </div>
+                          <span className="text-xs">Pinterest</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleSocialShare("whatsapp")}
+                          className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                        >
+                          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                            <FaWhatsapp className="text-white text-sm" />
+                          </div>
+                          <span className="text-xs">WhatsApp</span>
+                        </button>
+                      </div>
+
+                      {/* Copy Link Option */}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          toast.success("Link copied to clipboard!");
+                          setShowShareOptions(false);
+                        }}
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 w-full text-left border-t border-gray-100"
+                      >
+                        <FaLink className="text-gray-500 text-base" />
+                        <span>Copy Link</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -533,7 +610,7 @@ const ProductDetailPage = () => {
           </h1>
 
           {/* Ratings */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2 bg-green-600 text-white px-3 py-1 rounded-full">
               <span className="font-semibold">{product.rating || "4.6"}</span>
               <span>★</span>
@@ -548,7 +625,7 @@ const ProductDetailPage = () => {
 
           {/* Price Section */}
           <div className="space-y-2">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <div className="text-2xl xs:text-3xl sm:text-4xl font-bold text-gray-900 flex items-center">
                 <Image
                   src={newCurrency}
@@ -599,25 +676,6 @@ const ProductDetailPage = () => {
               BUY NOW
             </button>
           </div>
-
-          {/* Delivery Details
-          <div className="border rounded-lg p-4 bg-gray-50">
-            <h2 className="font-semibold text-base mb-3">Delivery Details</h2>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter Your Pincode"
-                className="flex-1 border rounded-lg px-4 py-3 outline-none focus:border-blue-500 text-base border-gray-300"
-                maxLength={6}
-              />
-              <button className="bg-blue-900 text-white px-6 rounded-lg hover:bg-blue-800 text-base font-medium whitespace-nowrap">
-                Check
-              </button>
-            </div>
-            <p className="text-sm text-green-600 mt-2">
-              ✓ Free delivery available for this location
-            </p>
-          </div> */}
 
           {/* About Product */}
           <div>

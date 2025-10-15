@@ -603,7 +603,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                       <FaPhone className="text-[#1e518e]" size={16} />
                       <div>
                         <div className="font-medium">Call Support</div>
-                        <div className="text-xs text-gray-500">+971 1234 5678</div>
+                        <div className="text-xs text-gray-500">+971 4 267 1124</div>
                       </div>
                     </a>
                     <Link
@@ -769,7 +769,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                   <FaPhone className="text-[#1e518e]" size={18} />
                   <div>
                     <div className="font-medium">Call Support</div>
-                    <div className="text-sm text-gray-600">+971 1234 5678</div>
+                    <div className="text-sm text-gray-600">+971 4 267 1124</div>
                   </div>
                 </a>
                 <Link

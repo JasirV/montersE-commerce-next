@@ -40,12 +40,12 @@ const Footer = () => {
 
             <div className="flex items-center gap-3">
               <MdPhone className="text-xl text-blue-400" />
-              <p className="text-gray-300 text-sm md:text-base">+97142671124</p>
+              <p className="text-gray-300 text-sm md:text-base">+971 4 267 1124</p>
             </div>
 
             <div className="flex items-center gap-3">
               <FaWhatsapp className="text-xl text-green-400" />
-              <p className="text-gray-300 text-sm md:text-base">+97142671124</p>
+              <p className="text-gray-300 text-sm md:text-base">+971 4 267 1124</p>
             </div>
 
             <div className="flex items-center gap-3">
