@@ -121,7 +121,7 @@ const Footer = () => {
               { name: "Refund And Returns Policy", path: "/ReturnPolicy" },
               { name: "Terms And Conditions", path: "/TermsCondition" },
               { name: "Warranty Policy", path: "/warranty" },
-              { name: "About Us", path: "/about" },
+              { name: "About Us", path: "/about-us" },
               { name: "Contact Us", path: "/contact-us" },
               { name: "Request Item", path: "/request-item" }
             ].map((item) => (

@@ -158,7 +158,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const menuItems = [
     {
       name: "SHOP BY BRANDS",
-      path: "/shop-by-brands",
+      path: "/shop",
     },
     {
       name: "EXCLUSIVE COLLECTION",

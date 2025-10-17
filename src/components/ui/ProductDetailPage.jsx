@@ -55,6 +55,8 @@ const ProductDetailPage = () => {
         const { data } = await fetchProduct({ id });
         setProducts(data || null);
         setSelectedImage(data?.images?.[0]?.url);
+        console.log(data,"dataaa");
+        
       } catch (err) {
         setError("Failed to load products");
         console.error("Error loading product:", err);
