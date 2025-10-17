@@ -1,15 +1,25 @@
 "use client";
-import React, { useState, useMemo,  Suspense, useEffect ,useContext} from "react";
-import { FaHeart, FaShareAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import {
+import React, { useState, useMemo, Suspense, useEffect, useContext } from "react";
+import { 
+  FaHeart, 
+  FaShareAlt, 
+  FaChevronLeft, 
+  FaChevronRight,
   FaShieldAlt,
   FaHeadset,
   FaUndo,
   FaQuestionCircle,
   FaExchangeAlt,
   FaBoxOpen,
-  FaThumbsDown,
+  FaThumbsDown
 } from "react-icons/fa";
+import {
+  FaFacebookF,
+  FaTwitter,
+  FaPinterest,
+  FaWhatsapp,
+  FaLink
+} from "react-icons/fa6";
 import { useParams, useRouter } from "next/navigation";
 import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
@@ -22,9 +32,9 @@ import { GlobalContext } from "../shared/context/GlobalContext";
 import axios from "axios";
 
 const ProductDetailPage = () => {
-    const { incrementWishlist,decrementWishlist,incrementCart } = useContext(GlobalContext);
+  const { incrementWishlist, decrementWishlist, incrementCart } = useContext(GlobalContext);
   const router = useRouter();
-  const [product, setProducts] = useState({});
+  const [product, setProducts] = useState(null);
   const [isLoading, setLoading] = useState(true);
   const [isInCart, setIsInCart] = useState(false);
   const [error, setError] = useState(null);
@@ -40,33 +50,33 @@ const ProductDetailPage = () => {
   useEffect(() => {
     const loadProducts = async () => {
       setLoading(true);
+      setError(null);
       try {
         const { data } = await fetchProduct({ id });
-        setProducts(data || {});
-        setSelectedImage(data?.images?.[0]?.url || defaultImage);
+        setProducts(data || null);
+        setSelectedImage(data?.images?.[0]?.url);
+        console.log(data,"dataaa");
+        
       } catch (err) {
         setError("Failed to load products");
+        console.error("Error loading product:", err);
       } finally {
         setLoading(false);
       }
     };
-    loadProducts();
+    
+    if (id) {
+      loadProducts();
+    }
   }, [id]);
 
   useEffect(() => {
     if (product?.images?.length) {
-      setSelectedImage(product.images[0].url || defaultImage);
-    } else {
-      setSelectedImage(defaultImage);
+      setSelectedImage(product.images[0].url);
     }
   }, [product]);
 
-  // Default image if none provided
-  const defaultImage = "https://via.placeholder.com/500x500?text=Product+Image";
-
-  const [selectedImage, setSelectedImage] = useState(
-    product?.images?.[0]?.url || defaultImage
-  );
+  const [selectedImage, setSelectedImage] = useState(null);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
 
@@ -102,12 +112,12 @@ const ProductDetailPage = () => {
         
         // Fetch wishlists
         const res = await axios
-        .get(
-          `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+          .get(
+            `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
 
         // Correct way to access response data
         if (res.data && res.data.wishlists?.length > 0) {
@@ -170,15 +180,13 @@ const ProductDetailPage = () => {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
-            
             data: {
               wishlistId: defaultWishlistId,
               productId: product._id || id,
             },
-            
           }
         );
-       decrementWishlist()
+        decrementWishlist()
         setIsWishlisted(false);
         console.log("Product removed from wishlist");
       } else {
@@ -198,7 +206,6 @@ const ProductDetailPage = () => {
         );
         incrementWishlist()
         setIsWishlisted(true);
-  
         console.log("Product added to wishlist");
       }
     } catch (error) {
@@ -215,25 +222,30 @@ const ProductDetailPage = () => {
     }
   };
 
-  if (!product || Object.keys(product).length === 0) {
-    return (
-      <div className="text-center mt-10 text-red-500">
-        Product not found. Please go back and try again.
-      </div>
-    );
-  }
-
-  // Handle share button click
+  // Enhanced Handle share button click for mobile
   const handleShareClick = () => {
-    setShowShareOptions(!showShareOptions);
-    if (navigator.share) {
-      navigator
-        .share({
-          title: product.title || "Hermès Watch",
-          text: "Check out this beautiful Hermès watch!",
-          url: window.location.href,
-        })
-        .catch((error) => console.log("Error sharing:", error));
+    // Check if it's a mobile device and if Web Share API is supported
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile && navigator.share) {
+      // Use native share dialog on mobile
+      navigator.share({
+        title: product?.title || "Hermès Watch",
+        text: "Check out this beautiful Hermès watch!",
+        url: window.location.href,
+      })
+      .then(() => {
+        console.log("Successful share");
+        setShowShareOptions(false);
+      })
+      .catch((error) => {
+        console.log("Error sharing:", error);
+        // Fallback to custom share options if native share fails
+        setShowShareOptions(!showShareOptions);
+      });
+    } else {
+      // Show custom share options on desktop or when native share isn't available
+      setShowShareOptions(!showShareOptions);
     }
   };
 
@@ -241,7 +253,7 @@ const ProductDetailPage = () => {
   const handleSocialShare = (platform) => {
     let shareUrl = "";
     const productUrl = encodeURIComponent(window.location.href);
-    const productTitle = encodeURIComponent(product.title || "Hermès Watch");
+    const productTitle = encodeURIComponent(product?.title || "Hermès Watch");
 
     switch (platform) {
       case "facebook":
@@ -271,7 +283,7 @@ const ProductDetailPage = () => {
 
   const handleAddToCart = async () => {
     try {
-      const token = localStorage.getItem("accessToken"); // assume JWT is saved
+      const token = localStorage.getItem("accessToken");
       console.log(id, "id");
       await addToCart(token, id, 1);
       incrementCart()
@@ -283,7 +295,6 @@ const ProductDetailPage = () => {
       setIsInCart(true);
     } catch (error) {
       console.error("Add to cart failed:", error);
-      // alert("Failed to add to cart. Please try again.");
     }
   };
 
@@ -291,33 +302,88 @@ const ProductDetailPage = () => {
     router.push("/cart");
   };
   
-const handleBuyNow = async () => {
-  try {
-    const token = localStorage.getItem("accessToken"); // JWT token
-    if (!token) {
-      router.push("/login"); // redirect to login if user not logged in
-      return;
+  const handleBuyNow = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      if (!isInCart) {
+        await addToCart(token, id, 1);
+        const cart = JSON.parse(localStorage.getItem("cart")) || [];
+        cart.push({ productId: id, quantity: 1 });
+        localStorage.setItem("cart", JSON.stringify(cart));
+        setIsInCart(true);
+      }
+
+      router.push(`/checkout?productId=${id}&quantity=1`);
+    } catch (error) {
+      console.error("Buy now failed:", error);
+      toast.error("Unable to proceed to checkout. Please try again.");
     }
+  };
 
-    // Add to cart if not already in cart
-    if (!isInCart) {
-      await addToCart(token, id, 1);
-
-      // Update localStorage
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
-      cart.push({ productId: id, quantity: 1 });
-      localStorage.setItem("cart", JSON.stringify(cart));
-      setIsInCart(true);
-    }
-
-    // Redirect to checkout with product id and quantity in query params
-    router.push(`/checkout?productId=${id}&quantity=1`);
-  } catch (error) {
-    console.error("Buy now failed:", error);
-    toast.error("Unable to proceed to checkout. Please try again.");
+  // Loading State
+  if (isLoading) {
+    return (
+      <div className="bg-gray-100 min-h-screen py-3 xs:py-4 sm:py-6 px-2 xs:px-3 sm:px-4">
+        <div className="max-w-7xl mx-auto bg-white shadow-md rounded-lg p-3 xs:p-4 sm:p-6">
+          <div className="animate-pulse">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
+              {/* Image Section Skeleton */}
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                  <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                </div>
+                <div className="w-full h-72 xs:h-80 sm:h-96 md:h-[500px] bg-gray-300 rounded-lg"></div>
+                <div className="flex gap-2 justify-center">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 bg-gray-300 rounded-md"></div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Content Section Skeleton */}
+              <div className="space-y-6">
+                <div className="h-8 bg-gray-300 rounded w-3/4"></div>
+                <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+                <div className="h-12 bg-gray-300 rounded w-1/3"></div>
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-300 rounded"></div>
+                  <div className="h-4 bg-gray-300 rounded"></div>
+                  <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+                </div>
+                <div className="h-12 bg-gray-300 rounded"></div>
+                <div className="h-24 bg-gray-300 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
-};
 
+  // Error State
+  if (error || !product) {
+    return (
+      <div className="bg-gray-100 min-h-screen flex items-center justify-center py-3 xs:py-4 sm:py-6 px-2 xs:px-3 sm:px-4">
+        <div className="max-w-md mx-auto bg-white shadow-md rounded-lg p-6 text-center">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Product Not Available</h2>
+          <p className="text-gray-600 mb-4">The product you're looking for is currently unavailable.</p>
+          <button
+            onClick={() => router.back()}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-100 min-h-screen py-3 xs:py-4 sm:py-6 px-2 xs:px-3 sm:px-4">
@@ -332,11 +398,12 @@ const handleBuyNow = async () => {
         <div className="space-y-4">
           {/* Wishlist & Share Buttons */}
           <div className="flex justify-between items-start">
-            <div className="flex gap-2">
+            <div className="flex gap-2 xs:gap-3">
+              {/* Wishlist Button */}
               <button
                 onClick={handleWishlistToggle}
                 disabled={wishlistLoading}
-                className={`bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors border border-gray-200 ${
+                className={`bg-white p-2 xs:p-2.5 rounded-full shadow-md hover:bg-gray-100 transition-colors border border-gray-200 flex items-center justify-center ${
                   wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 aria-label={
@@ -353,51 +420,104 @@ const handleBuyNow = async () => {
                 )}
               </button>
 
-              {/* Share Button */}
+              {/* Enhanced Share Button with Mobile & Desktop Responsiveness */}
               <div className="relative">
                 <button
                   onClick={handleShareClick}
-                  className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors border border-gray-200"
+                  className="bg-white p-2 xs:p-2.5 rounded-full shadow-md hover:bg-gray-100 transition-colors border border-gray-200 flex items-center gap-2 xs:gap-1"
                   aria-label="Share product"
                 >
                   <FaShareAlt size={18} className="text-gray-600" />
+                  {/* Show text on mobile */}
+                  <span className="text-sm font-medium text-gray-700 block xs:hidden">
+                    Share
+                  </span>
                 </button>
 
-                {/* Dropdown for Share */}
+                {/* Enhanced Dropdown for Share - Mobile Left Side, Desktop Right Side */}
                 {showShareOptions && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-200">
-                    <button
-                      onClick={() => handleSocialShare("facebook")}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      Share on Facebook
-                    </button>
-                    <button
-                      onClick={() => handleSocialShare("twitter")}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      Share on Twitter
-                    </button>
-                    <button
-                      onClick={() => handleSocialShare("pinterest")}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      Share on Pinterest
-                    </button>
-                    <button
-                      onClick={() => handleSocialShare("whatsapp")}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      Share on WhatsApp
-                    </button>
-                    <button
-                      onClick={() =>
-                        navigator.clipboard.writeText(window.location.href)
-                      }
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      Copy Link
-                    </button>
+                  <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 xs:w-64 sm:w-64 bg-white rounded-lg shadow-xl py-3 z-50 border border-gray-200">
+                    <div className="flex flex-col">
+                      {/* Header */}
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <h3 className="text-sm font-semibold text-gray-700">Share this product</h3>
+                      </div>
+
+                      {/* Native Web Share API for Mobile */}
+                      {navigator.share && (
+                        <button
+                          onClick={() => {
+                            navigator.share({
+                              title: product?.title || "Hermès Watch",
+                              text: "Check out this beautiful Hermès watch!",
+                              url: window.location.href,
+                            })
+                            .then(() => setShowShareOptions(false))
+                            .catch((error) => console.log("Error sharing:", error));
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 w-full text-left border-b border-gray-100 sm:hidden"
+                        >
+                          <FaShareAlt className="text-blue-500 text-base" />
+                          <span>Share via...</span>
+                        </button>
+                      )}
+
+                      {/* Social Media Options with React Icons */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3">
+                        <button
+                          onClick={() => handleSocialShare("facebook")}
+                          className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                        >
+                          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                            <FaFacebookF className="text-white text-sm" />
+                          </div>
+                          <span className="text-xs">Facebook</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleSocialShare("twitter")}
+                          className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                        >
+                          <div className="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center">
+                            <FaTwitter className="text-white text-sm" />
+                          </div>
+                          <span className="text-xs">Twitter</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleSocialShare("pinterest")}
+                          className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                        >
+                          <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
+                            <FaPinterest className="text-white text-sm" />
+                          </div>
+                          <span className="text-xs">Pinterest</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleSocialShare("whatsapp")}
+                          className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                        >
+                          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                            <FaWhatsapp className="text-white text-sm" />
+                          </div>
+                          <span className="text-xs">WhatsApp</span>
+                        </button>
+                      </div>
+
+                      {/* Copy Link Option */}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          toast.success("Link copied to clipboard!");
+                          setShowShareOptions(false);
+                        }}
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 w-full text-left border-t border-gray-100"
+                      >
+                        <FaLink className="text-gray-500 text-base" />
+                        <span>Copy Link</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -407,7 +527,7 @@ const handleBuyNow = async () => {
           {/* Main Product Image */}
           <div className="w-full h-72 xs:h-80 sm:h-96 md:h-[500px] bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200">
             <Image
-              src={selectedImage || defaultImage}
+              src={selectedImage}
               alt={product.title || "Product Image"}
               width={600}
               height={600}
@@ -460,9 +580,6 @@ const handleBuyNow = async () => {
                     width={80}
                     height={80}
                     className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 object-cover rounded-md"
-                    onError={(e) => {
-                      e.target.src = defaultImage;
-                    }}
                   />
                 </div>
               ))}
@@ -495,7 +612,7 @@ const handleBuyNow = async () => {
           </h1>
 
           {/* Ratings */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2 bg-green-600 text-white px-3 py-1 rounded-full">
               <span className="font-semibold">{product.rating || "4.6"}</span>
               <span>★</span>
@@ -510,7 +627,7 @@ const handleBuyNow = async () => {
 
           {/* Price Section */}
           <div className="space-y-2">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <div className="text-2xl xs:text-3xl sm:text-4xl font-bold text-gray-900 flex items-center">
                 <Image
                   src={newCurrency}
@@ -537,8 +654,6 @@ const handleBuyNow = async () => {
             </div>
           </div>
 
-         
-
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             {isInCart ? (
@@ -562,25 +677,6 @@ const handleBuyNow = async () => {
             >
               BUY NOW
             </button>
-          </div>
-
-          {/* Delivery Details */}
-          <div className="border rounded-lg p-4 bg-gray-50">
-            <h2 className="font-semibold text-base mb-3">Delivery Details</h2>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter Your Pincode"
-                className="flex-1 border rounded-lg px-4 py-3 outline-none focus:border-blue-500 text-base border-gray-300"
-                maxLength={6}
-              />
-              <button className="bg-blue-900 text-white px-6 rounded-lg hover:bg-blue-800 text-base font-medium whitespace-nowrap">
-                Check
-              </button>
-            </div>
-            <p className="text-sm text-green-600 mt-2">
-              ✓ Free delivery available for this location
-            </p>
           </div>
 
           {/* About Product */}

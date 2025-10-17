@@ -3,14 +3,15 @@ import React, { useContext, useEffect, useState } from "react";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import Dummy1 from "../../assets/Omega Seamaster.jpg";
 import newCurrency from "../../assets/newSymbole.png";
-import { toast } from "react-toastify";
-import api from "@/api/axiosIntespter";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 import { GlobalContext } from "../shared/context/GlobalContext";
 import axios from "axios";
 
 // Single product card component
 const ProductCard = ({ product }) => {
-  const { decrementWishlist,incrementWishlist ,incrementCart} = useContext(GlobalContext)
+  const { decrementWishlist, incrementWishlist, incrementCart } =
+    useContext(GlobalContext);
   const [isWishlisted, setIsWishlisted] = useState([]);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +37,6 @@ const ProductCard = ({ product }) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
 
       if (res.data && res.data.wishlists?.length > 0) {
         const defaultWishlist =
@@ -67,13 +67,23 @@ const ProductCard = ({ product }) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        toast.error("Please log in first to add to wishlist");
+         Toastify({
+        text:
+         "Please log in first to add to wishlist",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
         return;
       }
 
       const productId = product._id || product.productId?._id;
       if (!productId) {
-        console.error("Product ID not found");
+        // console.error("Product ID not found");
         return;
       }
 
@@ -88,8 +98,18 @@ const ProductCard = ({ product }) => {
         await addToWishlist(product);
       }
     } catch (error) {
-      console.error("Error toggling wishlist:", error);
-      toast.error("Failed to update wishlist. Please try again.");
+   
+          Toastify({
+        text:
+          "Failed to update wishlist. Please try again.",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
     }
   };
 
@@ -97,13 +117,33 @@ const ProductCard = ({ product }) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        toast.error("Please log in first to add to wishlist");
+         Toastify({
+        text:
+         "Please log in first to add to wishlist",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
         return;
       }
 
       // Make sure a default wishlist exists
       if (!defaultWishlistId) {
-        toast.error("No wishlist found. Please create a wishlist first.");
+        Toastify({
+        text:
+         "No wishlist found. Please create a wishlist first.",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
         return;
       }
 
@@ -116,7 +156,17 @@ const ProductCard = ({ product }) => {
 
       // Check if already in wishlist
       if (checkIsWishlisted(productId)) {
-        toast.info("Product is already in your wishlist");
+    Toastify({
+  text: "Product is already in your wishlist.",
+  duration: 3000,
+  gravity: "top",
+  position: "right",
+  close: true,
+  style: {
+    background: "linear-gradient(to right, #2193b0, #6dd5ed)", // blue gradient
+  },
+}).showToast();
+
         return;
       }
 
@@ -132,19 +182,36 @@ const ProductCard = ({ product }) => {
           },
         }
       );
-     
-      incrementWishlist()
+
+      incrementWishlist();
       if (response.status === 200) {
         // Add to local wishlist state
         setIsWishlisted((prev) => [...prev, productId]);
-        toast.success(` added to wishlist!`);
+             Toastify({
+        text:
+         "added to wishlist",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        },
+      }).showToast();
       }
     } catch (error) {
-      console.error(
-        "❌ Error adding to wishlist:",
-        error.response?.data || error
-      );
-      toast.error("Failed to add to wishlist. Please try again.");
+     
+          Toastify({
+        text:
+         "Failed to add to wishlist. Please try again.",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
     }
   };
 
@@ -166,15 +233,25 @@ const ProductCard = ({ product }) => {
         }
       );
 
-      decrementWishlist()
+      decrementWishlist();
       if (response.status === 200) {
         // Remove from local wishlist state
         setIsWishlisted((prev) => prev.filter((id) => id !== productId));
-        // toast.success("Product removed from wishlist");
+       
       }
     } catch (error) {
-      console.error("Error removing from wishlist:", error);
-      toast.error("Failed to remove from wishlist. Please try again.");
+      // console.error("Error removing from wishlist:", error);
+          Toastify({
+        text:
+          "Failed to remove from wishlist. Please try again.",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
     }
   };
 
@@ -182,13 +259,33 @@ const ProductCard = ({ product }) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        toast.error("Please log in to add items to your cart");
+        Toastify({
+        text:
+         "Please log in to add items to your cart",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
         return;
       }
 
       const productId = product._id || product.productId?._id;
       if (!productId) {
-        toast.error("Invalid product data");
+        Toastify({
+        text:
+         "Invalid product data",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
         return;
       }
 
@@ -205,16 +302,36 @@ const ProductCard = ({ product }) => {
         }
       );
 
-      incrementCart()
+      incrementCart();
 
       if (response.status === 200) {
-        // toast.success(` added to cart`);
+        Toastify({
+        text:
+         " added to cart",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        },
+      }).showToast();
       } else {
-        toast.error("Failed to add to cart. Try again!");
+        Toastify({
+        text:
+         "Failed to add to cart. Try again!",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
-      toast.error(error.response?.data?.message || "Failed to add to cart.");
+     
     }
   };
 
@@ -288,8 +405,6 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-
-
         {/* Add to Cart Button */}
         <button
           onClick={() => addToCart(product)}
@@ -308,48 +423,53 @@ const SimilarProduct = ({ productId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch similar products
-  useEffect(() => {
-    const fetchSimilarProducts = async () => {
-      if (!productId) {
-        console.log("No product ID provided");
-        setLoading(false);
-        return;
-      }
+   useEffect(() => {
+  const fetchSimilarProducts = async () => {
+    if (!productId) {
+      console.log("No product ID provided");
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError(null);
-        
-        
-        
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`
-        );
+    try {
+      setLoading(true);
+      setError(null);
 
+      // Get token from localStorage (or wherever you store it)
+      const token = localStorage.getItem("accessToken");
 
-        
-        if (response.data.success) {
-          // ✅ FIX: Access the correct property from backend
-          const products = response.data.products || response.data.similarProducts || [];
-          console.log("Products found:", products.length);
-          setSimilarProducts(products);
-        } else {
-          console.log("API returned success: false");
-          setSimilarProducts([]);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json",
+          },
         }
-      } catch (err) {
-        console.error("Error fetching similar products:", err);
-        console.error("Error details:", err.response?.data);
-        setError("Failed to load similar products");
-        setSimilarProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      );
 
-    fetchSimilarProducts();
-  }, [productId]);
+      if (response.data.success) {
+        const products =
+          response.data.products || response.data.similarProducts || [];
+        console.log("Products found:", products.length);
+        setSimilarProducts(products);
+      } else {
+        console.log("API returned success: false");
+        setSimilarProducts([]);
+      }
+    } catch (err) {
+      console.error("Error fetching similar products:", err);
+      console.error("Error details:", err.response?.data);
+      setError("Failed to load similar products");
+      setSimilarProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchSimilarProducts();
+}, [productId]);
+
 
   // Show loading state
   if (loading) {

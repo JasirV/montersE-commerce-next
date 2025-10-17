@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef,useContext } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   FiLock,
@@ -19,14 +19,13 @@ import watch from "../../assets/Watche/elegant-watch-with-silver-golden-chain-is
 import CreateWishlistModal from "../ui/createWishilist";
 import SeWishilistModal from "../ui/seeWishilist";
 import axios from "axios";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 import newCurrency from "../../assets/newSymbole.png";
-import api from "@/api/axiosIntespter";
 import { GlobalContext } from "../shared/context/GlobalContext";
 
 const ShoppingWishlist = () => {
-  const { incrementCart,decrementWishlist } = useContext(GlobalContext);
+  const { incrementCart, decrementWishlist } = useContext(GlobalContext);
   const router = useRouter();
   const params = useParams();
   const [activeWishlist, setActiveWishlist] = useState(null);
@@ -52,13 +51,31 @@ const ShoppingWishlist = () => {
   // Add to Cart Function - COMPLETE IMPLEMENTATION
   const handleAddToCart = async (item) => {
     if (!token) {
-      toast.error("Please login to add items to cart");
+      Toastify({
+        text: "Please login to add items to cart",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        },
+      }).showToast();
       router.push("/");
       return;
     }
 
     if (!item || !item.id) {
-      toast.error("Invalid product information");
+      Toastify({
+        text: "Invalid product information",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)", // red/orange gradient
+        },
+      }).showToast();
       return;
     }
 
@@ -82,9 +99,18 @@ const ShoppingWishlist = () => {
           },
         }
       );
-     incrementCart()
+      incrementCart();
       if (response.status === 200) {
-        toast.success("Item added to cart successfully");
+        Toastify({
+          text: "Item added to cart successfully",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #00b09b, #96c93d)",
+          },
+        }).showToast();
       }
     } catch (error) {
       console.log("Error adding to cart:", error);
@@ -98,9 +124,18 @@ const ShoppingWishlist = () => {
         localStorage.removeItem("token");
         router.push("/");
       } else if (error.response?.status === 404) {
-        toast.error("Product not found");
+        Toastify({
+          text: "Product not found",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)", // red/orange gradient
+          },
+        }).showToast();
       } else {
-        toast.error(errorMessage);
+        console.log(errorMessage);
       }
     } finally {
       // Clear loading state for this product
@@ -108,16 +143,6 @@ const ShoppingWishlist = () => {
         ...prev,
         [item.id]: false,
       }));
-    }
-  };
-
-  // View Product Details Function
-  const handleViewProduct = (item) => {
-    if (item.id) {
-      // Navigate to product detail page
-      router.push(`/products/${item.id}`);
-    } else {
-      toast.error("Product details not available");
     }
   };
 
@@ -140,10 +165,7 @@ const ShoppingWishlist = () => {
           },
         }
       );
-
-      console.log("📥 Fetch wishlists response:", response.data);
       const wishlists = response.data.wishlists || [];
-
       // Enhanced processing with better boolean conversion
       const processedWishlists = wishlists.map((wishlist) => ({
         ...wishlist,
@@ -151,18 +173,7 @@ const ShoppingWishlist = () => {
         isPublic: wishlist.isPublic === true || wishlist.isPublic === "true",
         isDefault: Boolean(wishlist.isDefault),
       }));
-
-      console.log(
-        "✅ Processed wishlists with public status:",
-        processedWishlists.map((w) => ({
-          name: w.name,
-          isPublic: w.isPublic,
-          type: typeof w.isPublic,
-        }))
-      );
-
       setWishlistData(processedWishlists);
-
       // Sync with URL parameter - IMPROVED LOGIC
       const wishlistId = params.id;
 
@@ -172,10 +183,6 @@ const ShoppingWishlist = () => {
         // First, try to find wishlist by URL ID
         if (wishlistId) {
           targetWishlist = processedWishlists.find((w) => w.id === wishlistId);
-          console.log(
-            `🎯 Looking for wishlist by ID ${wishlistId}:`,
-            targetWishlist
-          );
         }
 
         // If not found or no ID in URL, use default or first wishlist
@@ -183,7 +190,6 @@ const ShoppingWishlist = () => {
           targetWishlist =
             processedWishlists.find((w) => w.isDefault) ||
             processedWishlists[0];
-          console.log(`🎯 Using default/first wishlist:`, targetWishlist);
 
           // Update URL to reflect the actual wishlist being shown
           if (targetWishlist && targetWishlist.id !== wishlistId) {
@@ -258,13 +264,21 @@ const ShoppingWishlist = () => {
           },
         }
       );
-      decrementWishlist()
-      toast.success("Item removed from wishlist successfully!");
+      decrementWishlist();
+      Toastify({
+        text: "Item removed from wishlist successfully",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)", // green gradient
+        },
+      }).showToast();
       // Refresh wishlists after deleting item
       fetchWishlists();
     } catch (error) {
       console.error("Error deleting item:", error);
-      toast.error(error.response?.data?.message || "Failed to delete item");
     }
   };
 
@@ -273,7 +287,7 @@ const ShoppingWishlist = () => {
     console.log(token, "token");
 
     try {
-      const response = await  axios.put(
+      const response = await axios.put(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists/${activeWishlist.id}/default`,
         {}, // ✅ empty body if no data
         {
@@ -281,30 +295,46 @@ const ShoppingWishlist = () => {
         }
       );
 
-      toast.success("Wishlist set as default successfully!");
+      Toastify({
+        text: "Wishlist set as default successfully",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)", // green gradient
+        },
+      }).showToast();
       fetchWishlists();
       setMoreDropdownOpen(false);
     } catch (error) {
       console.error("Error making wishlist default:", error);
-      toast.error(error.response?.data?.message || "Failed to update wishlist");
+      Toastify({
+        text: "Failed to update wishlist",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)", // red/orange gradient
+        },
+      }).showToast();
     }
   };
 
-  // Toggle Public Sharing with API integration - IMPROVED STATE SYNC
   const handleTogglePublicSharing = async () => {
     if (!activeWishlist || !token) return;
 
     try {
       const newPublicStatus = !activeWishlist.isPublic;
 
-      // Optimistically update UI
+      // Optimistic UI update
       const optimisticWishlist = {
         ...activeWishlist,
         isPublic: newPublicStatus,
       };
       setActiveWishlist(optimisticWishlist);
 
-      // Update wishlistData array optimistically
       setWishlistData((prev) =>
         prev.map((wishlist) =>
           wishlist.id === activeWishlist.id
@@ -315,23 +345,26 @@ const ShoppingWishlist = () => {
 
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_BASEURL}/wishlists/${activeWishlist.id}/visibility`,
-        {
-          isPublic: newPublicStatus,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { isPublic: newPublicStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // console.log("📥 API Response:", response.data);
-
       if (response.data.success) {
-        toast.success(
-          response.data.message ||
-            `Wishlist is now ${newPublicStatus ? "public" : "private"}`
-        );
+        // ✅ Success Toast
+        Toastify({
+          text:
+            response.data.message ||
+            `Wishlist is now ${newPublicStatus ? "public" : "private"}`,
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #00b09b, #96c93d)",
+          },
+        }).showToast();
 
-        // Update with actual server response to ensure consistency
+        // Update from server response for accuracy
         if (response.data.wishlist) {
           const serverWishlist = {
             ...activeWishlist,
@@ -339,9 +372,7 @@ const ShoppingWishlist = () => {
             publicSlug: response.data.wishlist.publicSlug,
           };
 
-          console.log("🔄 Server wishlist data:", serverWishlist);
           setActiveWishlist(serverWishlist);
-
           setWishlistData((prev) =>
             prev.map((wishlist) =>
               wishlist.id === activeWishlist.id
@@ -353,7 +384,7 @@ const ShoppingWishlist = () => {
 
         setMoreDropdownOpen(false);
       } else {
-        // Revert optimistic update if API call failed
+        // ❌ API failed, revert state
         setActiveWishlist(activeWishlist);
         setWishlistData((prev) =>
           prev.map((wishlist) =>
@@ -362,12 +393,23 @@ const ShoppingWishlist = () => {
               : wishlist
           )
         );
-        throw new Error(response.data.message || "Failed to update visibility");
+
+        // ❌ Error Toast
+        Toastify({
+          text: response.data.message || "Failed to update wishlist visibility",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
       }
     } catch (error) {
       console.error("❌ Error updating wishlist visibility:", error);
 
-      // Revert optimistic updates on error
+      // Revert optimistic update
       setActiveWishlist(activeWishlist);
       setWishlistData((prev) =>
         prev.map((wishlist) =>
@@ -379,7 +421,18 @@ const ShoppingWishlist = () => {
 
       const errorMessage =
         error.response?.data?.message || "Failed to update wishlist visibility";
-      toast.error(errorMessage);
+
+      // ❌ Error Toast
+      Toastify({
+        text: errorMessage,
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
     }
   };
 
@@ -398,12 +451,30 @@ const ShoppingWishlist = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      toast.success("Wishlist emptied successfully!");
+      Toastify({
+        text: "Wishlist emptied successfully",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)", // green gradient
+        },
+      }).showToast();
       fetchWishlists();
       setMoreDropdownOpen(false);
     } catch (error) {
       console.error("Error emptying wishlist:", error);
-      toast.error(error.response?.data?.message || "Failed to empty wishlist");
+      Toastify({
+        text: "Failed to empty wishlist",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
     }
   };
 
@@ -422,13 +493,31 @@ const ShoppingWishlist = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      toast.success("Wishlist deleted successfully!");
+      Toastify({
+        text: "Wishlist deleted successfully!",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        },
+      }).showToast();
       // Refresh the wishlists after deletion
       fetchWishlists();
       setMoreDropdownOpen(false);
     } catch (error) {
       console.error("Error deleting wishlist:", error);
-      toast.error(error.response?.data?.message || "Failed to delete wishlist");
+      Toastify({
+        text: "Failed to delete wishlist",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
     }
   };
 
