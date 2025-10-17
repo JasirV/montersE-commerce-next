@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { toast } from "react-toastify"; // optional for alerts
-import api from "@/api/axiosIntespter";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 
 const CreateWishlistModal = ({ isOpen, onClose, onWishlistCreated }) => {
   const [wishlistName, setWishlistName] = useState("");
@@ -10,48 +10,66 @@ const CreateWishlistModal = ({ isOpen, onClose, onWishlistCreated }) => {
 
   if (!isOpen) return null;
 
-  const handleCreate = async () => {
-    if (!wishlistName.trim()) {
-      toast.error("Please enter a wishlist name");
+
+
+const handleCreate = async () => {
+  if (!wishlistName.trim()) {
+    toast.error("Please enter a wishlist name");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      toast.error("You are not logged in. Please log in first.");
       return;
     }
 
-    try {
-      setLoading(true);
-
-      const token = localStorage.getItem("accessToken"); // 👈 adjust if you store it differently
-      console.log(token,"My token");
-      
-
-      const { data } = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/create`,
-        { name: wishlistName, isDefault },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // if backend uses JWT
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      toast.success(data.message || "Wishlist created successfully");
-
-      // pass new wishlist back to parent
-      if (onWishlistCreated) {
-        onWishlistCreated(data.wishlists);
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/create`,
+      {
+        name: wishlistName,
+        isDefault,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
+    );
 
-      setWishlistName("");
-      setIsDefault(true);
-      onClose();
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to create wishlist"
-      );
-    } finally {
-      setLoading(false);
+    Toastify({
+      text: "✅ Wishlist created successfully!",
+      duration: 3000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #00b09b, #96c93d)",
+        fontWeight: "500",
+        borderRadius: "6px",
+      },
+    }).showToast();
+
+    // Optional: trigger parent update
+    if (onWishlistCreated) {
+      onWishlistCreated(response.data?.wishlists || []);
     }
-  };
+
+    // Reset form
+    setWishlistName("");
+    setIsDefault(true);
+    onClose?.();
+  } catch (error) {
+    console.error("❌ Error creating wishlist:", error);
+    toast.error(error.response?.data?.message || "Failed to create wishlist");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 px-4">

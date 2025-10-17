@@ -1,10 +1,12 @@
 "use client" 
-import React, { useState, useEffect } from 'react'
+import React, { useState} from 'react'
 import { Eye, EyeOff, CheckCircle, Lock, Clock, User, Check } from 'lucide-react'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { useParams, useRouter } from "next/navigation";
-import api from '@/api/axiosIntespter'
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
+
 
 const ResetPassword = () => {
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -104,8 +106,16 @@ const ResetPassword = () => {
         // Move to step 2 (Login) after successful password reset
         setCurrentStep(2);
         
-        toast.success("Password changed successfully");
-        console.log(response.data);
+         Toastify({
+      text: "Password changed successfully",
+      duration: 3000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #00b09b, #96c93d)",
+      },
+    }).showToast();
 
         // Simulate login process and move to step 3 after 2 seconds
         setTimeout(() => {

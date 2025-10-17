@@ -4,7 +4,6 @@ import Navbar from "@/components/shared/Navbar";
 import AuthModal from "@/features/auth/AuthModal";
 import Landing from "@/components/shared/BannerPage";
 import Home from "@/pages/Home";
-import AddSection from "@/layouts/addsSection";
 import WatchBrand from "@/layouts/WatchBrand";
 import Form from "@/components/ui/WatheForm";
 import JustforyouWatch from "@/components/ui/JustforyouWatch";
@@ -15,7 +14,6 @@ import ChatRobot from "@/components/ui/ChatRobot";
 import Watch from "@/layouts/Watch";
 import "../Mobile/responsive.css";
 
-
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [authAction, setAuthAction] = useState("login");
@@ -25,15 +23,13 @@ export default function IndexPage() {
     setModalIsOpen(true);
   };
 
-
   return (
     <div>
-   
       <Navbar
         onSignUpClick={() => handleAuthAction("register")}
         onLoginClick={() => handleAuthAction("login")}
       />
- 
+
       <AuthModal
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}
@@ -42,7 +38,6 @@ export default function IndexPage() {
 
       <Landing />
       <Home />
-      <AddSection />
       <WatchBrand />
       <Form />
       <JustforyouWatch />

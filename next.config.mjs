@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     images: {
-    domains: ['montres.ae','res.cloudinary.com',"lh3.googleusercontent.com",]
+    domains: ['montres.ae','res.cloudinary.com',"lh3.googleusercontent.com","platform-lookaside.fbsbx.com"]
   },
   env: {
     NEXT_PUBLIC_BASEURL: process.env.NEXT_PUBLIC_BASEURL,

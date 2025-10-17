@@ -5,8 +5,8 @@ import watchBanner from "../../assets/person-doing-their-delicate-job.jpg";
 import Image from "next/image";
 import Link from "next/link";
 import axios from "axios";
-import { toast } from "react-toastify";
-import api from "@/api/axiosIntespter";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 
 export default function WatchService() {
   const [selectedImage, setSelectedImage] = useState(null); // preview (base64)
@@ -61,10 +61,26 @@ const serviceOptions = [
     setIsDropdownOpen(false);
   };
 
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
 
   try {
+    const token = localStorage.getItem("accessToken"); // 👈 get your token
+
+    if (!token) {
+      Toastify({
+        text: "Please log in to book a service.",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
+      return;
+    }
+
     const formData = new FormData();
     formData.append("productName", productName);
     formData.append("manufactureYear", manufactureYear);
@@ -79,22 +95,60 @@ const serviceOptions = [
       `${process.env.NEXT_PUBLIC_BASEURL}/createBooking`,
       formData,
       {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`, // 👈 add token here
+        },
       }
     );
 
     if (response.data.success) {
-      toast.success("Service booked successfully!");
+      Toastify({
+        text: "Service booked successfully",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        },
+      }).showToast();
+
+      // ✅ Reset form fields
       setProductName("");
       setManufactureYear("");
       setWatchType("");
       setSelectedService("");
       setSelectedImage(null);
       setImageFile(null);
+    } else {
+      Toastify({
+        text: response.data.message || "Failed to book service",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
     }
   } catch (error) {
     console.error("❌ Error booking service:", error);
-    toast.error("Something went wrong ");
+
+    const message =
+      error.response?.data?.message || "Something went wrong. Please try again.";
+
+    Toastify({
+      text: message,
+      duration: 4000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+      },
+    }).showToast();
   }
 };
 

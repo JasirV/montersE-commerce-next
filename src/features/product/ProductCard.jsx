@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
 import { FiHeart } from "react-icons/fi";
-import { toast } from "react-toastify";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 import newCurrency from "../../assets/newSymbole.png";
 import { useCurrency } from "@/app/CurrencyContext";
 import { GlobalContext } from "@/components/shared/context/GlobalContext";
@@ -149,7 +150,16 @@ const ProductCard = ({ product }) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        toast.error("Please login to manage wishlist");
+            Toastify({
+      text: "Please login to manage wishlist",
+      duration: 4000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+      },
+    }).showToast();
         return;
       }
 

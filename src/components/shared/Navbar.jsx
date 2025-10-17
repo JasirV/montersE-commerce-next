@@ -18,7 +18,8 @@ import { useRouter } from "next/navigation";
 import { GlobalContext } from "./context/GlobalContext";
 import { fetchProductAll } from "@/service/productService";
 import api from "@/api/axiosIntespter";
-import { toast } from "react-toastify";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 
 const Navbar = ({ onSignUpClick }) => {
   const global = useContext(GlobalContext);
@@ -47,9 +48,19 @@ const Navbar = ({ onSignUpClick }) => {
     }
   }, []);
 
-  // Get user data only from localStorage
+  // Get user data with consistent property names
   const getUserData = useCallback(() => {
-    if (isClient && localUser) return { ...localUser, source: "localStorage" };
+    if (isClient && localUser) {
+      return {
+        ...localUser,
+        source: "localStorage",
+        // Normalize user data for consistent access
+        name: localUser.name || localUser.firstName || "",
+        email: localUser.email || "",
+        picture: localUser.picture || localUser.image || null,
+        provider: localUser.provider || "email",
+      };
+    }
     return null;
   }, [isClient, localUser]);
 
@@ -137,12 +148,30 @@ const Navbar = ({ onSignUpClick }) => {
       clearAll();
 
       // Notify and redirect
-      toast.success("Logged out successfully!");
+      Toastify({
+        text: "Logout successful",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        },
+      }).showToast();
       window.dispatchEvent(new Event("authChange"));
       window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
-      toast.error("Logout failed!");
+      Toastify({
+        text: "Logout failed!",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
     }
   };
 
@@ -172,6 +201,18 @@ const Navbar = ({ onSignUpClick }) => {
   const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
   const toggleMobileSearch = () => setIsMobileSearchOpen((prev) => !prev);
   const toggleUserDropdown = () => setUserDropdownOpen((prev) => !prev);
+
+  const getUserInitial = (user) => {
+    if (user?.name) return user.name.charAt(0).toUpperCase();
+    if (user?.firstName) return user.firstName.charAt(0).toUpperCase();
+    return "U";
+  };
+
+  const getUserDisplayName = (user) => {
+    if (user?.name) return user.name.split(" ")[0];
+    if (user?.firstName) return user.firstName;
+    return "User";
+  };
 
   const popularSearches = [
     { term: "Rolex Daytona", path: "/search?q=rolex+daytona" },
@@ -262,10 +303,12 @@ const Navbar = ({ onSignUpClick }) => {
                         className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 border-b last:border-b-0"
                       >
                         {product.images?.[0]?.url ? (
-                          <img
+                          <Image
                             src={product.images[0].url}
                             alt={product.name}
-                            className="w-10 h-10 object-cover rounded"
+                            width={40} // matches w-10
+                            height={40} // matches h-10
+                            className="object-cover rounded"
                           />
                         ) : (
                           <div className="w-10 h-10 bg-gray-200 rounded" />
@@ -314,7 +357,7 @@ const Navbar = ({ onSignUpClick }) => {
                   </span>
                 )}
               </Link>
-              
+
               {/* Cart */}
               <Link
                 href="/cart"
@@ -335,41 +378,58 @@ const Navbar = ({ onSignUpClick }) => {
                 <div className="relative user-dropdown-container">
                   <button
                     onClick={toggleUserDropdown}
-                    className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-full"
+                    className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-full transition-colors duration-200"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm">
-                      {user.name ? user.name.charAt(0).toUpperCase() : "U"}
-                    </div>
-                    <span className="text-sm font-medium truncate">
-                      {user.name?.split(" ")[0] || "User"}
+                    {/* Display OAuth profile image if available */}
+                    {user.picture ? (
+                      <Image
+                        src={user.picture}
+                        alt={user.name || "User"}
+                        className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                        width={32} // specify actual pixel width
+                        height={32} // specify actual pixel height
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        {getUserInitial(user)}
+                      </div>
+                    )}
+                    <span className="text-sm font-medium truncate max-w-24">
+                      {getUserDisplayName(user)}
                     </span>
                     <FaChevronDown
-                      className={`transition-transform ${
+                      className={`transition-transform duration-200 ${
                         userDropdownOpen ? "rotate-180" : ""
                       }`}
+                      size={14}
                     />
                   </button>
 
                   {userDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-2 z-50">
-                      <div className="px-4 py-2 border-b">
-                        <p className="text-sm font-medium">
-                          {user.name || "User"}
+                    <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border py-2 z-50">
+                      <div className="px-4 py-3 border-b">
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.name || getUserDisplayName(user)}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {user.email || ""}
+                        <p className="text-xs text-gray-500 truncate mt-1">
+                          {user.email}
                         </p>
+                        {user.provider && user.provider !== "email" && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            Signed in with {user.provider}
+                          </p>
+                        )}
                       </div>
                       <button
                         onClick={handleUserDashboard}
-                        className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50"
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 flex items-center gap-3 hover:bg-gray-50 transition-colors"
                       >
-                        <FaUser size={14} />
+                        <FaUser size={14} className="text-gray-500" />
                         My Dashboard
                       </button>
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 flex items-center gap-2 hover:bg-gray-50"
+                        className="w-full text-left px-4 py-3 text-sm text-red-600 flex items-center gap-3 hover:bg-gray-50 transition-colors"
                       >
                         <FaSignOutAlt size={14} />
                         Sign Out
@@ -380,9 +440,9 @@ const Navbar = ({ onSignUpClick }) => {
               ) : (
                 <button
                   onClick={onSignUpClick}
-                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-full flex items-center gap-2"
+                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-full flex items-center gap-2 hover:shadow-lg transition-all duration-200"
                 >
-                  <FaUser />
+                  <FaUser size={16} />
                   Sign In
                 </button>
               )}
@@ -392,9 +452,9 @@ const Navbar = ({ onSignUpClick }) => {
             <div className="md:hidden flex items-center gap-2">
               <button
                 onClick={toggleMobileSearch}
-                className="p-2.5 rounded-full hover:bg-gray-100"
+                className="p-2.5 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <FaSearch />
+                <FaSearch className="text-gray-700" />
               </button>
 
               <Link
@@ -432,32 +492,40 @@ const Navbar = ({ onSignUpClick }) => {
                 <div className="relative user-dropdown-container">
                   <button
                     onClick={toggleUserDropdown}
-                    className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center"
+                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                   >
-                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs">
-                      {user.name?.charAt(0).toUpperCase() || "U"}
-                    </div>
+                    {user.picture ? (
+                      <img
+                        src={user.picture}
+                        alt={user.name || "User"}
+                        className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        {getUserInitial(user)}
+                      </div>
+                    )}
                   </button>
                   {userDropdownOpen && (
                     <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border py-2 z-50">
-                      <div className="px-4 py-2 border-b">
-                        <p className="text-sm font-medium">
-                          {user.name || "User"}
+                      <div className="px-4 py-3 border-b">
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.name || getUserDisplayName(user)}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {user.email || ""}
+                        <p className="text-xs text-gray-500 truncate mt-1">
+                          {user.email}
                         </p>
                       </div>
                       <button
                         onClick={handleUserDashboard}
-                        className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 border-b hover:bg-gray-50"
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 flex items-center gap-3 border-b hover:bg-gray-50 transition-colors"
                       >
-                        <FaUser size={14} />
+                        <FaUser size={14} className="text-gray-500" />
                         My Dashboard
                       </button>
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 py-3 text-sm text-red-600 flex items-center gap-2 hover:bg-gray-50"
+                        className="w-full text-left px-4 py-3 text-sm text-red-600 flex items-center gap-3 hover:bg-gray-50 transition-colors"
                       >
                         <FaSignOutAlt size={14} />
                         Sign Out
@@ -468,9 +536,9 @@ const Navbar = ({ onSignUpClick }) => {
               ) : (
                 <button
                   onClick={onSignUpClick}
-                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center"
+                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white p-2 rounded-full flex items-center justify-center hover:shadow-lg transition-all duration-200"
                 >
-                  <FaUser />
+                  <FaUser size={16} />
                 </button>
               )}
             </div>
@@ -493,7 +561,7 @@ const Navbar = ({ onSignUpClick }) => {
                 />
                 <button
                   type="submit"
-                  className="bg-[#1e518e] text-white px-4 flex items-center justify-center"
+                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 flex items-center justify-center"
                 >
                   <FaSearch />
                 </button>
