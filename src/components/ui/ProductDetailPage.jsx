@@ -749,7 +749,7 @@ const ProductDetailPage = () => {
                     { label: "Accessories", value: product.Accessories || "N/A" },
                     { label: "Condition", value: product.Condition ? product.Condition.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : "N/A" },
                     { label: "Production Year", value: product.ProductionYear || "N/A" },
-                    { label: "SKU", value: product._id ? product._id.substring(0, 8).toUpperCase() : "N/A" },
+                    { label: "SKU", value: product.sku || "N/A" },
                   ].map((item, index) => (
                     <tr key={index} className="border-b last:border-b-0">
                       <td className="p-3 font-medium bg-gray-50 w-1/3">{item.label}</td>
