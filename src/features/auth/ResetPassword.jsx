@@ -93,7 +93,7 @@ const ResetPassword = () => {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        const response = await api.post(
+        const response = await axios.post(
           `${process.env.NEXT_PUBLIC_BASEURL}Auth/reset-password/${id}/${token}`,
           { newPassword, confirmPassword }
         );

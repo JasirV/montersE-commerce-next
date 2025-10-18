@@ -75,7 +75,7 @@ const serviceOptions = [
       formData.append("image", imageFile); // key must match multer ("image")
     }
 
-    const response = await api.post(
+    const response = await axios.post(
       `${process.env.NEXT_PUBLIC_BASEURL}/createBooking`,
       formData,
       {

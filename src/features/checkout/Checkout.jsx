@@ -1,150 +1,34 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   FaCcVisa,
   FaCcMastercard,
   FaCcAmex,
-  FaGooglePay,
-  FaApplePay,
   FaMapMarkerAlt,
   FaHome,
   FaBriefcase,
   FaPlus,
-  FaEdit,
-  FaTrash,
-  FaMoneyBillWave,
 } from "react-icons/fa";
 import Image from "next/image";
 import { getCart } from "@/service/productService";
-import { loadStripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  CardElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
-
-// Initialize Stripe
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-);
-
-// VAT Configuration
-const VAT_RATE = 0.05; // 5%
-
-const CheckoutForm = ({ totalAmount, vatAmount, finalTotal }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [paymentError, setPaymentError] = useState("");
-  const [processing, setProcessing] = useState(false);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setProcessing(true);
-    setPaymentError("");
-
-    const cardElement = elements.getElement(CardElement);
-
-    try {
-      const { error, paymentMethod } = await stripe.createPaymentMethod({
-        type: "card",
-        card: cardElement,
-      });
-
-      if (error) {
-        setPaymentError(error.message);
-        setProcessing(false);
-        return;
-      }
-
-      // Here you would send the paymentMethod.id to your server
-      console.log("PaymentMethod:", paymentMethod);
-      console.log("Amount Details:", {
-        subtotal: totalAmount - vatAmount,
-        vat: vatAmount,
-        total: finalTotal,
-      });
-
-      // Simulate API call to your backend
-      // const response = await fetch('/api/create-payment-intent', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     paymentMethodId: paymentMethod.id,
-      //     amount: finalTotal * 100, // Convert to cents
-      //     vatAmount: vatAmount * 100,
-      //     subtotal: (totalAmount - vatAmount) * 100
-      //   }),
-      // });
-
-      // const { clientSecret } = await response.json();
-
-      // const { error: confirmError } = await stripe.confirmCardPayment(clientSecret);
-
-      // if (confirmError) {
-      //   setPaymentError(confirmError.message);
-      // } else {
-      //   // Payment successful
-      //   console.log('Payment successful!');
-      // }
-    } catch (err) {
-      setPaymentError("An unexpected error occurred");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const cardElementOptions = {
-    style: {
-      base: {
-        fontSize: "16px",
-        color: "#424770",
-        "::placeholder": {
-          color: "#aab7c4",
-        },
-      },
-    },
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="border border-gray-300 rounded-lg p-3">
-        <CardElement options={cardElementOptions} />
-      </div>
-      {paymentError && (
-        <div className="text-red-600 text-sm">{paymentError}</div>
-      )}
-      <button
-        type="submit"
-        disabled={!stripe || processing}
-        className={`w-full bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors ${
-          !stripe || processing
-            ? "opacity-50 cursor-not-allowed"
-            : "hover:bg-blue-700"
-        }`}
-      >
-        {processing ? "Processing..." : `Pay ${finalTotal.toFixed(2)} AED`}
-      </button>
-    </form>
-  );
-};
+import axios from "axios";
+import ShippingTermsModal from "./ShippingTermsModal";
 
 const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("stripe");
+  const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
   const [step, setStep] = useState("checkout");
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [checkoutProducts, setCheckoutProducts] = useState([]);
   const [subtotal, setSubtotal] = useState(0);
+  const [shippingFee, setShippingFee] = useState(0);
   const [vatAmount, setVatAmount] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const [shippingAddresses, setShippingAddresses] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
@@ -158,9 +42,6 @@ const CheckoutPage = () => {
     state: "",
     city: "",
     street: "",
-    building: "",
-    apartment: "",
-    landmark: "",
     postalCode: "",
   });
 
@@ -173,20 +54,335 @@ const CheckoutPage = () => {
     state: "",
     city: "",
     street: "",
-    building: "",
-    apartment: "",
     postalCode: "",
   });
 
-  // Calculate VAT and totals
-  const calculateTotals = (cartTotal) => {
+  // Check if we have a valid address for calculation
+  const hasValidAddress = useCallback(() => {
+    if (selectedAddress) return true;
+
+    return (
+      shippingForm.firstName &&
+      shippingForm.lastName &&
+      shippingForm.street &&
+      shippingForm.city &&
+      shippingForm.state &&
+      shippingForm.country
+    );
+  }, [selectedAddress, shippingForm]);
+
+  // Calculate totals from backend when address or cart changes
+  useEffect(() => {
+    if (checkoutProducts.length > 0 && hasValidAddress()) {
+      calculateTotals();
+    }
+  }, [checkoutProducts, hasValidAddress]);
+
+  // Update totals when selected address changes
+  useEffect(() => {
+    if (checkoutProducts.length > 0 && selectedAddress) {
+      calculateTotals();
+    }
+  }, [selectedAddress]);
+
+  const calculateTotals = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        console.error("No token found");
+        calculateTotalsFallback();
+        return;
+      }
+
+      const items = checkoutProducts.map((item) => ({
+        productId: item.productId._id || item.productId,
+        quantity: item.quantity,
+      }));
+
+      // Prepare shipping address for calculation
+      let shippingAddress = {};
+      if (selectedAddress) {
+        shippingAddress = {
+          firstName: selectedAddress.firstName,
+          lastName: selectedAddress.lastName,
+          email: selectedAddress.email,
+          phone: selectedAddress.phone,
+          address1: selectedAddress.street,
+          street: selectedAddress.street,
+          city: selectedAddress.city,
+          state: selectedAddress.state,
+          country: selectedAddress.country,
+          postalCode: selectedAddress.postalCode,
+        };
+      } else if (hasValidAddress()) {
+        shippingAddress = {
+          firstName: shippingForm.firstName,
+          lastName: shippingForm.lastName,
+          email: shippingForm.email,
+          phone: shippingForm.phone,
+          address1: shippingForm.street,
+          street: shippingForm.street,
+          city: shippingForm.city,
+          state: shippingForm.state,
+          country: shippingForm.country,
+          postalCode: shippingForm.postalCode,
+        };
+      } else {
+        calculateTotalsFallback();
+        return;
+      }
+
+      console.log("Sending calculation request with:", {
+        items,
+        shippingAddress,
+        calculateOnly: true,
+      });
+
+      // Use the updated endpoint that handles calculateOnly
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/order/`, // Same endpoint, but with calculateOnly flag
+        {
+          items,
+          shippingAddress,
+          billingAddress: billingSameAsShipping ? shippingAddress : billingForm,
+          paymentMethod,
+          calculateOnly: true, // This flag is now handled by backend
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Calculation response:", response.data);
+
+      if (response.data.success) {
+        const {
+          subtotal: calculatedSubtotal = 0,
+          shippingFee: calculatedShippingFee = 0,
+          total: calculatedTotal = 0,
+          vatAmount: calculatedVat = 0,
+        } = response.data;
+
+        setSubtotal(calculatedSubtotal);
+        setShippingFee(calculatedShippingFee);
+        setFinalTotal(calculatedTotal);
+        setVatAmount(calculatedVat);
+
+        console.log("Updated totals:", {
+          subtotal: calculatedSubtotal,
+          shippingFee: calculatedShippingFee,
+          finalTotal: calculatedTotal,
+          vatAmount: calculatedVat,
+        });
+      } else {
+        throw new Error(response.data.message || "Calculation failed");
+      }
+    } catch (error) {
+      console.error("Error calculating totals:", error.message);
+      console.error("Error details:", error.response?.data);
+      calculateTotalsFallback();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Improved fallback calculation
+  const calculateTotalsFallback = () => {
+    const cartTotal = checkoutProducts.reduce((total, item) => {
+      const price = item.productId.salePrice || item.productId.price || 0;
+      return total + price * item.quantity;
+    }, 0);
+
     const subtotalValue = cartTotal;
-    const vatValue = subtotalValue * VAT_RATE;
-    const finalTotalValue = subtotalValue + vatValue;
+
+    // Calculate shipping based on subtotal (free over 100 AED as example)
+    const shippingValue = subtotalValue > 100 ? 0 : 20; // Example logic
+
+    // Calculate VAT (5% as example for UAE)
+    const vatRate = 0.05;
+    const vatValue = subtotalValue * vatRate;
+
+    const finalTotalValue = subtotalValue + shippingValue + vatValue;
 
     setSubtotal(subtotalValue);
+    setShippingFee(shippingValue);
     setVatAmount(vatValue);
     setFinalTotal(finalTotalValue);
+
+    console.log("Fallback calculation:", {
+      subtotal: subtotalValue,
+      shipping: shippingValue,
+      vat: vatValue,
+      total: finalTotalValue,
+    });
+  };
+
+  // Update totals when form fields are completed
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (
+        checkoutProducts.length > 0 &&
+        hasValidAddress() &&
+        !selectedAddress
+      ) {
+        calculateTotals();
+      }
+    }, 1000); // Debounce to avoid too many API calls
+
+    return () => clearTimeout(timer);
+  }, [
+    shippingForm.firstName,
+    shippingForm.lastName,
+    shippingForm.street,
+    shippingForm.city,
+    shippingForm.state,
+    shippingForm.country,
+  ]);
+
+  const createOrder = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        alert("Please login to continue");
+        return;
+      }
+
+      // Prepare items array for order
+      const items = checkoutProducts.map((item) => ({
+        productId: item.productId._id,
+        quantity: item.quantity,
+      }));
+
+      // Prepare shipping address
+      let shippingAddress = {};
+      if (selectedAddress) {
+        shippingAddress = {
+          firstName: selectedAddress.firstName,
+          lastName: selectedAddress.lastName,
+          email: selectedAddress.email,
+          phone: selectedAddress.phone,
+          address1: selectedAddress.street,
+          street: selectedAddress.street,
+          city: selectedAddress.city,
+          state: selectedAddress.state,
+          country: selectedAddress.country,
+          postalCode: selectedAddress.postalCode,
+        };
+      } else {
+        shippingAddress = {
+          firstName: shippingForm.firstName,
+          lastName: shippingForm.lastName,
+          email: shippingForm.email,
+          phone: shippingForm.phone,
+          address1: shippingForm.street,
+          street: shippingForm.street,
+          city: shippingForm.city,
+          state: shippingForm.state,
+          country: shippingForm.country,
+          postalCode: shippingForm.postalCode,
+        };
+      }
+
+      // Prepare billing address
+      let billingAddress = {};
+      if (billingSameAsShipping) {
+        billingAddress = { ...shippingAddress };
+      } else {
+        billingAddress = {
+          firstName: billingForm.firstName,
+          lastName: billingForm.lastName,
+          email: billingForm.email,
+          phone: billingForm.phone,
+          address1: billingForm.street,
+          street: billingForm.street,
+          city: billingForm.city,
+          state: billingForm.state,
+          country: billingForm.country,
+          postalCode: billingForm.postalCode,
+        };
+      }
+
+      // Validate required fields
+      if (
+        !shippingAddress.firstName ||
+        !shippingAddress.lastName ||
+        !shippingAddress.phone ||
+        !shippingAddress.email ||
+        !shippingAddress.street ||
+        !shippingAddress.city ||
+        !shippingAddress.state ||
+        !shippingAddress.country
+      ) {
+        alert("Please fill all required shipping address fields");
+        setIsLoading(false);
+        return;
+      }
+
+      if (
+        !billingSameAsShipping &&
+        (!billingAddress.firstName ||
+          !billingAddress.lastName ||
+          !billingAddress.phone ||
+          !billingAddress.email ||
+          !billingAddress.street ||
+          !billingAddress.city ||
+          !billingAddress.state ||
+          !billingAddress.country)
+      ) {
+        alert("Please fill all required billing address fields");
+        setIsLoading(false);
+        return;
+      }
+
+      const orderData = {
+        items,
+        shippingAddress,
+        billingAddress,
+        paymentMethod,
+        subtotal,
+        shippingFee,
+        total: finalTotal,
+        vatAmount,
+      };
+
+      console.log("Creating order with data:", orderData);
+
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/order/`,
+        orderData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.success) {
+        if (paymentMethod === "stripe" && response.data.checkoutUrl) {
+          window.location.href = response.data.checkoutUrl;
+        } else {
+          setStep("success");
+        }
+      } else {
+        throw new Error(response.data.message || "Failed to create order");
+      }
+    } catch (error) {
+      console.error("Order creation error:", error);
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to create order"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePlaceOrder = () => {
@@ -194,46 +390,43 @@ const CheckoutPage = () => {
       alert("Please accept the privacy policy to continue");
       return;
     }
-    if (!selectedAddress && !shippingForm.firstName) {
-      alert("Please fill in shipping address");
+
+    if (!hasValidAddress()) {
+      alert("Please fill in shipping address or select an existing address");
       return;
     }
-    setStep("payment");
+
+    createOrder();
   };
 
   useEffect(() => {
     setIsMounted(true);
+
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("accessToken");
         if (!token) return;
-        const result = await getCart(token);
-        setCheckoutProducts(result.cart || []);
-        calculateTotals(result.totalAmount || 0);
 
-        const mockAddresses = [
+        // Get cart data
+        const cartResult = await getCart(token);
+        setCheckoutProducts(cartResult.cart || []);
+
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/order/shipping-addresses`,
           {
-            id: 1,
-            type: "home",
-            firstName: "John",
-            lastName: "Doe",
-            phone: "+971501234567",
-            email: "john.doe@example.com",
-            country: "United Arab Emirates",
-            state: "Dubai",
-            city: "Dubai",
-            street: "Sheikh Zayed Road",
-            building: "Burj Khalifa",
-            apartment: "2501",
-            landmark: "Near Dubai Mall",
-            postalCode: "12345",
-            isDefault: true,
-          },
-        ];
-        setShippingAddresses(mockAddresses);
-        setSelectedAddress(mockAddresses[0]);
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const data = res.data;
+        console.log(data, "addresses");
+
+        if (data.success && data.addresses.length > 0) {
+          setShippingAddresses(data.addresses);
+          setSelectedAddress(data.addresses[0]);
+        }
       } catch (err) {
-        console.log("Failed to fetch cart:", err.message);
+        console.log("Error fetching data:", err.message);
       }
     };
 
@@ -260,13 +453,12 @@ const CheckoutPage = () => {
 
                 {!showAddressForm ? (
                   <div className="space-y-4">
-                    {/* Address Selection */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {shippingAddresses.map((address) => (
+                      {shippingAddresses.map((address, index) => (
                         <div
-                          key={address.id}
+                          key={index}
                           className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                            selectedAddress?.id === address.id
+                            selectedAddress === address
                               ? "border-blue-500 bg-blue-50"
                               : "border-gray-200 hover:border-gray-300"
                           }`}
@@ -290,7 +482,7 @@ const CheckoutPage = () => {
                               {address.firstName} {address.lastName}
                             </p>
                             <p>
-                              {address.street}, {address.building}
+                              {address.street}, {address.postalCode}
                             </p>
                             <p>
                               {address.city}, {address.state}
@@ -302,7 +494,6 @@ const CheckoutPage = () => {
                       ))}
                     </div>
 
-                    {/* Add New Address Button */}
                     <button
                       onClick={() => setShowAddressForm(true)}
                       className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -311,7 +502,6 @@ const CheckoutPage = () => {
                       <span>Add New Address</span>
                     </button>
 
-                    {/* Direct Form for New Shipping Address */}
                     <div className="border-t pt-4 mt-4">
                       <h3 className="font-medium mb-4">
                         Or enter new shipping address:
@@ -331,6 +521,7 @@ const CheckoutPage = () => {
                               })
                             }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="First Name"
                           />
                         </div>
                         <div>
@@ -347,6 +538,7 @@ const CheckoutPage = () => {
                               })
                             }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Last Name"
                           />
                         </div>
                         <div>
@@ -363,6 +555,7 @@ const CheckoutPage = () => {
                               })
                             }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Phone Number"
                           />
                         </div>
                         <div>
@@ -379,6 +572,7 @@ const CheckoutPage = () => {
                               })
                             }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Email Address"
                           />
                         </div>
                         <div className="sm:col-span-2">
@@ -395,6 +589,7 @@ const CheckoutPage = () => {
                               })
                             }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Street Address"
                           />
                         </div>
                         <div>
@@ -411,6 +606,7 @@ const CheckoutPage = () => {
                               })
                             }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="City"
                           />
                         </div>
                         <div>
@@ -427,6 +623,7 @@ const CheckoutPage = () => {
                               })
                             }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="State"
                           />
                         </div>
                         <div>
@@ -443,6 +640,7 @@ const CheckoutPage = () => {
                               })
                             }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Postal Code"
                           />
                         </div>
                         <div>
@@ -465,13 +663,14 @@ const CheckoutPage = () => {
                             <option>Kuwait</option>
                             <option>Qatar</option>
                             <option>Oman</option>
+                            <option>Germany</option>
+                            <option>United States</option>
                           </select>
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  // Add New Address Form (simplified)
                   <div className="space-y-4">
                     <button
                       onClick={() => setShowAddressForm(false)}
@@ -479,7 +678,6 @@ const CheckoutPage = () => {
                     >
                       ← Back to address selection
                     </button>
-                    {/* Add your address form here */}
                   </div>
                 )}
               </div>
@@ -520,6 +718,7 @@ const CheckoutPage = () => {
                           })
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="First Name"
                       />
                     </div>
                     <div>
@@ -536,6 +735,41 @@ const CheckoutPage = () => {
                           })
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="Last Name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Phone *
+                      </label>
+                      <input
+                        type="tel"
+                        value={billingForm.phone}
+                        onChange={(e) =>
+                          setBillingForm({
+                            ...billingForm,
+                            phone: e.target.value,
+                          })
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="Phone Number"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={billingForm.email}
+                        onChange={(e) =>
+                          setBillingForm({
+                            ...billingForm,
+                            email: e.target.value,
+                          })
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="Email Address"
                       />
                     </div>
                     <div className="sm:col-span-2">
@@ -552,6 +786,7 @@ const CheckoutPage = () => {
                           })
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="Street Address"
                       />
                     </div>
                     <div>
@@ -568,6 +803,7 @@ const CheckoutPage = () => {
                           })
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="City"
                       />
                     </div>
                     <div>
@@ -584,6 +820,7 @@ const CheckoutPage = () => {
                           })
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="State"
                       />
                     </div>
                     <div>
@@ -600,6 +837,7 @@ const CheckoutPage = () => {
                           })
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="Postal Code"
                       />
                     </div>
                     <div>
@@ -674,13 +912,20 @@ const CheckoutPage = () => {
                       </div>
                       <div className="text-right flex-shrink-0 ml-3">
                         <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
-                          {(item.productId.salePrice * item.quantity).toFixed(
-                            2
-                          )}{" "}
+                          {(
+                            (item.productId.salePrice ||
+                              item.productId.price ||
+                              0) * item.quantity
+                          ).toFixed(2)}{" "}
                           AED
                         </p>
                         <p className="text-xs text-gray-500 whitespace-nowrap">
-                          {item.productId.salePrice} AED each
+                          {(
+                            item.productId.salePrice ||
+                            item.productId.price ||
+                            0
+                          ).toFixed(2)}{" "}
+                          AED each
                         </p>
                       </div>
                     </div>
@@ -697,14 +942,34 @@ const CheckoutPage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Shipping</span>
-                    <span className="text-green-600 font-medium">Free</span>
+                    <span
+                      className={`font-medium ${
+                        shippingFee === 0 ? "text-green-600" : "text-gray-900"
+                      }`}
+                    >
+                      {shippingFee === 0
+                        ? "Free"
+                        : `${shippingFee.toFixed(2)} AED`}
+                    </span>
+                    <button
+                      onClick={() => setIsShippingModalOpen(true)}
+                      className="text-blue-600 text-xs underline hover:text-blue-700"
+                    >
+                      View Terms
+                    </button>
+                    {/* Modal is rendered outside of button */}
+                    <ShippingTermsModal
+                      isOpen={isShippingModalOpen}
+                      onClose={() => setIsShippingModalOpen(false)}
+                    />
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">VAT (5%)</span>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-gray-600">VAT</span>
                     <span className="font-medium">
                       {vatAmount.toFixed(2)} AED
                     </span>
                   </div>
+
                   <div className="flex justify-between text-lg font-semibold border-t border-gray-200 pt-3">
                     <span>Total</span>
                     <span>{finalTotal.toFixed(2)} AED</span>
@@ -712,7 +977,7 @@ const CheckoutPage = () => {
                 </div>
               </div>
 
-              {/* Rest of your payment method section remains the same */}
+              {/* Payment Method Section */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
                 <h2 className="text-lg font-semibold mb-4">Payment Method</h2>
 
@@ -739,27 +1004,6 @@ const CheckoutPage = () => {
                         <FaCcMastercard className="text-xl text-red-600" />
                         <FaCcAmex className="text-xl text-indigo-600" />
                       </div>
-                    </div>
-                  </label>
-
-                  <label
-                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                      paymentMethod === "cash"
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="cash"
-                      checked={paymentMethod === "cash"}
-                      onChange={() => setPaymentMethod("cash")}
-                      className="mr-3 text-blue-600"
-                    />
-                    <div className="flex items-center space-x-2">
-                      <FaMoneyBillWave className="text-green-500" />
-                      <span className="font-medium">Cash on Delivery</span>
                     </div>
                   </label>
                 </div>
@@ -794,48 +1038,58 @@ const CheckoutPage = () => {
                   onClick={handlePlaceOrder}
                   disabled={
                     !privacyAccepted ||
-                    (!selectedAddress && !shippingForm.firstName)
+                    !hasValidAddress() ||
+                    isLoading ||
+                    loading
                   }
                   className={`w-full mt-4 text-white py-3 rounded-lg font-medium transition-colors ${
                     privacyAccepted &&
-                    (selectedAddress || shippingForm.firstName)
+                    hasValidAddress() &&
+                    !isLoading &&
+                    !loading
                       ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
                       : "bg-gray-400 cursor-not-allowed"
                   }`}
                 >
-                  {paymentMethod === "cash"
-                    ? "Place Order (Cash)"
-                    : "Proceed to Payment"}
+                  {isLoading || loading
+                    ? "Processing..."
+                    : `Place Order - ${finalTotal.toFixed(2)} AED`}
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {step === "payment" && paymentMethod === "stripe" && (
-          <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold mb-6">Payment Details</h2>
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex justify-between text-sm mb-2">
-                <span>Subtotal:</span>
-                <span>{subtotal.toFixed(2)} AED</span>
-              </div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>VAT (5%):</span>
-                <span>{vatAmount.toFixed(2)} AED</span>
-              </div>
-              <div className="flex justify-between font-semibold border-t pt-2">
-                <span>Total:</span>
-                <span>{finalTotal.toFixed(2)} AED</span>
-              </div>
+        {step === "success" && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M5 13l4 4L19 7"
+                ></path>
+              </svg>
             </div>
-            <Elements stripe={stripePromise}>
-              <CheckoutForm
-                totalAmount={subtotal}
-                vatAmount={vatAmount}
-                finalTotal={finalTotal}
-              />
-            </Elements>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Order Placed Successfully!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Thank you for your order. You will receive a confirmation email
+              shortly.
+            </p>
+            <button
+              onClick={() => (window.location.href = "/")}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Continue Shopping
+            </button>
           </div>
         )}
       </div>

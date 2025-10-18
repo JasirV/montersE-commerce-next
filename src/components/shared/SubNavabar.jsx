@@ -242,8 +242,8 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     setCurrency(currency.code);
 
     try {
-      const res = await api.get(
-        `${process.env.NEXT_PUBLIC_BASEURL}Auth/convert-price`,
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/Auth/convert-price`,
         {
           params: {
             amount: 1,

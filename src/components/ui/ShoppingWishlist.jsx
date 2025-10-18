@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef,useContext } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   FiLock,
@@ -23,8 +23,10 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import newCurrency from "../../assets/newSymbole.png";
 import api from "@/api/axiosIntespter";
+import { GlobalContext } from "../shared/context/GlobalContext";
 
 const ShoppingWishlist = () => {
+  const { incrementCart,decrementWishlist } = useContext(GlobalContext);
   const router = useRouter();
   const params = useParams();
   const [activeWishlist, setActiveWishlist] = useState(null);
@@ -67,7 +69,7 @@ const ShoppingWishlist = () => {
     }));
 
     try {
-      const response = await api.post(
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/cart/add`,
         {
           productId: item.id,
@@ -80,7 +82,7 @@ const ShoppingWishlist = () => {
           },
         }
       );
-
+     incrementCart()
       if (response.status === 200) {
         toast.success("Item added to cart successfully");
       }
@@ -126,7 +128,7 @@ const ShoppingWishlist = () => {
       setLoading(true);
       setError(null);
 
-      const response = await api.get(
+      const response = await axios.get(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists/getAll`,
         {
           headers: {
@@ -246,7 +248,7 @@ const ShoppingWishlist = () => {
     if (!token || !wishlistId || !productId) return;
 
     try {
-      const response = await api.delete(
+      const response = await axios.delete(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -256,7 +258,7 @@ const ShoppingWishlist = () => {
           },
         }
       );
-
+      decrementWishlist()
       toast.success("Item removed from wishlist successfully!");
       // Refresh wishlists after deleting item
       fetchWishlists();
@@ -271,7 +273,7 @@ const ShoppingWishlist = () => {
     console.log(token, "token");
 
     try {
-      const response = await api.put(
+      const response = await  axios.put(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists/${activeWishlist.id}/default`,
         {}, // ✅ empty body if no data
         {
@@ -311,7 +313,7 @@ const ShoppingWishlist = () => {
         )
       );
 
-      const response = await api.put(
+      const response = await axios.put(
         `${process.env.NEXT_PUBLIC_BASEURL}/wishlists/${activeWishlist.id}/visibility`,
         {
           isPublic: newPublicStatus,
@@ -391,7 +393,7 @@ const ShoppingWishlist = () => {
       return;
 
     try {
-      const response = await api.delete(
+      const response = await axios.delete(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists/${activeWishlist.id}/items`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -415,7 +417,7 @@ const ShoppingWishlist = () => {
     }
 
     try {
-      const response = await api.delete(
+      const response = await axios.delete(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists/${wishlistId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
