@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useMemo, Suspense, useEffect, useContext } from "react";
 import { 
   FaHeart, 
@@ -32,6 +33,7 @@ import { GlobalContext } from "../shared/context/GlobalContext";
 import axios from "axios";
 
 const ProductDetailPage = () => {
+
   const { incrementWishlist, decrementWishlist, incrementCart } = useContext(GlobalContext);
   const router = useRouter();
   const [product, setProducts] = useState(null);
@@ -53,10 +55,9 @@ const ProductDetailPage = () => {
       setError(null);
       try {
         const { data } = await fetchProduct({ id });
-        setProducts(data || null);
-        setSelectedImage(data?.images?.[0]?.url);
-        console.log(data,"dataaa");
-        
+        setProducts(data || {});
+        setSelectedImage(data?.images?.[0]?.url || defaultImage);
+        console.log(data, "data");
       } catch (err) {
         setError("Failed to load products");
         console.error("Error loading product:", err);
@@ -88,14 +89,17 @@ const ProductDetailPage = () => {
   const maxThumbnailIndex = Math.max(0, images.length - visibleThumbnails);
 
   const handleThumbnailNavigate = (direction) => {
-    if (direction === 'prev') {
-      setThumbnailStartIndex(prev => Math.max(0, prev - 1));
+    if (direction === "prev") {
+      setThumbnailStartIndex((prev) => Math.max(0, prev - 1));
     } else {
-      setThumbnailStartIndex(prev => Math.min(maxThumbnailIndex, prev + 1));
+      setThumbnailStartIndex((prev) => Math.min(maxThumbnailIndex, prev + 1));
     }
   };
 
-  const visibleImages = images.slice(thumbnailStartIndex, thumbnailStartIndex + visibleThumbnails);
+  const visibleImages = images.slice(
+    thumbnailStartIndex,
+    thumbnailStartIndex + visibleThumbnails
+  );
 
   // Fetch user's wishlists and check if product is in wishlist
   useEffect(() => {
@@ -109,15 +113,14 @@ const ProductDetailPage = () => {
         }
 
         setWishlistLoading(true);
-        
+
         // Fetch wishlists
-        const res = await axios
-          .get(
-            `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         // Correct way to access response data
         if (res.data && res.data.wishlists?.length > 0) {
@@ -125,14 +128,15 @@ const ProductDetailPage = () => {
             res.data.wishlists.find((w) => w.isDefault) ||
             res.data.wishlists[0];
           setDefaultWishlistId(defaultWishlist._id || defaultWishlist.id);
-          
+
           // Check if current product is in any wishlist
-          const isProductInWishlist = res.data.wishlists.some(wishlist => 
-            wishlist.products?.some(productItem => 
-              productItem._id === id || productItem.productId === id
+          const isProductInWishlist = res.data.wishlists.some((wishlist) =>
+            wishlist.products?.some(
+              (productItem) =>
+                productItem._id === id || productItem.productId === id
             )
           );
-          
+
           setIsWishlisted(isProductInWishlist);
         } else {
           console.log("No wishlists found or empty response");
@@ -176,9 +180,9 @@ const ProductDetailPage = () => {
         await axios.delete(
           `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
           {
-            headers: { 
+            headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              "Content-Type": "application/json",
             },
             data: {
               wishlistId: defaultWishlistId,
@@ -200,17 +204,17 @@ const ProductDetailPage = () => {
           {
             headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              "Content-Type": "application/json",
             },
           }
         );
-        incrementWishlist()
+        incrementWishlist();
         setIsWishlisted(true);
         console.log("Product added to wishlist");
       }
     } catch (error) {
       console.error("Error updating wishlist:", error);
-      
+
       // Show user-friendly error message
       if (error.response?.status === 401) {
         router.push("/");
@@ -286,7 +290,7 @@ const ProductDetailPage = () => {
       const token = localStorage.getItem("accessToken");
       console.log(id, "id");
       await addToCart(token, id, 1);
-      incrementCart()
+      incrementCart();
       // store in localStorage for quick UI update
       const cart = JSON.parse(localStorage.getItem("cart")) || [];
       cart.push({ productId: id, quantity: 1 });
@@ -415,7 +419,11 @@ const ProductDetailPage = () => {
                 ) : (
                   <FaHeart
                     size={18}
-                    className={isWishlisted ? "text-red-500 fill-red-500" : "text-gray-600"}
+                    className={
+                      isWishlisted
+                        ? "text-red-500 fill-red-500"
+                        : "text-gray-600"
+                    }
                   />
                 )}
               </button>
@@ -542,19 +550,23 @@ const ProductDetailPage = () => {
             {images.length > visibleThumbnails && (
               <>
                 <button
-                  onClick={() => handleThumbnailNavigate('prev')}
+                  onClick={() => handleThumbnailNavigate("prev")}
                   disabled={thumbnailStartIndex === 0}
                   className={`absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-full p-1.5 shadow-md hover:bg-gray-50 transition-colors ${
-                    thumbnailStartIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                    thumbnailStartIndex === 0
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
                   }`}
                 >
                   <FaChevronLeft size={14} className="text-gray-600" />
                 </button>
                 <button
-                  onClick={() => handleThumbnailNavigate('next')}
+                  onClick={() => handleThumbnailNavigate("next")}
                   disabled={thumbnailStartIndex >= maxThumbnailIndex}
                   className={`absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-full p-1.5 shadow-md hover:bg-gray-50 transition-colors ${
-                    thumbnailStartIndex >= maxThumbnailIndex ? 'opacity-50 cursor-not-allowed' : ''
+                    thumbnailStartIndex >= maxThumbnailIndex
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
                   }`}
                 >
                   <FaChevronRight size={14} className="text-gray-600" />
@@ -569,14 +581,16 @@ const ProductDetailPage = () => {
                   key={thumbnailStartIndex + idx}
                   className={`flex-shrink-0 cursor-pointer border-2 rounded-lg transition-all duration-200 ${
                     selectedImage === (image.url || image)
-                      ? 'border-red-500 shadow-md scale-105'
-                      : 'border-gray-300 hover:border-red-300'
+                      ? "border-red-500 shadow-md scale-105"
+                      : "border-gray-300 hover:border-red-300"
                   }`}
                   onClick={() => handleImageSelect(image)}
                 >
                   <Image
                     src={image.url || image}
-                    alt={`${product.title || "Product"} thumbnail ${thumbnailStartIndex + idx + 1}`}
+                    alt={`${product.title || "Product"} thumbnail ${
+                      thumbnailStartIndex + idx + 1
+                    }`}
                     width={80}
                     height={80}
                     className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 object-cover rounded-md"
@@ -589,7 +603,12 @@ const ProductDetailPage = () => {
             {images.length > visibleThumbnails && (
               <div className="text-center mt-2">
                 <span className="text-xs text-gray-500">
-                  {thumbnailStartIndex + 1}-{Math.min(thumbnailStartIndex + visibleThumbnails, images.length)} of {images.length}
+                  {thumbnailStartIndex + 1}-
+                  {Math.min(
+                    thumbnailStartIndex + visibleThumbnails,
+                    images.length
+                  )}{" "}
+                  of {images.length}
                 </span>
               </div>
             )}
@@ -598,7 +617,9 @@ const ProductDetailPage = () => {
           {/* Image Counter */}
           <div className="text-center">
             <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-              {images.findIndex(img => (img.url || img) === selectedImage) + 1} / {images.length}
+              {images.findIndex((img) => (img.url || img) === selectedImage) +
+                1}{" "}
+              / {images.length}
             </span>
           </div>
         </div>
@@ -655,28 +676,41 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Action Buttons */}
+
           <div className="flex flex-col sm:flex-row gap-3">
-            {isInCart ? (
-              <button
-                onClick={handleGoToCart}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
-              >
-                GO TO CART
-              </button>
+            {product.stockQuantity > 0 ? (
+              <>
+                {isInCart ? (
+                  <button
+                    onClick={handleGoToCart}
+                    className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
+                  >
+                    GO TO CART
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleAddToCart}
+                    className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
+                  >
+                    ADD TO CART
+                  </button>
+                )}
+
+                <button
+                  onClick={handleBuyNow}
+                  className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors text-base shadow-md"
+                >
+                  BUY NOW
+                </button>
+              </>
             ) : (
               <button
-                onClick={handleAddToCart}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
+                disabled
+                className="flex-1 bg-gray-400 text-white py-3 rounded-lg font-semibold text-base shadow-md cursor-not-allowed"
               >
-                ADD TO CART
+                OUT OF STOCK
               </button>
             )}
-            <button
-              onClick={handleBuyNow}
-              className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors text-base shadow-md"
-            >
-              BUY NOW
-            </button>
           </div>
 
           {/* About Product */}
@@ -689,12 +723,17 @@ const ProductDetailPage = () => {
 
           {/* Product Specifications */}
           <div>
-            <h2 className="font-semibold text-lg mb-3">Product Specifications</h2>
+            <h2 className="font-semibold text-lg mb-3">
+              Product Specifications
+            </h2>
             <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <tbody>
                   {[
-                    { label: "Brand/Model", value: product.meta?.Brands || "Hermès" },
+                    {
+                      label: "Brand/Model",
+                      value: product.meta?.Brands || "Hermès",
+                    },
                     { label: "Reference No", value: product.sku || "Round" },
                     { label: "Case Diameter", value: product.pieces || "1" },
                     { label: "Movement", value: "45 MM" },
@@ -705,7 +744,9 @@ const ProductDetailPage = () => {
                     { label: "Production Year", value: "Leather" },
                   ].map((item, index) => (
                     <tr key={index} className="border-b last:border-b-0">
-                      <td className="p-3 font-medium bg-gray-50 w-1/3">{item.label}</td>
+                      <td className="p-3 font-medium bg-gray-50 w-1/3">
+                        {item.label}
+                      </td>
                       <td className="p-3">{item.value}</td>
                     </tr>
                   ))}
@@ -716,8 +757,10 @@ const ProductDetailPage = () => {
 
           {/* Benefits & Return/Warranty Policy */}
           <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
-            <h2 className="font-semibold text-lg mb-4 text-blue-900">Benefits & Policies</h2>
-            
+            <h2 className="font-semibold text-lg mb-4 text-blue-900">
+              Benefits & Policies
+            </h2>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-blue-100">
                 <FaShieldAlt className="text-blue-600 text-lg" />
@@ -729,7 +772,9 @@ const ProductDetailPage = () => {
               </div>
             </div>
 
-            <h3 className="font-semibold text-base mb-3 text-blue-900">Return & Warranty Policy</h3>
+            <h3 className="font-semibold text-base mb-3 text-blue-900">
+              Return & Warranty Policy
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { icon: FaUndo, text: "Upto 7 Days Returnable" },
