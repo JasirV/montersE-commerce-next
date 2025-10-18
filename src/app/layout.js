@@ -2,10 +2,11 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import Providers from "./Providers";
 import { GlobalProvider } from "@/components/shared/context/GlobalContext";
-import Head from "next/head"; // import Head
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({ children }) {
         <ToastContainer />
         {/* Providers wrapper */}
         <Providers>
+          {/* Global context for cart/wishlist */}
           <GlobalProvider>
             {children}
           </GlobalProvider>

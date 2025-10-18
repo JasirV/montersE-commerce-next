@@ -23,7 +23,7 @@ const PaymentSuccess = () => {
     }
 
     const response = await axios.get(
-      `http://localhost:9000/api/order/${orderId}`,
+     `${process.env.NEXT_PUBLIC_BASEURL}/order/${orderId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

@@ -94,9 +94,7 @@ const ProductGrid = () => {
                         <Link href={`/ProductDetailPage/${product._id}`}>
                           <Image
                             src={
-                              product.images?.[0]?.url ||
-                              "https://via.placeholder.com/300x300?text=No+Image"
-                            }
+                              product.images?.[0]?.url}
                             alt={product.name || "Product"}
                             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
                             width={300}

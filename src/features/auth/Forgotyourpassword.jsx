@@ -4,8 +4,9 @@ import { FaArrowLeft } from "react-icons/fa";
 import checkEmail from "../../assets/checkEmail.jpg";
 import Image from "next/image";
 import axios from "axios";
-import { toast } from "react-toastify"; // ✅ import toast
-import api from "@/api/axiosIntespter";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
+
 
 const ForgotPasswordForm = ({ setActiveTab }) => {
   const [emailSent, setEmailSent] = useState(false);
@@ -13,48 +14,94 @@ const ForgotPasswordForm = ({ setActiveTab }) => {
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleResetSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+const handleResetSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}Auth/forgot-password`,
-        { email: resetEmail }
-      );
+  try {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASEURL}/Auth/forgot-password`,
+      { email: resetEmail }
+    );
 
-      console.log("Reset email response:", response.data);
+    console.log("Reset email response:", response.data);
 
-      setSubmittedEmail(resetEmail);
-      setEmailSent(true);
-      setResetEmail("");
+    setSubmittedEmail(resetEmail);
+    setEmailSent(true);
+    setResetEmail("");
 
-      toast.success("Reset link has been sent to your email ");
-    } catch (error) {
-      console.error("Error sending reset email:", error);
-      toast.error(
-        error.response?.data?.message ||
-          "Something went wrong. Please try again "
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    // ✅ Success Toast
+    Toastify({
+      text: "Reset link has been sent to your email",
+      duration: 3000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #00b09b, #96c93d)", // green
+      },
+    }).showToast();
 
-  const handleResend = async () => {
-    if (!submittedEmail) return;
+  } catch (error) {
+    console.error("Error sending reset email:", error);
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      "Something went wrong. Please try again";
 
-    try {
-      await axios.post(`${process.env.NEXT_PUBLIC_BASEURL}Auth/forgot-password`, {
-        email: submittedEmail,
-      });
+    // ❌ Error Toast
+    Toastify({
+      text: message,
+      duration: 4000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #ff5f6d, #ffc371)", // red/orange
+      },
+    }).showToast();
+  } finally {
+    setLoading(false);
+  }
+};
 
-      toast.info("Reset link resent to your email ");
-    } catch (error) {
-      console.error("Error resending link:", error);
-      toast.error("Failed to resend link");
-    }
-  };
+// 🔁 Resend link
+const handleResend = async () => {
+  if (!submittedEmail) return;
+
+  try {
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_BASEURL}/Auth/forgot-password`,
+      { email: submittedEmail }
+    );
+
+    // ℹ️ Info Toast
+    Toastify({
+      text: "Reset link resent to your email",
+      duration: 3000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #2193b0, #6dd5ed)", // blue info
+      },
+    }).showToast();
+  } catch (error) {
+    console.error("Error resending link:", error);
+
+    // ❌ Error Toast
+    Toastify({
+      text: "Failed to resend link",
+      duration: 4000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+      },
+    }).showToast();
+  }
+};
 
   return (
     <div className="space-y-5">

@@ -1,12 +1,12 @@
 // app/wishlist/page.jsx
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { toast } from "react-toastify";
 import { FiPlus, FiHeart } from "react-icons/fi";
 import CreateWishlistModal from "../../../components/ui/createWishilist";
-
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 
 export default function WishlistBasePage() {
   const router = useRouter();
@@ -14,15 +14,31 @@ export default function WishlistBasePage() {
   const [token, setToken] = useState(null);
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("accessToken");
-    if (storedToken) {
-      setToken(storedToken);
-    } else {
-      toast.error("Please login to access wishlists");
-      router.push("/");
-    }
-  }, [router]);
+
+
+useEffect(() => {
+  if (typeof window === "undefined") return; // Ensure client
+  if (window.__toastShown) return; // 👈 guard against duplicate
+  window.__toastShown = true;
+
+  const storedToken = localStorage.getItem("accessToken");
+  if (storedToken) {
+    setToken(storedToken);
+  } else {
+    Toastify({
+      text: "Please login to access wishlists",
+      duration: 3000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #ff416c, #ff4b2b)",
+      },
+    }).showToast();
+    router.push("/");
+  }
+}, []);
+
 
   useEffect(() => {
     if (!token) return;
@@ -31,14 +47,14 @@ export default function WishlistBasePage() {
       try {
         setLoading(true);
 
-       const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlists`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const wishlists = response.data.wishlists || [];
 
@@ -49,12 +65,21 @@ export default function WishlistBasePage() {
           router.replace(`/wishlist/${defaultWishlist.id}`);
         } else {
           setLoading(false);
-          // Auto-open modal for new customers
+          // Auto-open modal for new customers after a short delay
           setTimeout(() => setOpen(true), 1000);
         }
       } catch (error) {
         console.error("Error fetching wishlists:", error);
-        toast.error("Failed to load wishlists");
+        Toastify({
+          text: "Failed to load wishlists. Please try again.",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff416c, #ff4b2b)",
+          },
+        }).showToast();
         setLoading(false);
       }
     };
@@ -64,11 +89,30 @@ export default function WishlistBasePage() {
 
   const handleWishlistCreated = (newWishlist) => {
     if (newWishlist && newWishlist.id) {
-      toast.success("Your first wishlist has been created!");
+      Toastify({
+        text: "Wishlist created successfully!",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        },
+      }).showToast();
       // Navigate immediately to the new wishlist page
       router.push(`/wishlist/${newWishlist.id}`);
     } else {
-      console.log("Invalid wishlist data:", newWishlist);
+      console.error("Invalid wishlist data:", newWishlist);
+      Toastify({
+        text: "Failed to create wishlist. Please try again.",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff416c, #ff4b2b)",
+        },
+      }).showToast();
     }
   };
 
