@@ -55,7 +55,7 @@ const ProductDetailPage = () => {
         const { data } = await fetchProduct({ id });
         setProducts(data || null);
         setSelectedImage(data?.images?.[0]?.url);
-        console.log(data,"dataaa");
+        console.log("Fetched product data:", data);
         
       } catch (err) {
         setError("Failed to load products");
@@ -230,8 +230,8 @@ const ProductDetailPage = () => {
     if (isMobile && navigator.share) {
       // Use native share dialog on mobile
       navigator.share({
-        title: product?.title || "Hermès Watch",
-        text: "Check out this beautiful Hermès watch!",
+        title: product?.name || "Hermès Watch",
+        text: "Check out this beautiful watch!",
         url: window.location.href,
       })
       .then(() => {
@@ -253,7 +253,7 @@ const ProductDetailPage = () => {
   const handleSocialShare = (platform) => {
     let shareUrl = "";
     const productUrl = encodeURIComponent(window.location.href);
-    const productTitle = encodeURIComponent(product?.title || "Hermès Watch");
+    const productTitle = encodeURIComponent(product?.name || "Premium Watch");
 
     switch (platform) {
       case "facebook":
@@ -323,6 +323,18 @@ const ProductDetailPage = () => {
       console.error("Buy now failed:", error);
       toast.error("Unable to proceed to checkout. Please try again.");
     }
+  };
+
+  // Calculate discount percentage
+  const calculateDiscount = () => {
+    if (!product?.salePrice || !product?.regularPrice) return 0;
+    return Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100);
+  };
+
+  // Format price with commas
+  const formatPrice = (price) => {
+    if (!price) return "0";
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
   // Loading State
@@ -448,8 +460,8 @@ const ProductDetailPage = () => {
                         <button
                           onClick={() => {
                             navigator.share({
-                              title: product?.title || "Hermès Watch",
-                              text: "Check out this beautiful Hermès watch!",
+                              title: product?.name || "Premium Watch",
+                              text: "Check out this beautiful watch!",
                               url: window.location.href,
                             })
                             .then(() => setShowShareOptions(false))
@@ -527,8 +539,8 @@ const ProductDetailPage = () => {
           {/* Main Product Image */}
           <div className="w-full h-72 xs:h-80 sm:h-96 md:h-[500px] bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200">
             <Image
-              src={selectedImage}
-              alt={product.title || "Product Image"}
+              src={selectedImage || product.image || "/placeholder-image.jpg"}
+              alt={product.name || "Product Image"}
               width={600}
               height={600}
               className="object-contain w-full h-full"
@@ -537,78 +549,81 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Amazon-style Thumbnail Gallery */}
-          <div className="relative">
-            {/* Navigation Arrows for Thumbnails */}
-            {images.length > visibleThumbnails && (
-              <>
-                <button
-                  onClick={() => handleThumbnailNavigate('prev')}
-                  disabled={thumbnailStartIndex === 0}
-                  className={`absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-full p-1.5 shadow-md hover:bg-gray-50 transition-colors ${
-                    thumbnailStartIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  <FaChevronLeft size={14} className="text-gray-600" />
-                </button>
-                <button
-                  onClick={() => handleThumbnailNavigate('next')}
-                  disabled={thumbnailStartIndex >= maxThumbnailIndex}
-                  className={`absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-full p-1.5 shadow-md hover:bg-gray-50 transition-colors ${
-                    thumbnailStartIndex >= maxThumbnailIndex ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  <FaChevronRight size={14} className="text-gray-600" />
-                </button>
-              </>
-            )}
+          {images.length > 0 && (
+            <div className="relative">
+              {/* Navigation Arrows for Thumbnails */}
+              {images.length > visibleThumbnails && (
+                <>
+                  <button
+                    onClick={() => handleThumbnailNavigate('prev')}
+                    disabled={thumbnailStartIndex === 0}
+                    className={`absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-full p-1.5 shadow-md hover:bg-gray-50 transition-colors ${
+                      thumbnailStartIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <FaChevronLeft size={14} className="text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() => handleThumbnailNavigate('next')}
+                    disabled={thumbnailStartIndex >= maxThumbnailIndex}
+                    className={`absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-full p-1.5 shadow-md hover:bg-gray-50 transition-colors ${
+                      thumbnailStartIndex >= maxThumbnailIndex ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <FaChevronRight size={14} className="text-gray-600" />
+                  </button>
+                </>
+              )}
 
-            {/* Thumbnails Container */}
-            <div className="flex justify-center gap-2 xs:gap-3 px-8">
-              {visibleImages.map((image, idx) => (
-                <div
-                  key={thumbnailStartIndex + idx}
-                  className={`flex-shrink-0 cursor-pointer border-2 rounded-lg transition-all duration-200 ${
-                    selectedImage === (image.url || image)
-                      ? 'border-red-500 shadow-md scale-105'
-                      : 'border-gray-300 hover:border-red-300'
-                  }`}
-                  onClick={() => handleImageSelect(image)}
-                >
-                  <Image
-                    src={image.url || image}
-                    alt={`${product.title || "Product"} thumbnail ${thumbnailStartIndex + idx + 1}`}
-                    width={80}
-                    height={80}
-                    className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 object-cover rounded-md"
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Thumbnail Indicator */}
-            {images.length > visibleThumbnails && (
-              <div className="text-center mt-2">
-                <span className="text-xs text-gray-500">
-                  {thumbnailStartIndex + 1}-{Math.min(thumbnailStartIndex + visibleThumbnails, images.length)} of {images.length}
-                </span>
+              {/* Thumbnails Container */}
+              <div className="flex justify-center gap-2 xs:gap-3 px-8">
+                {visibleImages.map((image, idx) => (
+                  <div
+                    key={thumbnailStartIndex + idx}
+                    className={`flex-shrink-0 cursor-pointer border-2 rounded-lg transition-all duration-200 ${
+                      selectedImage === (image.url || image)
+                        ? 'border-red-500 shadow-md scale-105'
+                        : 'border-gray-300 hover:border-red-300'
+                    }`}
+                    onClick={() => handleImageSelect(image)}
+                  >
+                    <Image
+                      src={image.url || image}
+                      alt={`${product.name || "Product"} thumbnail ${thumbnailStartIndex + idx + 1}`}
+                      width={80}
+                      height={80}
+                      className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 object-cover rounded-md"
+                    />
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+
+              {/* Thumbnail Indicator */}
+              {images.length > visibleThumbnails && (
+                <div className="text-center mt-2">
+                  <span className="text-xs text-gray-500">
+                    {thumbnailStartIndex + 1}-{Math.min(thumbnailStartIndex + visibleThumbnails, images.length)} of {images.length}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Image Counter */}
-          <div className="text-center">
-            <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-              {images.findIndex(img => (img.url || img) === selectedImage) + 1} / {images.length}
-            </span>
-          </div>
+          {images.length > 0 && (
+            <div className="text-center">
+              <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                {images.findIndex(img => (img.url || img) === selectedImage) + 1} / {images.length}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* ===== Right Section - Details ===== */}
         <div className="space-y-6">
           {/* Product Title */}
           <h1 className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
-            {product.name ||
-              "Hermès Kelly Red Watch 20mm – Classic Imported Watch Model For Men"}
+            {product.name || "Premium Watch"}
           </h1>
 
           {/* Ratings */}
@@ -636,53 +651,83 @@ const ProductDetailPage = () => {
                   height={24}
                   className="mr-2"
                 />
-                {product.salePrice || "65,000"}
+                {formatPrice(product.salePrice) || "65,000"}
               </div>
-              <div className="text-lg text-gray-500 line-through flex items-center">
-                <Image
-                  src={newCurrency}
-                  alt="Currency"
-                  width={18}
-                  height={18}
-                  className="mr-1"
-                />
-                {product.regularPrice || "90,000"}
-              </div>
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-semibold">
-                28% OFF
-              </span>
+              {product.regularPrice && product.regularPrice > product.salePrice && (
+                <>
+                  <div className="text-lg text-gray-500 line-through flex items-center">
+                    <Image
+                      src={newCurrency}
+                      alt="Currency"
+                      width={18}
+                      height={18}
+                      className="mr-1"
+                    />
+                    {formatPrice(product.regularPrice)}
+                  </div>
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-semibold">
+                    {calculateDiscount()}% OFF
+                  </span>
+                </>
+              )}
             </div>
+          </div>
+
+          {/* Stock Status */}
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-medium ${
+              product.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {product.stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
+            </span>
+            {product.stockQuantity > 0 && (
+              <span className="text-xs text-gray-500">
+                ({product.stockQuantity} items available)
+              </span>
+            )}
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
-            {isInCart ? (
-              <button
-                onClick={handleGoToCart}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
-              >
-                GO TO CART
-              </button>
+            {product.stockQuantity > 0 ? (
+              <>
+                {isInCart ? (
+                  <button
+                    onClick={handleGoToCart}
+                    className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
+                  >
+                    GO TO CART
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleAddToCart}
+                    className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
+                  >
+                    ADD TO CART
+                  </button>
+                )}
+                <button
+                  onClick={handleBuyNow}
+                  className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors text-base shadow-md"
+                >
+                  BUY NOW
+                </button>
+              </>
             ) : (
               <button
-                onClick={handleAddToCart}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md"
+                disabled
+                className="flex-1 bg-gray-400 text-white py-3 rounded-lg font-semibold cursor-not-allowed text-base shadow-md"
               >
-                ADD TO CART
+                OUT OF STOCK
               </button>
             )}
-            <button
-              onClick={handleBuyNow}
-              className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors text-base shadow-md"
-            >
-              BUY NOW
-            </button>
           </div>
 
           {/* About Product */}
           <div>
             <h2 className="font-semibold text-lg mb-3">About This Product</h2>
-            <ProductShortDescription
+            <ProductDescription 
+              description={product.description} 
               shortDescription={product.shortDescription}
             />
           </div>
@@ -694,15 +739,17 @@ const ProductDetailPage = () => {
               <table className="w-full text-sm">
                 <tbody>
                   {[
-                    { label: "Brand/Model", value: product.meta?.Brands || "Hermès" },
-                    { label: "Reference No", value: product.sku || "Round" },
-                    { label: "Case Diameter", value: product.pieces || "1" },
-                    { label: "Movement", value: "45 MM" },
-                    { label: "Dial", value: "Leather" },
-                    { label: "Wrist Size", value: "Leather" },
-                    { label: "Accessories", value: "Leather" },
-                    { label: "Condition", value: "Leather" },
-                    { label: "Production Year", value: "Leather" },
+                    { label: "Brand", value: product.brands?.[0] || product.brand || "N/A" },
+                    { label: "Category", value: product.category || product.categorisOne || "N/A" },
+                    { label: "Gender", value: product.gender ? product.gender.charAt(0).toUpperCase() + product.gender.slice(1) : "N/A" },
+                    { label: "Case Diameter", value: product.CaseDiameter ? `${product.CaseDiameter}mm` : "N/A" },
+                    { label: "Movement", value: product.Movement || "N/A" },
+                    { label: "Dial", value: product.Dial || "N/A" },
+                    { label: "Wrist Size", value: product.WristSize ? `${product.WristSize}mm` : "N/A" },
+                    { label: "Accessories", value: product.Accessories || "N/A" },
+                    { label: "Condition", value: product.Condition ? product.Condition.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : "N/A" },
+                    { label: "Production Year", value: product.ProductionYear || "N/A" },
+                    { label: "SKU", value: product._id ? product._id.substring(0, 8).toUpperCase() : "N/A" },
                   ].map((item, index) => (
                     <tr key={index} className="border-b last:border-b-0">
                       <td className="p-3 font-medium bg-gray-50 w-1/3">{item.label}</td>
@@ -761,45 +808,80 @@ const ProductDetailPage = () => {
   );
 };
 
-const ProductShortDescription = ({ shortDescription }) => {
+const ProductDescription = ({ description, shortDescription }) => {
   const [showAll, setShowAll] = useState(false);
 
-  if (!shortDescription) {
+  // Use description if available, otherwise use shortDescription or default content
+  let content = description || shortDescription;
+
+  if (!content) {
     return (
       <ul className="space-y-2 text-gray-700">
         <li className="flex items-start gap-2">
           <span className="text-gray-400 mt-1">•</span>
-          Premium quality Hermès watch with authentic craftsmanship
+          Premium quality watch with authentic craftsmanship
         </li>
         <li className="flex items-start gap-2">
           <span className="text-gray-400 mt-1">•</span>
-          Imported Swiss movement for precise timekeeping
+          Imported movement for precise timekeeping
         </li>
         <li className="flex items-start gap-2">
           <span className="text-gray-400 mt-1">•</span>
-          Water resistant up to 50 meters
+          Water resistant design
         </li>
       </ul>
     );
   }
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(shortDescription, "text/html");
-  const listItems = Array.from(doc.querySelectorAll("li"));
-  const visibleItems = showAll ? listItems : listItems.slice(0, 6);
+  // Check if content is HTML
+  if (content.includes('<') && content.includes('>')) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(content, "text/html");
+    const listItems = Array.from(doc.querySelectorAll("li"));
+    
+    if (listItems.length > 0) {
+      const visibleItems = showAll ? listItems : listItems.slice(0, 6);
+
+      return (
+        <div className="text-gray-700">
+          <ul className="space-y-2">
+            {visibleItems.map((li, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-sm leading-relaxed">{li.textContent}</span>
+              </li>
+            ))}
+          </ul>
+
+          {listItems.length > 6 && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="text-blue-600 text-sm mt-3 hover:underline font-medium"
+            >
+              {showAll ? "Show Less" : "Show All Key Features"}
+            </button>
+          )}
+        </div>
+      );
+    }
+  }
+
+  // If it's plain text with line breaks
+  const lines = content.split('\n').filter(line => line.trim());
+  const visibleLines = showAll ? lines : lines.slice(0, 6);
 
   return (
     <div className="text-gray-700">
-      <ul className="space-y-2">
-        {visibleItems.map((li, idx) => (
-          <li key={idx} className="flex items-start gap-2">
+      <div className="space-y-2">
+        {visibleLines.map((line, idx) => (
+          <div key={idx} className="flex items-start gap-2">
             <span className="text-gray-400 mt-1">•</span>
-            <span className="text-sm leading-relaxed">{li.textContent}</span>
-          </li>
+            <span className="text-sm leading-relaxed">{line}</span>
+          </div>
         ))}
-      </ul>
+      </div>
 
-      {listItems.length > 6 && (
+      {lines.length > 6 && (
         <button
           onClick={() => setShowAll(!showAll)}
           className="text-blue-600 text-sm mt-3 hover:underline font-medium"
