@@ -24,7 +24,7 @@ import SilverCufflinks from "../../assets/Silver Cufflinks.jpg";
 import FountainPen from "../../assets/Fountain Pen.jpg";
 import AccessoryDeals from "../../assets/Accessory Deals.jpg";
 import { useCurrency } from "@/app/CurrencyContext";
-import newCurrency from '../../assets/newSymbole.png';
+import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
 import axios from "axios";
 
@@ -53,7 +53,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       categories: [
         { name: "luxury Watches", path: "/watches/luxury" },
         { name: "Sports Watches", path: "/watches/sports" },
-        { name: "Classic Watches", path: "/watches/classic" },
+        { name: "Classic&Dress Watches", path: "/watches/classic" },
+        { name: "Vintage Watches", path: "/watches/Vintage" },
+        { name: "Limited Editions ", path: "/watches/LimitedEditions " },
       ],
       featuredProducts: [
         {
@@ -341,7 +343,11 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           />
         );
       default:
-        return <span className="text-amber-600 font-bold">{selectedCurrency.symbol}</span>;
+        return (
+          <span className="text-amber-600 font-bold">
+            {selectedCurrency.symbol}
+          </span>
+        );
     }
   };
 
@@ -552,14 +558,13 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                     </Link>
 
                     {/* Mega Menu for specific items */}
-                    {item.hasMegaMenu &&
-                      dropdown === item.name && (
-                        <MegaMenu 
-                          data={megaMenuData[item.megaMenuKey]} 
-                          megaMenuKey={item.megaMenuKey}
-                          isMobile={false}
-                        />
-                      )}
+                    {item.hasMegaMenu && dropdown === item.name && (
+                      <MegaMenu
+                        data={megaMenuData[item.megaMenuKey]}
+                        megaMenuKey={item.megaMenuKey}
+                        isMobile={false}
+                      />
+                    )}
 
                     {/* Regular Submenu for other items */}
                     {item.subMenu &&
@@ -603,7 +608,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                       <FaPhone className="text-[#1e518e]" size={16} />
                       <div>
                         <div className="font-medium">Call Support</div>
-                        <div className="text-xs text-gray-500">+971 4 267 1124</div>
+                        <div className="text-xs text-gray-500">
+                          +971 4 267 1124
+                        </div>
                       </div>
                     </a>
                     <Link
@@ -726,8 +733,8 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               {(item.hasMegaMenu || item.subMenu) && dropdown === item.name && (
                 <div className="bg-white">
                   {item.hasMegaMenu ? (
-                    <MegaMenu 
-                      data={megaMenuData[item.megaMenuKey]} 
+                    <MegaMenu
+                      data={megaMenuData[item.megaMenuKey]}
                       megaMenuKey={item.megaMenuKey}
                       isMobile={true}
                     />

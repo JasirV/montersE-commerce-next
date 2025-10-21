@@ -10,9 +10,9 @@ import Omega from "../../assets/PremimumBrands/b6047a0809e6575a92443a6924e60eae.
 import Rolex from "../../assets/PremimumBrands/rolex-logo-editorial-illustration-free-vector.jpg";
 import Cartier from "../../assets/PremimumBrands/cartier-logo-png_seeklogo-26665.png";
 import Ap from "../../assets/PremimumBrands/bbdc6dc34c14f4427a5d1fe1475cd453.jpg";
-import Seamaster from '../../assets/PremimumBrands/images (6).jpeg'
-import santos from '../../assets/PremimumBrands/santos.jpg'
-import Speedmaster from '../../assets/PremimumBrands/images (4).png'
+import Seamaster from "../../assets/PremimumBrands/images (6).jpeg";
+import santos from "../../assets/PremimumBrands/santos.jpg";
+import Speedmaster from "../../assets/PremimumBrands/images (4).png";
 
 const MegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
   const { currency } = useCurrency();
@@ -24,7 +24,7 @@ const MegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
     { name: "Cartier", logo: Cartier },
     { name: "Ap", logo: Ap },
     { name: "Santos", logo: santos },
-    { name: "Seamaster", logo: Seamaster},
+    { name: "Seamaster", logo: Seamaster },
     { name: "Speedmaster", logo: Speedmaster },
   ];
 
@@ -91,7 +91,9 @@ const MegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
             {topBrands.slice(0, 4).map((brand) => (
               <Link
                 key={brand.name}
-                href={`/brands/${brand.name.toLowerCase().replace(/\s+/g, '-')}`}
+                href={`/brands/${brand.name
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")}`}
                 className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg hover:bg-white hover:shadow-sm transition-all duration-200 border border-gray-200"
               >
                 {brand.logo ? (
@@ -236,8 +238,6 @@ const MegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
                   </div>
                 </div>
               </div>
-
-            
             </div>
           </div>
         </div>

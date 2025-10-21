@@ -32,10 +32,26 @@ const WishlistIcon = ({ isWishlisted, onClick, className = "" }) => {
 };
 
 // Badge component
-const ProductBadge = ({ badge }) => {
+const ProductBadge = ({ badge, type = "default" }) => {
+  const getBadgeStyles = () => {
+    if (type === "sold-out") {
+      return "bg-gradient-to-r from-[#dc2626] to-[#b91c1c] text-white";
+    }
+    return "bg-gradient-to-r from-[#b58e5f] to-[#8b6b4a] text-white";
+  };
+
   return (
-    <div className="absolute top-1 xs:top-2 sm:top-3 right-1 xs:right-2 sm:right-3 bg-gradient-to-r from-[#b58e5f] to-[#8b6b4a] text-white text-[8px] xs:text-[10px] tracking-wide font-semibold px-1.5 xs:px-2 sm:px-3 py-0.5 xs:py-0.5 sm:py-1 rounded-full shadow-sm sm:shadow-md">
+    <div className={`absolute top-1 xs:top-2 sm:top-3 right-1 xs:right-2 sm:right-3 ${getBadgeStyles()} text-[8px] xs:text-[10px] tracking-wide font-semibold px-1.5 xs:px-2 sm:px-3 py-0.5 xs:py-0.5 sm:py-1 rounded-full shadow-sm sm:shadow-md`}>
       {badge}
+    </div>
+  );
+};
+
+// Sold Out Badge component (separate for clarity)
+const SoldOutBadge = () => {
+  return (
+    <div className="absolute top-1 xs:top-2 sm:top-3 right-1 xs:right-2 sm:right-3 bg-gradient-to-r from-[#dc2626] to-[#b91c1c] text-white text-[8px] xs:text-[10px] tracking-wide font-semibold px-1.5 xs:px-2 sm:px-3 py-0.5 xs:py-0.5 sm:py-1 rounded-full shadow-sm sm:shadow-md">
+      SOLD OUT
     </div>
   );
 };
@@ -87,6 +103,8 @@ const PriceDisplay = ({ price, mrp }) => {
 };
 
 const ProductCard = ({ product }) => {
+  console.log(product,"product");
+  
   const { decrementWishlist, incrementWishlist } = useContext(GlobalContext);
   const imageUrl = product?.images?.[0]?.url;
   const router = useRouter();
@@ -96,6 +114,9 @@ const ProductCard = ({ product }) => {
   );
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check if product is sold out
+  const isSoldOut = product.stockQuantity === 0;
 
   // Fetch user's wishlists
   useEffect(() => {
@@ -147,24 +168,48 @@ const ProductCard = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
 
+    // Prevent adding to wishlist if product is sold out
+    if (isSoldOut && !isWishlisted) {
+      Toastify({
+        text: "Cannot add sold out product to wishlist",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
+      return;
+    }
+
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-            Toastify({
-      text: "Please login to manage wishlist",
-      duration: 4000,
-      gravity: "top",
-      position: "right",
-      close: true,
-      style: {
-        background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-      },
-    }).showToast();
+        Toastify({
+          text: "Please login to manage wishlist",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
       if (!defaultWishlistId) {
-        toast.error("No wishlist available");
+        Toastify({
+          text: "No wishlist available",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
@@ -188,7 +233,6 @@ const ProductCard = ({ product }) => {
 
         if (response.status === 200) {
           setIsWishlisted(false);
-          // toast.success("Removed from wishlist!");
         }
       } else {
         // ✅ Add to wishlist API call
@@ -208,19 +252,19 @@ const ProductCard = ({ product }) => {
         incrementWishlist();
         if (response.status === 200) {
           setIsWishlisted(true);
-          // toast.success("Added to wishlist!");
         }
       }
     } catch (error) {
       console.log("Error toggling wishlist:", error);
-      // toast.error(message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="group bg-white rounded-md sm:rounded-lg overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition duration-300 transform hover:-translate-y-0.5 xs:hover:-translate-y-1 relative">
+    <div className={`group bg-white rounded-md sm:rounded-lg overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition duration-300 transform hover:-translate-y-0.5 xs:hover:-translate-y-1 relative ${
+      isSoldOut ? "opacity-80" : ""
+    }`}>
       <div className="relative w-full pb-[100%] sm:pb-[90%] md:pb-[85%] lg:pb-[80%] xl:pb-[76%] overflow-hidden">
         {imageUrl && (
           <Image
@@ -228,7 +272,9 @@ const ProductCard = ({ product }) => {
             alt={product?.name || "Product image"}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="absolute top-0 left-0 w-full h-full object-cover object-center group-hover:scale-105 transition duration-500"
+            className={`absolute top-0 left-0 w-full h-full object-cover object-center transition duration-500 ${
+              isSoldOut ? "grayscale" : "group-hover:scale-105"
+            }`}
             priority={false}
           />
         )}
@@ -240,7 +286,11 @@ const ProductCard = ({ product }) => {
           className={isLoading ? "opacity-50 cursor-not-allowed" : ""}
         />
 
-        {product.badge && <ProductBadge badge={product.badge} />}
+        {/* Show sold out badge if stock is 0 */}
+        {isSoldOut && <SoldOutBadge />}
+        
+        {/* Show regular badge only if product is not sold out and has a badge */}
+        {!isSoldOut && product.badge && <ProductBadge badge={product.badge} />}
       </div>
 
       <div className="p-2 xs:p-3 sm:p-3 md:p-4">
@@ -253,11 +303,15 @@ const ProductCard = ({ product }) => {
         <div className="flex gap-2 mt-2 xs:mt-3">
           <button
             onClick={handleViewDetails}
-            className="flex-1 text-white bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] py-1.5 xs:py-2 rounded text-xs xs:text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#8b6b4a] focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`flex-1 text-white py-1.5 xs:py-2 rounded text-xs xs:text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isSoldOut 
+                ? "bg-gradient-to-r from-[#6b7280] to-[#9ca3af] cursor-not-allowed" 
+                : "bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#1a447a] hover:to-[#005099] focus:ring-[#8b6b4a]"
+            }`}
             aria-label={`View details for ${product.name}`}
             disabled={isLoading}
           >
-            View Details
+            {isSoldOut ? "Out of Stock" : "View Details"}
           </button>
         </div>
       </div>
