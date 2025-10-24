@@ -408,7 +408,7 @@ const ProductDetailPage = () => {
         specs: [
           { label: "Strap Material", value: product.strapMaterial || "N/A" },
           { label: "Strap Color", value: product.strapColor || "N/A" },
-          { label: "Wrist Size", value: product.wristSize ? `${product.strapSize} cm` : product.WristSize ? `${product.WristSize} cm` : "N/A" },
+          { label: "Wrist Size", value: product.strapSize ? `${product.strapSize} cm` : product.strapSize ? `${product.strapSize} cm` : "N/A" },
         ]
       },
       {
