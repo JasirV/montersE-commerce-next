@@ -398,7 +398,7 @@ const ProductDetailPage = () => {
         specs: [
           { label: "Movement", value: product.movement || product.Movement || "N/A" },
           { label: "Case Material", value: product.caseMaterial || "N/A" },
-          { label: "Case Diameter", value: product.caseDiameter ? `${product.caseDiameter} mm` : product.CaseDiameter ? `${product.CaseDiameter} mm` : "N/A" },
+          { label: "Case Diameter Size", value: product.caseSize ? `${product.caseSize} mm` : product.caseSize ? `${product.caseSize} mm` : "N/A" },
           { label: "Dial Color", value: product.dialColor || product.Dial || "N/A" },
         ]
       },
@@ -408,8 +408,7 @@ const ProductDetailPage = () => {
         specs: [
           { label: "Strap Material", value: product.strapMaterial || "N/A" },
           { label: "Strap Color", value: product.strapColor || "N/A" },
-          { label: "Strap Size", value: product.strapSize ? `${product.strapSize} cm` : "N/A" },
-          { label: "Wrist Size", value: product.wristSize ? `${product.wristSize} cm` : product.WristSize ? `${product.WristSize} cm` : "N/A" },
+          { label: "Wrist Size", value: product.wristSize ? `${product.strapSize} cm` : product.WristSize ? `${product.WristSize} cm` : "N/A" },
         ]
       },
       {
@@ -417,7 +416,7 @@ const ProductDetailPage = () => {
         icon: <Package className="text-indigo-600 text-xl" />,
         specs: [
           { label: "Scope of Delivery", value: product.scopeOfDelivery || "N/A" },
-          { label: "Accessories", value: product.accessories || product.Accessories || "N/A" },
+          { label: "Accessories", value: product.includedAccessories || product.includedAccessories || "N/A" },
           { label: "Category", value: product.categories || product.categorisOne || "N/A" },
         ]
       }
