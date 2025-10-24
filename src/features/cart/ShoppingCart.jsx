@@ -184,16 +184,16 @@ const ShoppingCart = () => {
     () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
     [cartItems]
   );
+  const subtotal = useMemo(() => {
+    return cartItems.reduce((acc, item) => {
+      if (!item?.productId) return acc; // ✅ Skip null product items
 
-  const subtotal = useMemo(
-    () =>
-      cartItems.reduce((acc, item) => {
-        const price =
-          item.productId?.salePrice || item.productId.regularPrice || 0;
-        return acc + price * item.quantity;
-      }, 0),
-    [cartItems]
-  );
+      const price =
+        item.productId?.salePrice ?? item.productId?.regularPrice ?? 0; // ✅ Safe with nullish coalescing
+
+      return acc + price * (item.quantity || 0);
+    }, 0);
+  }, [cartItems]);
 
   // Utility function for clean toast usage
   const showToast = (message, type = "info") => {
@@ -406,128 +406,137 @@ const ShoppingCart = () => {
             </div>
           ) : (
             <>
-              {cartItems.map((item, index) => {
-                const productId = item.productId._id;
-                const isInWishlist = checkIsWishlisted(productId);
-                const isLoadingWishlist = wishlistLoading[productId];
+              {cartItems
+                .filter((item) => item?.productId) // ✅ skip null products
+                .map((item, index) => {
+                  const productId = item.productId._id;
+                  const isInWishlist = checkIsWishlisted(productId);
+                  const isLoadingWishlist = wishlistLoading[productId];
 
-                return (
-                  <div
-                    key={item._id || index}
-                    className="flex flex-col sm:flex-row justify-between items-start border-b pb-4 mb-4 gap-4"
-                  >
-                    {/* Product Info */}
-                    <div className="flex items-start gap-3 sm:gap-4 flex-1">
-                      <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
-                        <Image
-                          src={item.productId.images[0].url}
-                          alt={item.productId.name}
-                          fill
-                          className="rounded-md object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-800 text-sm sm:text-base line-clamp-2">
-                          {item.productId.name}
-                        </h3>
-                        <p className="text-gray-500 text-xs sm:text-sm">
-                          Sold by {item.seller}
-                        </p>
-
-                        {/* Actions */}
-                        <div className="flex gap-3 mt-3 flex-wrap">
-                          <button
-                            onClick={() => handleRemove(productId)}
-                            className="flex items-center gap-1 text-gray-600 text-xs sm:text-sm hover:text-red-600 transition-colors"
-                          >
-                            <FiTrash2 /> Remove
-                          </button>
-                          <button
-                            onClick={() => handleToggleWishlist(item.productId)}
-                            disabled={isLoadingWishlist}
-                            className={`flex items-center gap-1 text-xs sm:text-sm font-medium transition-colors ${
-                              isInWishlist
-                                ? "text-green-600 cursor-default"
-                                : "text-gray-600 hover:text-red-600"
-                            } ${
-                              isLoadingWishlist
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
-                            }`}
-                          >
-                            <FiHeart
-                              className={`text-base ${
-                                isInWishlist
-                                  ? "text-green-600 fill-green-600"
-                                  : ""
-                              } ${isLoadingWishlist ? "animate-pulse" : ""}`}
-                            />
-                            {isLoadingWishlist
-                              ? "Processing..."
-                              : isInWishlist
-                              ? "Added to Wishlist"
-                              : "Move to Wishlist"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Price & Quantity */}
-                    <div className="flex sm:flex-col justify-between items-end sm:items-center w-full sm:w-auto gap-2 sm:gap-0">
-                      <div className="text-right sm:text-center">
-                        <div className="text-lg font-bold text-gray-800 flex items-center justify-end sm:justify-center gap-1">
-                          <PriceWithCurrency
-                            amount={item.productId.salePrice * item.quantity}
+                  return (
+                    <div
+                      key={item._id || index}
+                      className="flex flex-col sm:flex-row justify-between items-start border-b pb-4 mb-4 gap-4"
+                    >
+                      {/* Product Info */}
+                      <div className="flex items-start gap-3 sm:gap-4 flex-1">
+                        <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
+                          <Image
+                            src={
+                              item.productId.images?.[0]?.url ||
+                              "/placeholder.png"
+                            } // ✅ safe fallback
+                            alt={item.productId.name || "Product"}
+                            fill
+                            className="rounded-md object-cover"
                           />
                         </div>
-                        {item.originalPrice && (
-                          <>
-                            <p className="text-sm text-green-600">
-                              {Math.round(
-                                (1 - item.price / item.originalPrice) * 100
-                              )}
-                              % OFF
-                            </p>
-                            <p className="text-xs text-gray-500 line-through flex items-center gap-1 justify-end sm:justify-center">
-                              <Image
-                                src={newCurrency}
-                                alt="Currency"
-                                width={12}
-                                height={12}
-                                className="w-3 h-3"
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-800 text-sm sm:text-base line-clamp-2">
+                            {item.productId.name || "Unknown Product"}
+                          </h3>
+                          <p className="text-gray-500 text-xs sm:text-sm">
+                            Sold by {item.seller || "N/A"}
+                          </p>
+
+                          {/* Actions */}
+                          <div className="flex gap-3 mt-3 flex-wrap">
+                            <button
+                              onClick={() => handleRemove(productId)}
+                              className="flex items-center gap-1 text-gray-600 text-xs sm:text-sm hover:text-red-600 transition-colors"
+                            >
+                              <FiTrash2 /> Remove
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleToggleWishlist(item.productId)
+                              }
+                              disabled={isLoadingWishlist}
+                              className={`flex items-center gap-1 text-xs sm:text-sm font-medium transition-colors ${
+                                isInWishlist
+                                  ? "text-green-600 cursor-default"
+                                  : "text-gray-600 hover:text-red-600"
+                              } ${
+                                isLoadingWishlist
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
+                            >
+                              <FiHeart
+                                className={`text-base ${
+                                  isInWishlist
+                                    ? "text-green-600 fill-green-600"
+                                    : ""
+                                } ${isLoadingWishlist ? "animate-pulse" : ""}`}
                               />
-                              {item.originalPrice.toFixed(2)}
-                            </p>
-                          </>
-                        )}
-                        <p className="text-xs text-green-600">Free Delivery</p>
+                              {isLoadingWishlist
+                                ? "Processing..."
+                                : isInWishlist
+                                ? "Added to Wishlist"
+                                : "Move to Wishlist"}
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 sm:mt-2">
-                        <button
-                          onClick={() =>
-                            updateQuantity(productId, item.quantity - 1)
-                          }
-                          className="w-6 h-6 rounded-full border flex items-center justify-center text-sm hover:bg-gray-100"
-                        >
-                          -
-                        </button>
-                        <span className="text-sm font-medium min-w-[30px] text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() =>
-                            updateQuantity(productId, item.quantity + 1)
-                          }
-                          className="w-6 h-6 rounded-full border flex items-center justify-center text-sm hover:bg-gray-100"
-                        >
-                          +
-                        </button>
+                      {/* Price & Quantity */}
+                      <div className="flex sm:flex-col justify-between items-end sm:items-center w-full sm:w-auto gap-2 sm:gap-0">
+                        <div className="text-right sm:text-center">
+                          <div className="text-lg font-bold text-gray-800 flex items-center justify-end sm:justify-center gap-1">
+                            <PriceWithCurrency
+                              amount={item.productId.salePrice * item.quantity}
+                            />
+                          </div>
+                          {item.originalPrice && (
+                            <>
+                              <p className="text-sm text-green-600">
+                                {Math.round(
+                                  (1 - item.price / item.originalPrice) * 100
+                                )}
+                                % OFF
+                              </p>
+                              <p className="text-xs text-gray-500 line-through flex items-center gap-1 justify-end sm:justify-center">
+                                <Image
+                                  src={newCurrency}
+                                  alt="Currency"
+                                  width={12}
+                                  height={12}
+                                  className="w-3 h-3"
+                                />
+                                {item.originalPrice.toFixed(2)}
+                              </p>
+                            </>
+                          )}
+                          <p className="text-xs text-green-600">
+                            Free Delivery
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:mt-2">
+                          <button
+                            onClick={() =>
+                              updateQuantity(productId, item.quantity - 1)
+                            }
+                            className="w-6 h-6 rounded-full border flex items-center justify-center text-sm hover:bg-gray-100"
+                          >
+                            -
+                          </button>
+                          <span className="text-sm font-medium min-w-[30px] text-center">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              updateQuantity(productId, item.quantity + 1)
+                            }
+                            className="w-6 h-6 rounded-full border flex items-center justify-center text-sm hover:bg-gray-100"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
 
               {/* Recommended Section */}
               <div className="mt-6 sm:mt-8">

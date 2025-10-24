@@ -192,12 +192,13 @@ const Page = () => {
         <nav className="flex mb-4 xs:mb-5 sm:mb-6" aria-label="Breadcrumb">
           <ol className="inline-flex items-center space-x-1 text-xs xs:text-sm">
             <li>
-              <a
-                href="#"
-                className="flex items-center text-gray-700 hover:text-[#8b6b4a]"
-              >
-                Home
-              </a>
+            <a
+  href="#"
+  className="flex items-center text-gray-700 hover:text-[#8b6b4a] font-semibold"
+>
+  Home
+</a>
+
             </li>
           </ol>
         </nav>

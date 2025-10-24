@@ -193,11 +193,12 @@ const Page = () => {
           <ol className="inline-flex items-center space-x-1 text-xs xs:text-sm">
             <li>
               <a
-                href="#"
-                className="flex items-center text-gray-700 hover:text-[#8b6b4a]"
-              >
-                Home
-              </a>
+  href="#"
+  className="flex items-center text-gray-700 hover:text-[#8b6b4a] font-semibold"
+>
+  Home
+</a>
+
             </li>
           </ol>
         </nav>

@@ -209,7 +209,7 @@ const Page = () => {
             <li>
               <a
                 href="#"
-                className="flex items-center text-gray-700 hover:text-[#8b6b4a]"
+                className="flex items-center text-gray-700 hover:text-[#8b6b4a] font-semibold"
               >
                 Home
               </a>
