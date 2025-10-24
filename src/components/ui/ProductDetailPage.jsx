@@ -18,14 +18,33 @@ import {
   FaExchangeAlt,
   FaBoxOpen,
   FaThumbsDown,
+  FaInfoCircle,
+  FaCog,
+  FaLink,
+  FaListAlt,
+  FaRuler,
+  FaCalendarAlt,
 } from "react-icons/fa";
 import {
   FaFacebookF,
   FaTwitter,
   FaPinterest,
   FaWhatsapp,
-  FaLink,
 } from "react-icons/fa6";
+import { 
+  Watch, 
+  Settings, 
+  Link2, 
+  Package, 
+  BarChart3,
+  Calendar,
+  Ruler,
+  Tag,
+  Hash,
+  Barcode,
+  User,
+  Shield
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
@@ -347,6 +366,132 @@ const ProductDetailPage = () => {
   const formatPrice = (price) => {
     if (!price) return "0";
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+
+  // Enhanced Product Specifications Component
+  const ProductSpecifications = ({ product }) => {
+    const watchSpecs = [
+      {
+        category: "Basic Information",
+        icon: <FaListAlt className="text-blue-600 text-xl" />,
+        specs: [
+          { label: "Brand", value: product.brand || product.brands?.[0] || "N/A" },
+          { label: "Model", value: product.model || "N/A" },
+          { label: "Reference Number", value: product.referenceNumber || product.RefenceNumber || "N/A" },
+          { label: "Serial Number", value: product.serialNumber || "N/A" },
+          { label: "SKU", value: product.sku || "N/A" },
+        ]
+      },
+      {
+        category: "Watch Details",
+        icon: <Watch className="text-green-600 text-xl" />,
+        specs: [
+          { label: "Watch Type", value: product.watchType || "N/A" },
+          { label: "Production Year", value: product.productionYear || product.ProductionYear || "N/A" },
+          { label: "Gender", value: product.gender ? product.gender.charAt(0).toUpperCase() + product.gender.slice(1) : "N/A" },
+          { label: "Condition", value: product.condition ? product.condition.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "N/A" },
+        ]
+      },
+      {
+        category: "Movement & Technical",
+        icon: <Settings className="text-purple-600 text-xl" />,
+        specs: [
+          { label: "Movement", value: product.movement || product.Movement || "N/A" },
+          { label: "Case Material", value: product.caseMaterial || "N/A" },
+          { label: "Case Diameter", value: product.caseDiameter ? `${product.caseDiameter} mm` : product.CaseDiameter ? `${product.CaseDiameter} mm` : "N/A" },
+          { label: "Dial Color", value: product.dialColor || product.Dial || "N/A" },
+        ]
+      },
+      {
+        category: "Strap/Bracelet",
+        icon: <Link2 className="text-orange-600 text-xl" />,
+        specs: [
+          { label: "Strap Material", value: product.strapMaterial || "N/A" },
+          { label: "Strap Color", value: product.strapColor || "N/A" },
+          { label: "Strap Size", value: product.strapSize ? `${product.strapSize} cm` : "N/A" },
+          { label: "Wrist Size", value: product.wristSize ? `${product.wristSize} cm` : product.WristSize ? `${product.WristSize} cm` : "N/A" },
+        ]
+      },
+      {
+        category: "Additional Information",
+        icon: <Package className="text-indigo-600 text-xl" />,
+        specs: [
+          { label: "Scope of Delivery", value: product.scopeOfDelivery || "N/A" },
+          { label: "Accessories", value: product.accessories || product.Accessories || "N/A" },
+          { label: "Category", value: product.categories || product.categorisOne || "N/A" },
+        ]
+      }
+    ];
+
+    return (
+      <div className="mt-8">
+        <h2 className="font-bold text-2xl mb-6 text-gray-900 border-b pb-3 flex items-center gap-3">
+          <FaListAlt className="text-blue-600 text-2xl" />
+          Product Specifications
+        </h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {watchSpecs.map((category, categoryIndex) => (
+            <div key={categoryIndex} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+              {/* Category Header */}
+              <div className="bg-gradient-to-r from-blue-50 to-gray-50 px-4 py-3 border-b border-gray-200">
+                <h3 className="font-semibold text-lg text-gray-800 flex items-center gap-3">
+                  {category.icon}
+                  {category.category}
+                </h3>
+              </div>
+              
+              {/* Specifications List */}
+              <div className="divide-y divide-gray-100">
+                {category.specs.map((spec, specIndex) => (
+                  <div key={specIndex} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <span className="font-medium text-gray-700 text-sm flex-1">
+                        {spec.label}
+                      </span>
+                      <span className="text-gray-900 text-sm font-semibold text-right flex-1 ml-4">
+                        {spec.value}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Compact Table View for Larger Screens */}
+        <div className="mt-8 hidden xl:block">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+              <h3 className="font-bold text-lg text-white flex items-center gap-3">
+                <BarChart3 className="text-white text-xl" />
+                Complete Technical Specifications
+              </h3>
+            </div>
+            <div className="grid grid-cols-3 gap-0">
+              {watchSpecs.flatMap(category => category.specs).map((spec, index) => (
+                <div 
+                  key={index} 
+                  className={`p-4 border-b border-r border-gray-100 ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                  }`}
+                >
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      {spec.label}
+                    </div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {spec.value}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Loading State
@@ -776,83 +921,8 @@ const ProductDetailPage = () => {
             />
           </div>
 
-          {/* Product Specifications */}
-          <div className="mt-6">
-            <h2 className="font-semibold text-xl mb-4 text-gray-800 border-b pb-2">
-              Product Specifications
-            </h2>
-            <div className="border border-gray-200 rounded-xl shadow-sm overflow-hidden bg-white">
-              <table className="w-full text-sm text-gray-700">
-                <tbody>
-                  {[
-                    {
-                      label: "Brand",
-                      value: product.brands?.[0] || product.brand || "N/A",
-                    },
-                    {
-                      label: "Reference Number",
-                      value: product.RefenceNumber || "N/A",
-                    },
-                    { label: "SKU", value: product.sku || "N/A" },
-                    {
-                      label: "Category",
-                      value:
-                        product.categories || product.categorisOne || "N/A",
-                    },
-                    {
-                      label: "Gender",
-                      value: product.gender
-                        ? product.gender.charAt(0).toUpperCase() +
-                          product.gender.slice(1)
-                        : "N/A",
-                    },
-                    {
-                      label: "Case Diameter",
-                      value: product.CaseDiameter
-                        ? `${product.CaseDiameter} mm`
-                        : "N/A",
-                    },
-                    { label: "Movement", value: product.Movement || "N/A" },
-                    { label: "Dial", value: product.Dial || "N/A" },
-                    {
-                      label: "Wrist Size",
-                      value: product.WristSize
-                        ? `${product.WristSize} mm`
-                        : "N/A",
-                    },
-                    {
-                      label: "Accessories",
-                      value: product.Accessories || "N/A",
-                    },
-                    {
-                      label: "Condition",
-                      value: product.Condition
-                        ? product.Condition.split("-")
-                            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                            .join(" ")
-                        : "N/A",
-                    },
-                    {
-                      label: "Production Year",
-                      value: product.ProductionYear || "N/A",
-                    },
-                  ].map((item, index) => (
-                    <tr
-                      key={index}
-                      className={`border-b border-gray-100 ${
-                        index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                      }`}
-                    >
-                      <td className="p-3 font-medium text-gray-900 w-1/3">
-                        {item.label}
-                      </td>
-                      <td className="p-3 text-gray-700">{item.value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {/* Enhanced Product Specifications */}
+          <ProductSpecifications product={product} />
 
           {/* Benefits & Return/Warranty Policy */}
           <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
