@@ -934,19 +934,7 @@ const ProductDetailPage = () => {
             {product.name || "Premium Watch"}
           </h1>
 
-          {/* Ratings */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 bg-green-600 text-white px-3 py-1 rounded-full">
-              <span className="font-semibold">{product.rating || "4.6"}</span>
-              <span>★</span>
-            </div>
-            <span className="text-gray-600 text-sm">
-              ({product.reviewCount || 8} Reviews)
-            </span>
-            <span className="text-blue-600 text-sm font-medium hover:underline cursor-pointer">
-              View all reviews
-            </span>
-          </div>
+         
 
           {/* Price Section */}
           <div className="space-y-2">

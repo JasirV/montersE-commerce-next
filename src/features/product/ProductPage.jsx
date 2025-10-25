@@ -305,7 +305,6 @@ const categoryFilteredProducts = useMemo(() => {
                     <option value="featured">Featured</option>
                     <option value="priceLowHigh">Price: Low to High</option>
                     <option value="priceHighLow">Price: High to Low</option>
-                    <option value="rating">Rating</option>
                     <option value="discount">Discount</option>
                   </select>
                 </div>
