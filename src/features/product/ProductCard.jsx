@@ -39,6 +39,18 @@ const WishlistIcon = ({
   );
 };
 
+// Product Badge component
+const ProductBadge = ({ badge }) => {
+  if (!badge) return null;
+  
+  return (
+    <div className="absolute top-1 xs:top-2 sm:top-3 right-1 xs:right-2 sm:right-3">
+      <span className="inline-block bg-red-600 text-white text-xs xs:text-sm font-medium px-2 py-1 rounded-full">
+        {badge}
+      </span>
+    </div>
+  );
+};
 
 // Price display component - NORMAL COLORS FOR ALL ITEMS
 const PriceDisplay = ({ price, mrp, isSoldOut = false }) => {
@@ -161,9 +173,17 @@ const ProductCard = ({ product }) => {
     }
   }, [user]);
 
-  const handleViewDetails = () => {
+  // Handle click on product card (image, name, price, etc.)
+  const handleProductClick = () => {
     console.log("Navigating to product:", product);
     router.push(`/ProductDetailPage/${product._id}`);
+  };
+
+  // Handle view details button click
+  const handleViewDetails = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleProductClick();
   };
 
   // Subscribe to restock notifications
@@ -349,7 +369,11 @@ const ProductCard = ({ product }) => {
           isSoldOut ? "border border-gray-200" : ""
         }`}
       >
-        <div className="relative w-full pb-[100%] sm:pb-[90%] md:pb-[85%] lg:pb-[80%] xl:pb-[76%] overflow-hidden">
+        {/* Clickable Image Container */}
+        <div 
+          className="relative w-full pb-[100%] sm:pb-[90%] md:pb-[85%] lg:pb-[80%] xl:pb-[76%] overflow-hidden cursor-pointer"
+          onClick={handleProductClick}
+        >
           {imageUrl && (
             <Image
               src={imageUrl}
@@ -371,14 +395,17 @@ const ProductCard = ({ product }) => {
             className={isLoading ? "opacity-50 cursor-not-allowed" : ""}
           />
 
-       
           {/* Show regular badge only if product is not sold out and has a badge */}
           {!isSoldOut && product.badge && (
             <ProductBadge badge={product.badge} />
           )}
         </div>
 
-        <div className="p-2 xs:p-3 sm:p-3 md:p-4">
+        {/* Clickable Content Area */}
+        <div 
+          className="p-2 xs:p-3 sm:p-3 md:p-4 cursor-pointer"
+          onClick={handleProductClick}
+        >
           {/* Product Name - NORMAL COLOR FOR ALL ITEMS */}
           <h3 className="text-xs xs:text-sm md:text-base font-semibold text-[#1a1a1a] mt-0.5 xs:mt-1 line-clamp-2 min-h-[2.5rem] xs:min-h-[3rem]">
             {product.name}
@@ -396,8 +423,11 @@ const ProductCard = ({ product }) => {
             isSoldOut={isSoldOut}
             stockQuantity={product.stockQuantity}
           />
+        </div>
 
-          <div className="flex gap-2 mt-2 xs:mt-3">
+        {/* Buttons Section - Not clickable for navigation */}
+        <div className="px-2 xs:px-3 sm:px-3 md:px-4 pb-2 xs:pb-3 sm:pb-3 md:pb-4">
+          <div className="flex gap-2">
             {isSoldOut ? (
               <button
                 onClick={handleRestockNotify}

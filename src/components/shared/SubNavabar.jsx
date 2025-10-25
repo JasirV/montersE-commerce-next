@@ -614,7 +614,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                       </div>
                     </a>
                     <Link
-                      href="/ContactForm"
+                      href="/contact-us"
                       className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm transition-colors border-b border-gray-100"
                     >
                       <FaEnvelope className="text-[#1e518e]" size={16} />
