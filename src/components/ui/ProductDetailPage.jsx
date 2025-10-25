@@ -18,12 +18,10 @@ import {
   FaExchangeAlt,
   FaBoxOpen,
   FaThumbsDown,
-  FaInfoCircle,
-  FaCog,
   FaLink,
   FaListAlt,
-  FaRuler,
-  FaCalendarAlt,
+  FaBell,
+  FaClock,
 } from "react-icons/fa";
 import {
   FaFacebookF,
@@ -37,27 +35,20 @@ import {
   Link2, 
   Package, 
   BarChart3,
-  Calendar,
-  Ruler,
-  Tag,
-  Hash,
-  Barcode,
-  User,
-  Shield
+  Mail,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
-import ReviewsRating from "./ReviewsRatings";
+
 import { addToCart, fetchProduct } from "@/service/productService";
 import { toast } from "react-toastify";
 import SimilarProduct from "./SimillarProduct";
-import api from "@/api/axiosIntespter";
 import { GlobalContext } from "../shared/context/GlobalContext";
 import axios from "axios";
 
 const ProductDetailPage = () => {
-  const { incrementWishlist, decrementWishlist, incrementCart } =
+  const { incrementWishlist, decrementWishlist, incrementCart, user } =
     useContext(GlobalContext);
   const router = useRouter();
   const [product, setProducts] = useState(null);
@@ -71,6 +62,15 @@ const ProductDetailPage = () => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+
+  // Restock notification states
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  // Check if product is sold out
+  const isSoldOut = product?.stockQuantity === 0;
 
   // Get product data from navigation state or fetch if needed
   useEffect(() => {
@@ -181,6 +181,45 @@ const ProductDetailPage = () => {
       fetchWishlistsAndCheckWishlist();
     }
   }, [id]);
+
+  // Set user email if available
+  useEffect(() => {
+    if (user?.email) {
+      setEmail(user.email);
+    }
+  }, [user]);
+
+  // Check if user is already subscribed to restock notifications
+  useEffect(() => {
+    const checkRestockSubscription = async () => {
+      if (!user || !product) return;
+
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return;
+
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/restock-notifications/my-subscriptions`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (response.data.success) {
+          const isSubscribed = response.data.data.some(
+            (subscription) => subscription.productId._id === product._id
+          );
+          setIsSubscribed(isSubscribed);
+        }
+      } catch (error) {
+        console.error("Error checking restock subscription:", error);
+      }
+    };
+
+    if (isSoldOut) {
+      checkRestockSubscription();
+    }
+  }, [user, product, isSoldOut]);
 
   // Add/Remove from wishlist API
   const handleWishlistToggle = async () => {
@@ -310,6 +349,50 @@ const ProductDetailPage = () => {
     setSelectedImage(image.url || image);
   };
 
+  // Subscribe to restock notifications
+  const handleRestockSubscribe = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        toast.error("Please login to get restock notifications");
+        router.push("/");
+        return;
+      }
+
+      if (!email) {
+        toast.error("Please enter your email address");
+        return;
+      }
+
+      setIsSubscribing(true);
+
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/restock-notifications/subscribe`,
+        {
+          productId: product._id,
+          email: email
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setIsSubscribed(true);
+        setShowRestockModal(false);
+        toast.success("You'll be notified when this product is back in stock!");
+      }
+    } catch (error) {
+      console.error("Restock subscription error:", error);
+      const errorMessage = error.response?.data?.message || "Failed to subscribe for notifications";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
   const handleAddToCart = async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -417,7 +500,7 @@ const ProductDetailPage = () => {
         specs: [
           { label: "Scope of Delivery", value: product.scopeOfDelivery || "N/A" },
           { label: "Accessories", value: product.includedAccessories || product.includedAccessories || "N/A" },
-          { label: "Category", value: product.categories || product.categorisOne || "N/A" },
+          { label: "Category", value: product.category || product.category || "N/A" },
         ]
       }
     ];
@@ -492,6 +575,23 @@ const ProductDetailPage = () => {
       </div>
     );
   };
+
+  // Out of Stock Banner Component
+  const OutOfStockBanner = () => (
+    <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-4 mb-6">
+      <div className="flex items-center gap-3">
+        <div className="bg-red-100 p-2 rounded-full">
+          <FaClock className="text-red-600 text-lg" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold text-red-800 text-lg">Out of Stock</h3>
+          <p className="text-red-700 text-sm mt-1">
+            This product is currently unavailable. Get notified when it's back in stock.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 
   // Loading State
   if (isLoading) {
@@ -577,9 +677,13 @@ const ProductDetailPage = () => {
               {/* Wishlist Button */}
               <button
                 onClick={handleWishlistToggle}
-                disabled={wishlistLoading}
-                className={`bg-white p-2 xs:p-2.5 rounded-full shadow-md hover:bg-gray-100 transition-colors border border-gray-200 flex items-center justify-center ${
+                disabled={wishlistLoading || (isSoldOut && !isWishlisted)}
+                className={`p-2 xs:p-2.5 rounded-full shadow-md transition-colors border flex items-center justify-center ${
                   wishlistLoading ? "opacity-50 cursor-not-allowed" : ""
+                } ${
+                  isSoldOut && !isWishlisted
+                    ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed"
+                    : "bg-white border-gray-200 hover:bg-gray-100"
                 }`}
                 aria-label={
                   isWishlisted ? "Remove from wishlist" : "Add to wishlist"
@@ -593,6 +697,8 @@ const ProductDetailPage = () => {
                     className={
                       isWishlisted
                         ? "text-red-500 fill-red-500"
+                        : isSoldOut && !isWishlisted
+                        ? "text-gray-400"
                         : "text-gray-600"
                     }
                   />
@@ -709,15 +815,27 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Main Product Image */}
-          <div className="w-full h-72 xs:h-80 sm:h-96 md:h-[500px] bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200">
+          <div className={`w-full h-72 xs:h-80 sm:h-96 md:h-[500px] bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center border ${
+            isSoldOut ? "border-red-200 grayscale opacity-90" : "border-gray-200"
+          }`}>
             <Image
               src={selectedImage || product.image || "/placeholder-image.jpg"}
               alt={product.name || "Product Image"}
               width={600}
               height={600}
-              className="object-contain w-full h-full"
+              className={`object-contain w-full h-full ${
+                isSoldOut ? "grayscale opacity-80" : ""
+              }`}
               priority
             />
+            {/* Sold Out Overlay */}
+            {isSoldOut && (
+              <div className="absolute inset-0 bg-black bg-opacity-10 flex items-center justify-center">
+                <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-lg">
+                  Out of Stock
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Amazon-style Thumbnail Gallery */}
@@ -760,6 +878,8 @@ const ProductDetailPage = () => {
                       selectedImage === (image.url || image)
                         ? "border-red-500 shadow-md scale-105"
                         : "border-gray-300 hover:border-red-300"
+                    } ${
+                      isSoldOut ? "grayscale opacity-70" : ""
                     }`}
                     onClick={() => handleImageSelect(image)}
                   >
@@ -806,6 +926,9 @@ const ProductDetailPage = () => {
 
         {/* ===== Right Section - Details ===== */}
         <div className="space-y-6">
+          {/* Out of Stock Banner */}
+          {isSoldOut && <OutOfStockBanner />}
+
           {/* Product Title */}
           <h1 className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
             {product.name || "Premium Watch"}
@@ -902,12 +1025,31 @@ const ProductDetailPage = () => {
                 </button>
               </>
             ) : (
-              <button
-                disabled
-                className="flex-1 bg-gray-400 text-white py-3 rounded-lg font-semibold cursor-not-allowed text-base shadow-md"
-              >
-                OUT OF STOCK
-              </button>
+              <div className="flex flex-col gap-3 w-full">
+                {isSubscribed ? (
+                  <button
+                    disabled
+                    className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold cursor-not-allowed text-base shadow-md flex items-center justify-center gap-2"
+                  >
+                    <FaBell className="text-white" />
+                    NOTIFICATIONS ENABLED
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowRestockModal(true)}
+                    className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity text-base shadow-md flex items-center justify-center gap-2"
+                  >
+                    <FaBell className="text-white" />
+                    NOTIFY WHEN AVAILABLE
+                  </button>
+                )}
+                <button
+                  disabled
+                  className="flex-1 bg-gray-400 text-white py-3 rounded-lg font-semibold cursor-not-allowed text-base shadow-md"
+                >
+                  OUT OF STOCK
+                </button>
+              </div>
             )}
           </div>
 
@@ -961,13 +1103,75 @@ const ProductDetailPage = () => {
         </div>
       </div>
 
+      {/* Restock Notification Modal */}
+      {showRestockModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <FaBell className="text-blue-600 text-lg" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Get Restock Notification
+              </h3>
+            </div>
+            
+            <p className="text-gray-600 mb-4">
+              We'll send you an email when <strong>{product.name}</strong> is
+              back in stock.
+            </p>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowRestockModal(false)}
+                  className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  disabled={isSubscribing}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRestockSubscribe}
+                  disabled={isSubscribing || !email}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-md hover:from-[#1a447a] hover:to-[#005099] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubscribing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Subscribing...
+                    </>
+                  ) : (
+                    <>
+                      <FaBell className="text-white" />
+                      Notify Me
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Reviews Section with lazy loading */}
       <Suspense
         fallback={
           <div className="h-48 xs:h-56 sm:h-64 bg-gray-100 mt-6 animate-pulse rounded-lg"></div>
         }
       >
-        <ReviewsRating productId={id} />
         <SimilarProduct productId={id} />
       </Suspense>
     </div>
