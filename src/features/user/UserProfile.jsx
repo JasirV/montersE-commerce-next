@@ -5,33 +5,43 @@ import ProfileInformation from "./UserAccount/ProfileInformation";
 import ProfileUpdate from "./UserAccount/ProfileUpdate";
 import PasswordSection from "./PasswordSection";
 import TrackingSection from "./OrderTracking/TrackingMap";
-import { 
-  FiPackage, 
-  FiTruck, 
-  FiUser, 
-  FiLock
-} from "react-icons/fi";
+import { FiPackage, FiTruck, FiUser, FiLock } from "react-icons/fi";
 
 const UserProfile = () => {
   const [activeSection, setActiveSection] = useState("orders");
   const [isMobile, setIsMobile] = useState(false);
   const [userData, setUserData] = useState({
-    name: "Alex John",
-    email: "alexjohn@gmail.com",
-    phone: "+1 234 567 8900",
-    address: "123 Main St, New York, NY 10001",
+    id: "",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
     profilePicture: "",
   });
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
+  // ✅ Load user data from localStorage on mount
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUserData((prev) => ({
+          ...prev,
+          id: parsedUser.id || "",
+          name: parsedUser.name || "",
+          email: parsedUser.email || "",
+        }));
+      } catch (err) {
+        console.error("Failed to parse user from localStorage", err);
+      }
+    }
+  }, []);
 
-    // Set initial state
+  // ✅ Check if mobile view
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
-
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
@@ -39,7 +49,7 @@ const UserProfile = () => {
   const renderContent = () => {
     switch (activeSection) {
       case "orders":
-        return <OrdersSection setActiveSection={setActiveSection} />;
+        return <OrdersSection setActiveSection={setActiveSection} userId={userData.id} />;
       case "profile":
         return isEditingProfile ? (
           <ProfileUpdate
@@ -56,13 +66,12 @@ const UserProfile = () => {
       case "password":
         return <PasswordSection />;
       case "tracking":
-        return <TrackingSection/>;
+        return <TrackingSection />;
       default:
-        return <OrdersSection setActiveSection={setActiveSection} />;
+        return <OrdersSection setActiveSection={setActiveSection} userId={userData.id} />;
     }
   };
 
-  // Mobile bottom navigation items
   const mobileNavItems = [
     { id: "orders", label: "Orders", icon: FiPackage, count: 3 },
     { id: "tracking", label: "Tracking", icon: FiTruck },
@@ -72,7 +81,6 @@ const UserProfile = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen pb-16 md:pb-0">
-      {/* Mobile Header - Simplified without hamburger menu */}
       {isMobile && (
         <div className="bg-white shadow-sm p-4 flex items-center justify-center sticky top-0 z-20">
           <h1 className="text-xl font-bold">Your Account</h1>
@@ -81,25 +89,25 @@ const UserProfile = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="bg-white rounded-xl shadow p-4 md:p-6 mt-4 md:mt-6">
-          {/* Header Section for Desktop */}
           {!isMobile && (
             <div className="mb-6">
               <h1 className="text-2xl font-bold">Your Account</h1>
               <p className="text-gray-600">
-                {userData.name}, Email: {userData.email}
+                {userData.name || "Guest"}, Email: {userData.email || "N/A"}
               </p>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Sidebar for Desktop Only */}
             {!isMobile && (
               <div className="md:col-span-1">
-                <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+                <Sidebar
+                  activeSection={activeSection}
+                  setActiveSection={setActiveSection}
+                />
               </div>
             )}
 
-            {/* Main Content */}
             <div className="md:col-span-3">
               {isMobile && (
                 <div className="mb-4">
@@ -114,7 +122,6 @@ const UserProfile = () => {
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 shadow-lg">
           <div className="flex justify-around items-center">

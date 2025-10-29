@@ -15,14 +15,19 @@ import FilterSidebar from "@/features/product/ProductFilterSidebar";
 
 const Page = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [products, setProducts] = useState({ products: [], totalPages: 0, currentPage: 1, totalProducts: 0 });
+  const [products, setProducts] = useState({
+    products: [],
+    totalPages: 0,
+    currentPage: 1,
+    totalProducts: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortOption, setSortOption] = useState("featured");
   const { category, subcategory } = useParams();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [brandSearch, setBrandSearch] = useState("");
-  
+
   // Ref for scroll target
   const productsSectionRef = useRef(null);
 
@@ -35,7 +40,14 @@ const Page = () => {
           limit: 15,
         });
         if (data) {
-          setProducts(data || { products: [], totalPages: 0, currentPage: 1, totalProducts: 0 });
+          setProducts(
+            data || {
+              products: [],
+              totalPages: 0,
+              currentPage: 1,
+              totalProducts: 0,
+            }
+          );
         } else {
           setError(error);
         }
@@ -51,9 +63,9 @@ const Page = () => {
   // Scroll to top when page changes
   useEffect(() => {
     if (productsSectionRef.current) {
-      productsSectionRef.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
+      productsSectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
       });
     }
   }, [currentPage]);
@@ -179,7 +191,10 @@ const Page = () => {
   // Calculate display range for pagination
   const getDisplayRange = () => {
     const startItem = (currentPage - 1) * productsPerPage + 1;
-    const endItem = Math.min(currentPage * productsPerPage, products.totalProducts || 0);
+    const endItem = Math.min(
+      currentPage * productsPerPage,
+      products.totalProducts || 0
+    );
     return { startItem, endItem };
   };
 
@@ -192,13 +207,12 @@ const Page = () => {
         <nav className="flex mb-4 xs:mb-5 sm:mb-6" aria-label="Breadcrumb">
           <ol className="inline-flex items-center space-x-1 text-xs xs:text-sm">
             <li>
-            <a
-  href="#"
-  className="flex items-center text-gray-700 hover:text-[#8b6b4a] font-semibold"
->
-  Home
-</a>
-
+              <a
+                href="#"
+                className="flex items-center text-gray-700 hover:text-[#8b6b4a] font-semibold"
+              >
+                Home
+              </a>
             </li>
           </ol>
         </nav>
@@ -370,175 +384,179 @@ const Page = () => {
 };
 
 // Mobile Responsive Pagination Component
-const MobileResponsivePagination = memo(({ 
-  currentPage, 
-  totalPages, 
-  onPageChange 
-}) => {
-  const generatePageNumbers = () => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
+const MobileResponsivePagination = memo(
+  ({ currentPage, totalPages, onPageChange }) => {
+    const generatePageNumbers = () => {
+      if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+      }
 
-    const pages = [];
-    pages.push(1);
+      const pages = [];
+      pages.push(1);
 
-    if (currentPage > 3) {
-      pages.push('...');
-    }
+      if (currentPage > 3) {
+        pages.push("...");
+      }
 
-    const start = Math.max(2, currentPage - 1);
-    const end = Math.min(totalPages - 1, currentPage + 1);
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
 
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
 
-    if (currentPage < totalPages - 2) {
-      pages.push('...');
-    }
+      if (currentPage < totalPages - 2) {
+        pages.push("...");
+      }
 
-    if (totalPages > 1) {
-      pages.push(totalPages);
-    }
+      if (totalPages > 1) {
+        pages.push(totalPages);
+      }
 
-    return pages;
-  };
+      return pages;
+    };
 
-  if (totalPages <= 1) return null;
+    if (totalPages <= 1) return null;
 
-  const pageNumbers = generatePageNumbers();
-  const isFirstPage = currentPage === 1;
-  const isLastPage = currentPage === totalPages;
+    const pageNumbers = generatePageNumbers();
+    const isFirstPage = currentPage === 1;
+    const isLastPage = currentPage === totalPages;
 
-  return (
-    <div className="mt-6 sm:mt-8">
-      {/* Desktop Layout */}
-      <div className="hidden sm:flex items-center justify-center space-x-2">
-        {/* Previous Button */}
-        <button
-          onClick={() => !isFirstPage && onPageChange(currentPage - 1)}
-          disabled={isFirstPage}
-          className={`flex items-center justify-center w-8 h-8 rounded border ${
-            isFirstPage
-              ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-              : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
-          }`}
-          aria-label="Previous page"
-        >
-          <FiChevronLeft className="h-4 w-4" />
-        </button>
-
-        {/* Page Numbers */}
-        <div className="flex items-center space-x-2">
-          {pageNumbers.map((page, index) => (
-            <React.Fragment key={index}>
-              {page === '...' ? (
-                <span className="px-2 py-1 text-sm text-gray-500">...</span>
-              ) : (
-                <button
-                  onClick={() => onPageChange(page)}
-                  className={`flex items-center justify-center w-8 h-8 text-sm font-medium rounded border ${
-                    currentPage === page
-                      ? 'bg-[#8b6b4a] text-white border-[#8b6b4a]'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
-                  }`}
-                  aria-label={`Page ${page}`}
-                  aria-current={currentPage === page ? 'page' : undefined}
-                >
-                  {page}
-                </button>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* Next Button */}
-        <button
-          onClick={() => !isLastPage && onPageChange(currentPage + 1)}
-          disabled={isLastPage}
-          className={`flex items-center justify-center w-8 h-8 rounded border ${
-            isLastPage
-              ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-              : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
-          }`}
-          aria-label="Next page"
-        >
-          <FiChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="sm:hidden">
-        <div className="flex items-center justify-between">
+    return (
+      <div className="mt-6 sm:mt-8">
+        {/* Desktop Layout */}
+        <div className="hidden sm:flex items-center justify-center space-x-2">
           {/* Previous Button */}
           <button
             onClick={() => !isFirstPage && onPageChange(currentPage - 1)}
             disabled={isFirstPage}
-            className={`flex items-center justify-center w-10 h-10 rounded-lg border ${
+            className={`flex items-center justify-center w-8 h-8 rounded border ${
               isFirstPage
-                ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-                : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
             }`}
             aria-label="Previous page"
           >
-            <FiChevronLeft className="h-5 w-5" />
+            <FiChevronLeft className="h-4 w-4" />
           </button>
 
-          {/* Current Page Display */}
+          {/* Page Numbers */}
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Page</span>
-            <span className="text-sm font-semibold text-gray-900">{currentPage}</span>
-            <span className="text-sm text-gray-600">of</span>
-            <span className="text-sm font-semibold text-gray-900">{totalPages}</span>
+            {pageNumbers.map((page, index) => (
+              <React.Fragment key={index}>
+                {page === "..." ? (
+                  <span className="px-2 py-1 text-sm text-gray-500">...</span>
+                ) : (
+                  <button
+                    onClick={() => onPageChange(page)}
+                    className={`flex items-center justify-center w-8 h-8 text-sm font-medium rounded border ${
+                      currentPage === page
+                        ? "bg-[#8b6b4a] text-white border-[#8b6b4a]"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                    }`}
+                    aria-label={`Page ${page}`}
+                    aria-current={currentPage === page ? "page" : undefined}
+                  >
+                    {page}
+                  </button>
+                )}
+              </React.Fragment>
+            ))}
           </div>
 
           {/* Next Button */}
           <button
             onClick={() => !isLastPage && onPageChange(currentPage + 1)}
             disabled={isLastPage}
-            className={`flex items-center justify-center w-10 h-10 rounded-lg border ${
+            className={`flex items-center justify-center w-8 h-8 rounded border ${
               isLastPage
-                ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-                : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
             }`}
             aria-label="Next page"
           >
-            <FiChevronRight className="h-5 w-5" />
+            <FiChevronRight className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Page Numbers for Mobile - Scrollable */}
-        {totalPages > 1 && (
-          <div className="mt-4 flex justify-center">
-            <div className="flex items-center space-x-1 overflow-x-auto scrollbar-hide max-w-full px-2 py-1">
-              {pageNumbers.map((page, index) => (
-                <React.Fragment key={index}>
-                  {page === '...' ? (
-                    <span className="px-2 py-1 text-sm text-gray-500">...</span>
-                  ) : (
-                    <button
-                      onClick={() => onPageChange(page)}
-                      className={`flex items-center justify-center min-w-8 h-8 px-2 text-sm font-medium rounded border ${
-                        currentPage === page
-                          ? 'bg-[#8b6b4a] text-white border-[#8b6b4a]'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
-                      }`}
-                      aria-label={`Page ${page}`}
-                      aria-current={currentPage === page ? 'page' : undefined}
-                    >
-                      {page}
-                    </button>
-                  )}
-                </React.Fragment>
-              ))}
+        {/* Mobile Layout */}
+        <div className="sm:hidden">
+          <div className="flex items-center justify-between">
+            {/* Previous Button */}
+            <button
+              onClick={() => !isFirstPage && onPageChange(currentPage - 1)}
+              disabled={isFirstPage}
+              className={`flex items-center justify-center w-10 h-10 rounded-lg border ${
+                isFirstPage
+                  ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                  : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+              }`}
+              aria-label="Previous page"
+            >
+              <FiChevronLeft className="h-5 w-5" />
+            </button>
+
+            {/* Current Page Display */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">Page</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {currentPage}
+              </span>
+              <span className="text-sm text-gray-600">of</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {totalPages}
+              </span>
             </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => !isLastPage && onPageChange(currentPage + 1)}
+              disabled={isLastPage}
+              className={`flex items-center justify-center w-10 h-10 rounded-lg border ${
+                isLastPage
+                  ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                  : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+              }`}
+              aria-label="Next page"
+            >
+              <FiChevronRight className="h-5 w-5" />
+            </button>
           </div>
-        )}
+
+          {/* Page Numbers for Mobile - Scrollable */}
+          {totalPages > 1 && (
+            <div className="mt-4 flex justify-center">
+              <div className="flex items-center space-x-1 overflow-x-auto scrollbar-hide max-w-full px-2 py-1">
+                {pageNumbers.map((page, index) => (
+                  <React.Fragment key={index}>
+                    {page === "..." ? (
+                      <span className="px-2 py-1 text-sm text-gray-500">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => onPageChange(page)}
+                        className={`flex items-center justify-center min-w-8 h-8 px-2 text-sm font-medium rounded border ${
+                          currentPage === page
+                            ? "bg-[#8b6b4a] text-white border-[#8b6b4a]"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                        }`}
+                        aria-label={`Page ${page}`}
+                        aria-current={currentPage === page ? "page" : undefined}
+                      >
+                        {page}
+                      </button>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 MobileResponsivePagination.displayName = "MobileResponsivePagination";
 
