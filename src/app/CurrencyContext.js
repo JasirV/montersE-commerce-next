@@ -23,7 +23,7 @@ export const CurrencyProvider = ({ children }) => {
   // Function to get currency symbol
   const getCurrencySymbol = () => {
     const symbols = {
-      AED: "د.إ", // UAE Dirham
+      AED: "AED", // UAE Dirham
       USD: "$",
       EUR: "€",
       GBP: "£",
@@ -35,7 +35,7 @@ export const CurrencyProvider = ({ children }) => {
       QAR: "﷼", // Qatari Riyal
       KWD: "د.ك", // Kuwaiti Dinar
     };
-    return symbols[currency] || "د.إ"; // Default to AED symbol
+    return symbols[currency] || "AED"; // Default to AED symbol
   };
 
   const value = {
