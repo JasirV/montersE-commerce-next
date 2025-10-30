@@ -378,6 +378,7 @@ const ProductCard = ({ product }) => {
             <Image
               src={imageUrl}
               alt={product?.name || "Product image"}
+              unoptimized   // <--- bypasses Vercel
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={`absolute top-0 left-0 w-full h-full object-cover object-center transition duration-500 ${

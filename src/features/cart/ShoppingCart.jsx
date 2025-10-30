@@ -427,6 +427,7 @@ const ShoppingCart = () => {
                               "/placeholder.png"
                             } // ✅ safe fallback
                             alt={item.productId.name || "Product"}
+                           unoptimized   // <--- bypasses Vercel
                             fill
                             className="rounded-md object-cover"
                           />
@@ -558,6 +559,7 @@ const ShoppingCart = () => {
                           <div className="relative aspect-square mb-2">
                             <Image
                               src={product.images[0].url}
+                              unoptimized   // <--- bypasses Vercel
                               alt={product.name}
                               fill
                               className="object-cover rounded"

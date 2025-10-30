@@ -821,6 +821,7 @@ const ProductDetailPage = () => {
             <Image
               src={selectedImage || product.image || "/placeholder-image.jpg"}
               alt={product.name || "Product Image"}
+              unoptimized   // <--- bypasses Vercel
               width={600}
               height={600}
               className={`object-contain w-full h-full ${
@@ -888,6 +889,7 @@ const ProductDetailPage = () => {
                       alt={`${product.name || "Product"} thumbnail ${
                         thumbnailStartIndex + idx + 1
                       }`}
+                      unoptimized   // <--- bypasses Vercel
                       width={80}
                       height={80}
                       className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 object-cover rounded-md"
