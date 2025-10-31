@@ -183,6 +183,7 @@ const BrandNewAdded = () => {
                       <Image
                         src={getProductImage(product)}
                         alt={getProductName(product)}
+                        unoptimized   // <--- bypasses Vercel
                         width={160}
                         height={160}
                         loading="lazy"
