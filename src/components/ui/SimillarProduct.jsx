@@ -350,6 +350,7 @@ const ProductCard = ({ product }) => {
         <Image
           src={product.images?.[0]?.url || Dummy1}
           alt={product.name}
+          unoptimized   // <--- bypasses Vercel
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"

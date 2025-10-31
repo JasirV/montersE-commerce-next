@@ -209,7 +209,7 @@ const Page = () => {
             <li>
               <a
                 href="#"
-                className="flex items-center text-gray-700 hover:text-[#8b6b4a]"
+                className="flex items-center text-gray-700 hover:text-[#8b6b4a] font-semibold"
               >
                 Home
               </a>
@@ -289,7 +289,6 @@ const Page = () => {
                     <option value="featured">Featured</option>
                     <option value="priceLowHigh">Price: Low to High</option>
                     <option value="priceHighLow">Price: High to Low</option>
-                    <option value="rating">Rating</option>
                     <option value="discount">Discount</option>
                   </select>
                 </div>

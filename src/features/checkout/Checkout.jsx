@@ -14,6 +14,7 @@ import Image from "next/image";
 import { getCart } from "@/service/productService";
 import axios from "axios";
 import ShippingTermsModal from "./ShippingTermsModal";
+import TabbyLogo from '../../assets/Tabby logo.png'
 
 const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("stripe");
@@ -29,7 +30,7 @@ const CheckoutPage = () => {
   const [shippingAddresses, setShippingAddresses] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [cartLoading, setCartLoading] = useState(true); // New loading state for cart
+  const [cartLoading, setCartLoading] = useState(true);
 
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -58,6 +59,17 @@ const CheckoutPage = () => {
     street: "",
     postalCode: "",
   });
+
+  // Safe product price getter
+  const getProductPrice = useCallback((product) => {
+    if (!product) return 0;
+    return product.salePrice || product.price || 0;
+  }, []);
+
+  // Safe product data checker
+  const isValidProduct = useCallback((item) => {
+    return item && item.productId && typeof item.quantity === 'number';
+  }, []);
 
   // Check if we have a valid address for calculation
   const hasValidAddress = useCallback(() => {
@@ -98,7 +110,15 @@ const CheckoutPage = () => {
         return;
       }
 
-      const items = checkoutProducts.map((item) => ({
+      // Filter valid items only
+      const validItems = checkoutProducts.filter(isValidProduct);
+      
+      if (validItems.length === 0) {
+        calculateTotalsFallback();
+        return;
+      }
+
+      const items = validItems.map((item) => ({
         productId: item.productId._id || item.productId,
         quantity: item.quantity,
       }));
@@ -142,15 +162,14 @@ const CheckoutPage = () => {
         calculateOnly: true,
       });
 
-      // Use the updated endpoint that handles calculateOnly
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/order/`, // Same endpoint, but with calculateOnly flag
+        `${process.env.NEXT_PUBLIC_BASEURL}/order/`,
         {
           items,
           shippingAddress,
           billingAddress: billingSameAsShipping ? shippingAddress : billingForm,
           paymentMethod,
-          calculateOnly: true, // This flag is now handled by backend
+          calculateOnly: true,
         },
         {
           headers: {
@@ -185,25 +204,27 @@ const CheckoutPage = () => {
         throw new Error(response.data.message || "Calculation failed");
       }
     } catch (error) {
-      console.error("Error calculating totals:", error.message);
-      console.error("Error details:", error.response?.data);
+      console.log("Error calculating totals:", error.message);
+      console.log("Error details:", error.response?.data || error.message);
       calculateTotalsFallback();
     } finally {
       setLoading(false);
     }
   };
 
-  // Improved fallback calculation
+  // Fixed fallback calculation with safe product access
   const calculateTotalsFallback = () => {
-    const cartTotal = checkoutProducts.reduce((total, item) => {
-      const price = item.productId.salePrice || item.productId.price || 0;
+    const validItems = checkoutProducts.filter(isValidProduct);
+    
+    const cartTotal = validItems.reduce((total, item) => {
+      const price = getProductPrice(item.productId);
       return total + price * item.quantity;
     }, 0);
 
     const subtotalValue = cartTotal;
 
     // Calculate shipping based on subtotal (free over 100 AED as example)
-    const shippingValue = subtotalValue > 100 ? 0 : 20; // Example logic
+    const shippingValue = subtotalValue > 100 ? 0 : 20;
 
     // Calculate VAT (5% as example for UAE)
     const vatRate = 0.05;
@@ -234,7 +255,7 @@ const CheckoutPage = () => {
       ) {
         calculateTotals();
       }
-    }, 1000); // Debounce to avoid too many API calls
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [
@@ -255,8 +276,17 @@ const CheckoutPage = () => {
         return;
       }
 
+      // Filter valid items only
+      const validItems = checkoutProducts.filter(isValidProduct);
+      
+      if (validItems.length === 0) {
+        alert("No valid products in cart");
+        setIsLoading(false);
+        return;
+      }
+
       // Prepare items array for order
-      const items = checkoutProducts.map((item) => ({
+      const items = validItems.map((item) => ({
         productId: item.productId._id,
         quantity: item.quantity,
       }));
@@ -369,6 +399,8 @@ const CheckoutPage = () => {
       if (response.data.success) {
         if (paymentMethod === "stripe" && response.data.checkoutUrl) {
           window.location.href = response.data.checkoutUrl;
+        } else if (paymentMethod === "tabby" && response.data.paymentUrl) {
+          window.location.href = response.data.paymentUrl;
         } else {
           setStep("success");
         }
@@ -406,7 +438,7 @@ const CheckoutPage = () => {
 
     const fetchData = async () => {
       try {
-        setCartLoading(true); // Start loading
+        setCartLoading(true);
         const token = localStorage.getItem("accessToken");
         if (!token) return;
 
@@ -431,7 +463,7 @@ const CheckoutPage = () => {
       } catch (err) {
         console.log("Error fetching data:", err.message);
       } finally {
-        setCartLoading(false); // End loading
+        setCartLoading(false);
       }
     };
 
@@ -448,8 +480,12 @@ const CheckoutPage = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
             <div className="flex flex-col items-center justify-center space-y-4">
               <FaSpinner className="w-8 h-8 text-blue-600 animate-spin" />
-              <h2 className="text-xl font-semibold text-gray-700">Loading Your Cart...</h2>
-              <p className="text-gray-500">Please wait while we prepare your checkout</p>
+              <h2 className="text-xl font-semibold text-gray-700">
+                Loading Your Cart...
+              </h2>
+              <p className="text-gray-500">
+                Please wait while we prepare your checkout
+              </p>
             </div>
           </div>
         </div>
@@ -898,17 +934,16 @@ const CheckoutPage = () => {
                 {loading ? (
                   <div className="flex justify-center items-center py-8">
                     <FaSpinner className="w-6 h-6 text-blue-600 animate-spin" />
-                    <span className="ml-2 text-gray-600">Calculating totals...</span>
+                    <span className="ml-2 text-gray-600">
+                      Calculating totals...
+                    </span>
                   </div>
                 ) : (
                   <>
                     <div className="space-y-4 mb-6 max-h-80 overflow-y-auto">
-                      {checkoutProducts.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          Your cart is empty
-                        </div>
-                      ) : (
-                        checkoutProducts.map((item, index) => (
+                      {checkoutProducts
+                        .filter(isValidProduct)
+                        .map((item, index) => (
                           <div
                             key={index}
                             className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-b-0"
@@ -917,54 +952,49 @@ const CheckoutPage = () => {
                               <div className="relative w-16 h-16 flex-shrink-0">
                                 <Image
                                   src={
-                                    item.productId.images?.[0]?.url ||
+                                    item.productId?.images?.[0]?.url ||
                                     "/placeholder.png"
                                   }
-                                  alt={item.productId.name}
+                                  alt={item.productId?.name || "Product"}
                                   fill
                                   className="rounded-lg object-cover border border-gray-200"
                                 />
                               </div>
+
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium text-gray-900 line-clamp-2">
-                                  {item.productId.name}
+                                  {item.productId?.name || "Unknown Product"}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  Qty: {item.quantity}
+                                  Qty: {item.quantity || 0}
                                 </p>
-                                {item.productId.color && (
+                                {item.productId?.color && (
                                   <p className="text-xs text-gray-500">
                                     Color: {item.productId.color}
                                   </p>
                                 )}
-                                {item.productId.size && (
+                                {item.productId?.size && (
                                   <p className="text-xs text-gray-500">
                                     Size: {item.productId.size}
                                   </p>
                                 )}
                               </div>
                             </div>
+
                             <div className="text-right flex-shrink-0 ml-3">
                               <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
                                 {(
-                                  (item.productId.salePrice ||
-                                    item.productId.price ||
-                                    0) * item.quantity
+                                  getProductPrice(item.productId) * item.quantity
                                 ).toFixed(2)}{" "}
                                 AED
                               </p>
                               <p className="text-xs text-gray-500 whitespace-nowrap">
-                                {(
-                                  item.productId.salePrice ||
-                                  item.productId.price ||
-                                  0
-                                ).toFixed(2)}{" "}
-                                AED each
+                                {getProductPrice(item.productId).toFixed(2)} AED
+                                each
                               </p>
                             </div>
                           </div>
-                        ))
-                      )}
+                        ))}
                     </div>
 
                     {/* Price Breakdown */}
@@ -979,7 +1009,9 @@ const CheckoutPage = () => {
                         <span className="text-gray-600">Shipping</span>
                         <span
                           className={`font-medium ${
-                            shippingFee === 0 ? "text-green-600" : "text-gray-900"
+                            shippingFee === 0
+                              ? "text-green-600"
+                              : "text-gray-900"
                           }`}
                         >
                           {shippingFee === 0
@@ -1043,6 +1075,40 @@ const CheckoutPage = () => {
                       </div>
                     </div>
                   </label>
+
+            {/* Tabby Payment Option */}
+<label
+  className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+    paymentMethod === "tabby"
+      ? "border-blue-500 bg-blue-50"
+      : "border-gray-200"
+  }`}
+>
+  <div className="flex items-center flex-1">
+    <input
+      type="radio"
+      name="payment"
+      value="tabby"
+      checked={paymentMethod === "tabby"}
+      onChange={() => setPaymentMethod("tabby")}
+      className="mr-3 text-blue-600"
+    />
+    <div>
+      <p className="font-medium">Pay later with Tabby</p>
+      <p className="text-sm text-gray-600 mt-1">Use any card.</p>
+    </div>
+  </div>
+
+  <div className="w-12 h-8 relative ml-4">
+    <Image
+      src={TabbyLogo} // Add Tabby logo in your public folder
+      alt="Tabby"
+      fill
+      className="object-contain"
+    />
+  </div>
+</label>
+
                 </div>
 
                 {/* Privacy Policy */}
@@ -1078,14 +1144,14 @@ const CheckoutPage = () => {
                     !hasValidAddress() ||
                     isLoading ||
                     loading ||
-                    checkoutProducts.length === 0
+                    checkoutProducts.filter(isValidProduct).length === 0
                   }
                   className={`w-full mt-4 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${
                     privacyAccepted &&
                     hasValidAddress() &&
                     !isLoading &&
                     !loading &&
-                    checkoutProducts.length > 0
+                    checkoutProducts.filter(isValidProduct).length > 0
                       ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
                       : "bg-gray-400 cursor-not-allowed"
                   }`}
@@ -1109,38 +1175,6 @@ const CheckoutPage = () => {
           </div>
         )}
 
-        {step === "success" && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M5 13l4 4L19 7"
-                ></path>
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Order Placed Successfully!
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Thank you for your order. You will receive a confirmation email
-              shortly.
-            </p>
-            <button
-              onClick={() => (window.location.href = "/")}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Continue Shopping
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

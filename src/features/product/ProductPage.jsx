@@ -114,32 +114,29 @@ const ProductPage = () => {
     
   };
 
-  // Fixed category filtering logic - now uses API products
-  const categoryFilteredProducts = useMemo(() => {
-    if (loading) return [];
-    return products.products.filter((p) => {
-      // First check if the main category matches
-      const isCategoryMatch =
-        p.categories &&
-        p.categories.some((cat) =>
-          cat?.toLowerCase()?.includes(category?.toLowerCase())
-        );
+const categoryFilteredProducts = useMemo(() => {
+  if (loading) return [];
+  return products.products.filter((p) => {
+    const categoriesArray = Array.isArray(p.categories)
+      ? p.categories
+      : [p.categories].filter(Boolean); // make sure it's an array
 
-      // If there's a subcategory in URL, check if it matches
-      if (subcategory) {
-        return (
-          isCategoryMatch &&
-          p.categories &&
-          p.categories.some((cat) =>
-            cat.toLowerCase().includes(subcategory.toLowerCase())
-          )
-        );
-      }
+    const isCategoryMatch = categoriesArray.some((cat) =>
+      cat?.toLowerCase()?.includes(category?.toLowerCase())
+    );
 
-      // If no subcategory in URL, only check main category
-      return isCategoryMatch;
-    });
-  }, [category, subcategory, products, loading]);
+    if (subcategory) {
+      return (
+        isCategoryMatch &&
+        categoriesArray.some((cat) =>
+          cat.toLowerCase().includes(subcategory.toLowerCase())
+        )
+      );
+    }
+
+    return isCategoryMatch;
+  });
+}, [category, subcategory, products, loading]);
 
   // Filter products based on active filters
   const filteredProducts = useMemo(() => {
@@ -308,7 +305,6 @@ const ProductPage = () => {
                     <option value="featured">Featured</option>
                     <option value="priceLowHigh">Price: Low to High</option>
                     <option value="priceHighLow">Price: High to Low</option>
-                    <option value="rating">Rating</option>
                     <option value="discount">Discount</option>
                   </select>
                 </div>
