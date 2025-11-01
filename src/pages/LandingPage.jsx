@@ -14,6 +14,7 @@ import Footer from "@/components/shared/Footer";
 import ChatRobot from "@/components/ui/ChatRobot";
 import Watch from "@/layouts/Watch";
 import "../Mobile/responsive.css";
+import CategorySectionWithImages from "@/components/CategorySection";
 
 
 export default function IndexPage() {
@@ -41,6 +42,9 @@ export default function IndexPage() {
       />
 
       <Landing />
+      <div className="flex md:hidden  bg-red-300 justify-center">
+        <CategorySectionWithImages/>
+      </div>
       <Home />
       <AddSection />
       <WatchBrand />

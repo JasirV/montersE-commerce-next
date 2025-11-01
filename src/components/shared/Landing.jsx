@@ -5,7 +5,7 @@ import { FaChevronLeft, FaChevronRight, FaPause, FaPlay } from "react-icons/fa";
 
 // Import your images - replace these with optimized smaller banner images
 import LuxuryWatchCollection from "../../assets/Banners/LuxuryWatchCollection.jpg";
-import NewArrivals2025 from "../../assets/Banners/NewArrivals2025.jpg";
+import NewArrivals2025 from "../../assets/Banners/01.png";
 import ExclusiveLimited from "../../assets/Banners/ExclusiveLimited.jpg";
 import WorldWideShipping from "../../assets/Banners/WorldWideShipping.jpg";
 
