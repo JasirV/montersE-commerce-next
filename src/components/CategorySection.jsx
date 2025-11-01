@@ -36,7 +36,7 @@ const CategorySectionWithImages = () => {
       image: "/images/accessories.jpg"
     },
     {
-      id: 7,
+      id: 7, 
       name: "JEWELRY",
       image: "/images/jewelry.jpg"
     },
