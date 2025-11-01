@@ -18,12 +18,12 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
 
   const handleGoogleLogin = () => {
     // Redirect user to backend Google OAuth endpoint
-    window.location.href = "https://api.montres.ae/api/Auth/google";
+    window.location.href = "http://localhost:9000/api/Auth/google";
   };
 
   const handleFacebookLogin = () => {
     // Redirect user to backend Facebook OAuth endpoint
-    window.location.href = "https://api.montres.ae/api/Auth/facebook";
+    window.location.href = "http://localhost:9000/api/Auth/facebook";
   };
 
   const handleSubmit = async (e) => {

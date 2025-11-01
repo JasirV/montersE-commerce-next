@@ -17,7 +17,7 @@ const BrandNewAdded = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:9000/api/products');
+        const response = await axios.get('https://api.montres.ae/api/products');
         
         console.log('API Response:', response.data);
         
@@ -59,6 +59,9 @@ const BrandNewAdded = () => {
 
     fetchProducts();
   }, []);
+
+
+
 
   // Dummy products as fallback
   const dummyProducts = [
@@ -180,6 +183,7 @@ const BrandNewAdded = () => {
                       <Image
                         src={getProductImage(product)}
                         alt={getProductName(product)}
+                        unoptimized   // <--- bypasses Vercel
                         width={160}
                         height={160}
                         loading="lazy"

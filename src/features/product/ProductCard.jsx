@@ -124,6 +124,7 @@ const ProductCard = ({ product }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [email, setEmail] = useState("");
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
   // Check if product is sold out
   const isSoldOut = product.stockQuantity === 0;
@@ -218,8 +219,11 @@ const ProductCard = ({ product }) => {
         return;
       }
 
+      setIsSubscribing(true);
+
+      // Use the correct API endpoint
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/restock-notifications/subscribe`,
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/restock-notifications/subscribe`,
         {
           productId: product._id,
           email: email
@@ -227,14 +231,17 @@ const ProductCard = ({ product }) => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
 
+      console.log("Restock subscription response:", response);
+
       if (response.data.success) {
         setShowRestockModal(false);
         Toastify({
-          text: response.data.message,
+          text: response.data.message || "Successfully subscribed for restock notifications!",
           duration: 4000,
           gravity: "top",
           position: "right",
@@ -243,10 +250,16 @@ const ProductCard = ({ product }) => {
             background: "linear-gradient(to right, #059669, #047857)",
           },
         }).showToast();
+      } else {
+        throw new Error(response.data.message || "Subscription failed");
       }
     } catch (error) {
       console.error("Restock subscription error:", error);
-      const errorMessage = error.response?.data?.message || "Failed to subscribe for notifications";
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          "Failed to subscribe for notifications";
+      
       Toastify({
         text: errorMessage,
         duration: 4000,
@@ -257,6 +270,8 @@ const ProductCard = ({ product }) => {
           background: "linear-gradient(to right, #dc2626, #b91c1c)",
         },
       }).showToast();
+    } finally {
+      setIsSubscribing(false);
     }
   };
 
@@ -378,7 +393,7 @@ const ProductCard = ({ product }) => {
             <Image
               src={imageUrl}
               alt={product?.name || "Product image"}
-              unoptimized   // <--- bypasses Vercel
+              unoptimized
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={`absolute top-0 left-0 w-full h-full object-cover object-center transition duration-500 ${
@@ -470,19 +485,22 @@ const ProductCard = ({ product }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isSubscribing}
               />
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowRestockModal(false)}
                   className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  disabled={isSubscribing}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleRestockSubscribe}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-md hover:from-[#1a447a] hover:to-[#005099] transition-colors"
+                  disabled={isSubscribing}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-md hover:from-[#1a447a] hover:to-[#005099] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Notify Me
+                  {isSubscribing ? "Subscribing..." : "Notify Me"}
                 </button>
               </div>
             </div>
