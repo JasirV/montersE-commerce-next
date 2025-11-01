@@ -349,7 +349,7 @@ const ProductDetailPage = () => {
     setSelectedImage(image.url || image);
   };
 
-  // Subscribe to restock notifications
+  // Subscribe to restock notifications - FIXED API CALL
   const handleRestockSubscribe = async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -364,10 +364,18 @@ const ProductDetailPage = () => {
         return;
       }
 
+      if (!product?._id) {
+        toast.error("Product information is missing");
+        return;
+      }
+
       setIsSubscribing(true);
 
+      // Use the localhost API endpoint you specified
+      const API_BASE = "http://localhost:9000/api/products";
+      
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/restock-notifications/subscribe`,
+        `${API_BASE}/restock-notifications/subscribe`,
         {
           productId: product._id,
           email: email
@@ -375,21 +383,79 @@ const ProductDetailPage = () => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
 
-      if (response.data.success) {
+      // Handle different response formats
+      if (response.data.success || response.status === 200 || response.status === 201) {
         setIsSubscribed(true);
         setShowRestockModal(false);
         toast.success("You'll be notified when this product is back in stock!");
+        console.log("Restock notification subscription successful:", response.data);
+      } else {
+        throw new Error("Subscription failed");
       }
     } catch (error) {
       console.error("Restock subscription error:", error);
-      const errorMessage = error.response?.data?.message || "Failed to subscribe for notifications";
+      
+      // Enhanced error handling
+      let errorMessage = "Failed to subscribe for notifications";
+      
+      if (error.response) {
+        // Server responded with error status
+        errorMessage = error.response.data?.message || error.response.data?.error || errorMessage;
+        
+        // Handle specific status codes
+        if (error.response.status === 409) {
+          errorMessage = "You're already subscribed to notifications for this product";
+          setIsSubscribed(true);
+        } else if (error.response.status === 401) {
+          errorMessage = "Please login again";
+          router.push("/");
+        } else if (error.response.status === 404) {
+          errorMessage = "Product not found";
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage = "Network error. Please check your connection.";
+      }
+      
       toast.error(errorMessage);
     } finally {
       setIsSubscribing(false);
+    }
+  };
+
+  // Unsubscribe from restock notifications (optional feature)
+  const handleRestockUnsubscribe = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token || !product?._id) return;
+
+      const API_BASE = "http://localhost:9000/api/products";
+      
+      const response = await axios.delete(
+        `${API_BASE}/restock-notifications/unsubscribe`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          data: {
+            productId: product._id,
+            email: user?.email || email
+          }
+        }
+      );
+
+      if (response.data.success || response.status === 200) {
+        setIsSubscribed(false);
+        toast.success("You've been unsubscribed from restock notifications");
+      }
+    } catch (error) {
+      console.error("Unsubscribe error:", error);
+      toast.error("Failed to unsubscribe");
     }
   };
 
@@ -589,6 +655,14 @@ const ProductDetailPage = () => {
             This product is currently unavailable. Get notified when it's back in stock.
           </p>
         </div>
+        {isSubscribed && (
+          <button
+            onClick={handleRestockUnsubscribe}
+            className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors"
+          >
+            Unsubscribe
+          </button>
+        )}
       </div>
     </div>
   );
@@ -1018,8 +1092,8 @@ const ProductDetailPage = () => {
               <div className="flex flex-col gap-3 w-full">
                 {isSubscribed ? (
                   <button
-                    disabled
-                    className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold cursor-not-allowed text-base shadow-md flex items-center justify-center gap-2"
+                    onClick={handleRestockUnsubscribe}
+                    className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors text-base shadow-md flex items-center justify-center gap-2"
                   >
                     <FaBell className="text-white" />
                     NOTIFICATIONS ENABLED
