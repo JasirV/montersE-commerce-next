@@ -91,8 +91,8 @@ const filtersData = [
     ],
   },
   {
-    id: "badges",
-    name: "Badges",
+    id: "Model",
+    name: "Model",
     options: [
       { value: "deal_of_day", label: "Deal of the Day" },
       { value: "in_demand", label: "In Demand" },

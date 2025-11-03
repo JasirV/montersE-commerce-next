@@ -309,7 +309,7 @@ const handleSubmit = async (e) => {
           <p className="text-center text-gray-500 text-xs mt-5">
             By booking a service, you agree to our{" "}
             <Link
-              href="/terms-and-conditions"
+              href="/servicesTermsCondition"
               className="text-blue-600 underline"
             >
               terms and conditions
