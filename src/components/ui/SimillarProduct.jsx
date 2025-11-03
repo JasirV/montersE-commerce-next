@@ -1,15 +1,21 @@
+"use client"; // ✅ Add this line
+
 import Image from "next/image";
 import React, { useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
-import Dummy1 from "../../assets/Omega Seamaster.jpg";
-import newCurrency from "../../assets/newSymbole.png";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
-import { GlobalContext } from "../shared/context/GlobalContext";
 import axios from "axios";
+import { GlobalContext } from "../shared/context/GlobalContext";
+import Dummy1 from "../../assets/Omega Seamaster.jpg";
+import newCurrency from "../../assets/newSymbole.png";
+
 
 // Single product card component
 const ProductCard = ({ product }) => {
+  const router = useRouter();
+
   const { decrementWishlist, incrementWishlist, incrementCart } =
     useContext(GlobalContext);
   const [isWishlisted, setIsWishlisted] = useState([]);
@@ -67,23 +73,21 @@ const ProductCard = ({ product }) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-         Toastify({
-        text:
-         "Please log in first to add to wishlist",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+        Toastify({
+          text: "Please log in first to add to wishlist",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
       const productId = product._id || product.productId?._id;
       if (!productId) {
-        // console.error("Product ID not found");
         return;
       }
 
@@ -98,10 +102,8 @@ const ProductCard = ({ product }) => {
         await addToWishlist(product);
       }
     } catch (error) {
-   
-          Toastify({
-        text:
-          "Failed to update wishlist. Please try again.",
+      Toastify({
+        text: "Failed to update wishlist. Please try again.",
         duration: 4000,
         gravity: "top",
         position: "right",
@@ -117,33 +119,31 @@ const ProductCard = ({ product }) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-         Toastify({
-        text:
-         "Please log in first to add to wishlist",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+        Toastify({
+          text: "Please log in first to add to wishlist",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
       // Make sure a default wishlist exists
       if (!defaultWishlistId) {
         Toastify({
-        text:
-         "No wishlist found. Please create a wishlist first.",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+          text: "No wishlist found. Please create a wishlist first.",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
@@ -156,17 +156,16 @@ const ProductCard = ({ product }) => {
 
       // Check if already in wishlist
       if (checkIsWishlisted(productId)) {
-    Toastify({
-  text: "Product is already in your wishlist.",
-  duration: 3000,
-  gravity: "top",
-  position: "right",
-  close: true,
-  style: {
-    background: "linear-gradient(to right, #2193b0, #6dd5ed)", // blue gradient
-  },
-}).showToast();
-
+        Toastify({
+          text: "Product is already in your wishlist.",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #2193b0, #6dd5ed)",
+          },
+        }).showToast();
         return;
       }
 
@@ -187,23 +186,20 @@ const ProductCard = ({ product }) => {
       if (response.status === 200) {
         // Add to local wishlist state
         setIsWishlisted((prev) => [...prev, productId]);
-             Toastify({
-        text:
-         "added to wishlist",
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #00b09b, #96c93d)",
-        },
-      }).showToast();
+        Toastify({
+          text: "added to wishlist",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #00b09b, #96c93d)",
+          },
+        }).showToast();
       }
     } catch (error) {
-     
-          Toastify({
-        text:
-         "Failed to add to wishlist. Please try again.",
+      Toastify({
+        text: "Failed to add to wishlist. Please try again.",
         duration: 4000,
         gravity: "top",
         position: "right",
@@ -237,13 +233,20 @@ const ProductCard = ({ product }) => {
       if (response.status === 200) {
         // Remove from local wishlist state
         setIsWishlisted((prev) => prev.filter((id) => id !== productId));
-       
+        Toastify({
+          text: "Removed from wishlist",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #00b09b, #96c93d)",
+          },
+        }).showToast();
       }
     } catch (error) {
-      // console.error("Error removing from wishlist:", error);
-          Toastify({
-        text:
-          "Failed to remove from wishlist. Please try again.",
+      Toastify({
+        text: "Failed to remove from wishlist. Please try again.",
         duration: 4000,
         gravity: "top",
         position: "right",
@@ -260,32 +263,30 @@ const ProductCard = ({ product }) => {
       const token = localStorage.getItem("accessToken");
       if (!token) {
         Toastify({
-        text:
-         "Please log in to add items to your cart",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+          text: "Please log in to add items to your cart",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
       const productId = product._id || product.productId?._id;
       if (!productId) {
         Toastify({
-        text:
-         "Invalid product data",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+          text: "Invalid product data",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
@@ -306,32 +307,37 @@ const ProductCard = ({ product }) => {
 
       if (response.status === 200) {
         Toastify({
-        text:
-         " added to cart",
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #00b09b, #96c93d)",
-        },
-      }).showToast();
+          text: " added to cart",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #00b09b, #96c93d)",
+          },
+        }).showToast();
       } else {
         Toastify({
-        text:
-         "Failed to add to cart. Try again!",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+          text: "Failed to add to cart. Try again!",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
-     
+    }
+  };
+
+  // Navigate to product details page
+  const handleProductClick = (product) => {
+    const productId = product._id || product.productId?._id;
+    if (productId) {
+      router.push(`/ProductDetailPage/${productId}`);
     }
   };
 
@@ -343,21 +349,39 @@ const ProductCard = ({ product }) => {
   const productId = product._id || product.productId?._id;
   const isProductWishlisted = checkIsWishlisted(productId);
 
+  // Format price with currency symbol
+  const formatPrice = (price) => {
+    return (
+      <div className="flex items-center">
+        <Image
+          src={newCurrency}
+          alt="Currency"
+          className="w-4 h-4 mr-1.5"
+        />
+        <span className="text-xl font-bold text-gray-900">
+          {price?.toLocaleString() || "0"}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 mx-2 my-2">
       {/* Product Image Container */}
-      <div className="relative h-52 bg-gray-50">
-        <Image
-          src={product.images?.[0]?.url || Dummy1}
-          alt={product.name}
-          unoptimized   // <--- bypasses Vercel
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-          loading="lazy"
-          onError={(e) => {
-            e.target.src = Dummy1;
-          }}
-        />
+      <div className="relative h-52 bg-gray-50 cursor-pointer">
+        <div onClick={() => handleProductClick(product)}>
+          <Image
+            src={product.images?.[0]?.url || Dummy1}
+            alt={product.name}
+            unoptimized
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            onError={(e) => {
+              e.target.src = Dummy1;
+            }}
+          />
+        </div>
 
         {/* Wishlist Button */}
         <button
@@ -382,26 +406,20 @@ const ProductCard = ({ product }) => {
 
       {/* Product Details */}
       <div className="p-5">
-        {/* Product Name */}
-        <h3 className="text-gray-800 font-semibold text-[15px] mb-3 line-clamp-2 leading-tight min-h-[2.8rem]">
+        {/* Product Name - Clickable */}
+        <h3 
+          onClick={() => handleProductClick(product)}
+          className="text-gray-800 font-semibold text-[15px] mb-3 line-clamp-2 leading-tight min-h-[2.8rem] cursor-pointer hover:text-blue-600 transition-colors"
+        >
           {product.name}
         </h3>
 
         {/* Price Section */}
         <div className="flex items-baseline gap-2 mb-3">
-          <div className="flex items-center">
-            <Image
-              src={newCurrency}
-              alt="Currency"
-              className="w-4 h-4 mr-1.5"
-            />
-            <span className="text-xl font-bold text-gray-900">
-              {product.salePrice?.toLocaleString() || "0"}
-            </span>
-          </div>
+          {formatPrice(product.salePrice)}
           {product.regularPrice && product.regularPrice > product.salePrice && (
             <span className="text-sm text-gray-500 line-through ml-1">
-              {product.regularPrice?.toLocaleString()}
+              {formatPrice(product.regularPrice)}
             </span>
           )}
         </div>
@@ -424,53 +442,63 @@ const SimilarProduct = ({ productId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-   useEffect(() => {
-  const fetchSimilarProducts = async () => {
-    if (!productId) {
-      console.log("No product ID provided");
-      setLoading(false);
-      return;
-    }
+  const router = useRouter();
 
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Get token from localStorage (or wherever you store it)
-      const token = localStorage.getItem("accessToken");
-
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`,
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.success) {
-        const products =
-          response.data.products || response.data.similarProducts || [];
-        console.log("Products found:", products.length);
-        setSimilarProducts(products);
-      } else {
-        console.log("API returned success: false");
-        setSimilarProducts([]);
-      }
-    } catch (err) {
-      console.error("Error fetching similar products:", err);
-      console.error("Error details:", err.response?.data);
-      setError("Failed to load similar products");
-      setSimilarProducts([]);
-    } finally {
-      setLoading(false);
+  // Safe router usage - check if router is ready
+  const handleViewMore = () => {
+    if (router && typeof router.push === 'function') {
+      router.push('/ProductDetailPage');
+    } else {
+      // Fallback if router is not available
+      window.location.href = '/products';
     }
   };
 
-  fetchSimilarProducts();
-}, [productId]);
+  useEffect(() => {
+    const fetchSimilarProducts = async () => {
+      if (!productId) {
+        console.log("No product ID provided");
+        setLoading(false);
+        return;
+      }
 
+      try {
+        setLoading(true);
+        setError(null);
+
+        const token = localStorage.getItem("accessToken");
+
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.data.success) {
+          const products =
+            response.data.products || response.data.similarProducts || [];
+          console.log("Products found:", products.length);
+          setSimilarProducts(products);
+        } else {
+          console.log("API returned success: false");
+          setSimilarProducts([]);
+        }
+      } catch (err) {
+        console.error("Error fetching similar products:", err);
+        console.error("Error details:", err.response?.data);
+        setError("Failed to load similar products");
+        setSimilarProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSimilarProducts();
+  }, [productId]);
 
   // Show loading state
   if (loading) {
@@ -562,7 +590,10 @@ const SimilarProduct = ({ productId }) => {
 
         {/* View More Button */}
         <div className="mt-12 text-center">
-          <button className="inline-flex items-center px-8 py-4 border-2 border-gray-300 rounded-xl text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-300 group">
+          <button 
+            onClick={handleViewMore}
+            className="inline-flex items-center px-8 py-4 border-2 border-gray-300 rounded-xl text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-300 group"
+          >
             View More Products
             <svg
               className="ml-3 w-5 h-5 transition-transform group-hover:translate-y-0.5"

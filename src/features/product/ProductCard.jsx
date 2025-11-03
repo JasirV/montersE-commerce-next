@@ -42,7 +42,7 @@ const WishlistIcon = ({
 // Product Badge component
 const ProductBadge = ({ badge }) => {
   if (!badge) return null;
-  
+
   return (
     <div className="absolute top-1 xs:top-2 sm:top-3 right-1 xs:right-2 sm:right-3">
       <span className="inline-block bg-red-600 text-white text-xs xs:text-sm font-medium px-2 py-1 rounded-full">
@@ -68,13 +68,7 @@ const PriceDisplay = ({ price, mrp, isSoldOut = false }) => {
     <div className="mt-1 xs:mt-1.5 sm:mt-2 flex justify-between items-center">
       {price ? (
         <span className="text-xs xs:text-sm md:text-base font-bold text-[#1a1a1a] flex items-center gap-1">
-          <Image
-            src={newCurrency}
-            alt={currency}
-            width={14}
-            height={14}
-            className="inline-block"
-          />
+        
           {formatPrice(price)}
           {currency}
         </span>
@@ -84,13 +78,7 @@ const PriceDisplay = ({ price, mrp, isSoldOut = false }) => {
 
       {mrp && (
         <span className="text-[10px] xs:text-xs text-gray-500 line-through flex items-center gap-1">
-          <Image
-            src={newCurrency}
-            alt={currency}
-            width={12}
-            height={12}
-            className="inline-block"
-          />
+          {currency}
           {formatPrice(mrp)}
         </span>
       )}
@@ -111,9 +99,9 @@ const StockStatus = ({ isSoldOut, stockQuantity }) => {
 };
 
 const ProductCard = ({ product }) => {
-  console.log(product, "product");
-
-  const { decrementWishlist, incrementWishlist, user } = useContext(GlobalContext);
+ 
+  const { decrementWishlist, incrementWishlist, user } =
+    useContext(GlobalContext);
   const imageUrl = product?.images?.[0]?.url;
   const router = useRouter();
   const { currency, rate } = useCurrency();
@@ -226,7 +214,7 @@ const ProductCard = ({ product }) => {
         `${process.env.NEXT_PUBLIC_BASEURL}/products/restock-notifications/subscribe`,
         {
           productId: product._id,
-          email: email
+          email: email,
         },
         {
           headers: {
@@ -236,12 +224,14 @@ const ProductCard = ({ product }) => {
         }
       );
 
-      console.log("Restock subscription response:", response);
+      // console.log("Restock subscription response:", response);
 
       if (response.data.success) {
         setShowRestockModal(false);
         Toastify({
-          text: response.data.message || "Successfully subscribed for restock notifications!",
+          text:
+            response.data.message ||
+            "Successfully subscribed for restock notifications!",
           duration: 4000,
           gravity: "top",
           position: "right",
@@ -255,11 +245,12 @@ const ProductCard = ({ product }) => {
       }
     } catch (error) {
       console.error("Restock subscription error:", error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          error.message || 
-                          "Failed to subscribe for notifications";
-      
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to subscribe for notifications";
+
       Toastify({
         text: errorMessage,
         duration: 4000,
@@ -385,7 +376,7 @@ const ProductCard = ({ product }) => {
         }`}
       >
         {/* Clickable Image Container */}
-        <div 
+        <div
           className="relative w-full pb-[100%] sm:pb-[90%] md:pb-[85%] lg:pb-[80%] xl:pb-[76%] overflow-hidden cursor-pointer"
           onClick={handleProductClick}
         >
@@ -418,7 +409,7 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Clickable Content Area */}
-        <div 
+        <div
           className="p-2 xs:p-3 sm:p-3 md:p-4 cursor-pointer"
           onClick={handleProductClick}
         >

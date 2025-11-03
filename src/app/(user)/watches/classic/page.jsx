@@ -294,7 +294,7 @@ const Page = () => {
         <div className="flex flex-col md:flex-row gap-6 xs:gap-7 sm:gap-8">
           {/* Sidebar */}
           <aside className="md:w-72 lg:w-80">
-            <FilterSidebar
+            {/* <FilterSidebar
               activeFilters={activeFilters}
               toggleFilter={toggleFilter}
               mobileFiltersOpen={mobileFiltersOpen}
@@ -304,7 +304,7 @@ const Page = () => {
               setBrandSearch={setBrandSearch}
               clearAllFilters={clearAllFilters}
               applyFilters={applyFilters}
-            />
+            /> */}
           </aside>
 
           {/* Products Section with ref for scrolling */}

@@ -1,59 +1,37 @@
 "use client";
 
-import React, {
-  useState,
-  useMemo,
-  memo,
-  lazy,
-  Suspense,
-  useEffect,
-} from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Disclosure } from "@headlessui/react";
 import Link from "next/link";
 
-// Lazy load icons for better performance
-const FiFilter = lazy(() =>
-  import("react-icons/fi").then((module) => ({ default: module.FiFilter }))
-);
-const FiX = lazy(() =>
-  import("react-icons/fi").then((module) => ({ default: module.FiX }))
-);
-const FiChevronDown = lazy(() =>
-  import("react-icons/fi").then((module) => ({ default: module.FiChevronDown }))
-);
-const FiSearch = lazy(() =>
-  import("react-icons/fi").then((module) => ({ default: module.FiSearch }))
-);
-const FiShoppingCart = lazy(() =>
-  import("react-icons/fi").then((module) => ({
-    default: module.FiShoppingCart,
-  }))
-);
-const FaTimes = lazy(() =>
-  import("react-icons/fa").then((module) => ({ default: module.FaTimes }))
-);
-const FaChevronDown = lazy(() =>
-  import("react-icons/fa").then((module) => ({ default: module.FaChevronDown }))
-);
-const FaChevronRight = lazy(() =>
-  import("react-icons/fa").then((module) => ({
-    default: module.FaChevronRight,
-  }))
-);
+// Import icons directly
+import { 
+  FiFilter, 
+  FiX, 
+  FiChevronDown, 
+  FiSearch, 
+  FiShoppingCart,
+  FiUser, 
+  FiClock, 
+  FiGrid 
+} from "react-icons/fi";
+import { 
+  FaTimes, 
+  FaChevronDown, 
+} from "react-icons/fa";
 
-import { FiUser, FiClock, FiGrid } from "react-icons/fi";
-
-// Memoized filter data
+// Updated filter data with new structure
 const filtersData = [
   {
     id: "category",
     name: "Category",
     options: [
       { value: "watch", label: "Watch" },
-      { value: "Home Accessories", label: "Home Accessories" },
+      { value: "home_accessories", label: "Home Accessories" },
       { value: "leather", label: "Leather" },
-      { value: "Personal Accessories", label: "Personal Accessories" },
-      { value: "Accessories", label: "Accessories" },
+      { value: "personal_accessories", label: "Personal Accessories" },
+      { value: "jewellery", label: "Jewellery" },
+      { value: "gold", label: "Gold" },
     ],
   },
   {
@@ -61,37 +39,41 @@ const filtersData = [
     name: "Price",
     options: [
       { value: "1-500", label: "AED 1 - AED 500" },
-      { value: "2501-5000", label: "AED 2501 - AED 5000" },
-      { value: "8000-90000", label: "AED 8000 - AED 90000" },
+      { value: "501-1000", label: "AED 501 - AED 1,000" },
+      { value: "1001-5000", label: "AED 1,001 - AED 5,000" },
+      { value: "5001-10000", label: "AED 5,001 - AED 10,000" },
+      { value: "10001-20000", label: "AED 10,001 - AED 20,000" },
+      { value: "20001-40000", label: "AED 20,001 - AED 40,000" },
+      { value: "40000-50000", label: "AED 40,000 - AED 50,000" },
     ],
   },
   {
     id: "brand",
     name: "Brand",
     options: [
-      { value: "Rolex", label: "Rolex" },
-      { value: "Longines", label: "Longines" },
-      { value: "Tiffany &amp; Co", label: "Tiffany Co" },
-      { value: "Christian Dior", label: "Christian Dior" },
-      { value: "Gucci", label: "Gucci" },
-      { value: "Saint Laurent", label: "Saint Laurent" },
-      { value: "Jean D eve", label: "Jean D eve" },
-      { value: "Omega", label: "Omega" },
-      { value: "Zenith", label: "Zenith" },
+      { value: "rolex", label: "Rolex" },
+      { value: "longines", label: "Longines" },
+      { value: "tiffany_co", label: "Tiffany & Co" },
+      { value: "christian_dior", label: "Christian Dior" },
+      { value: "gucci", label: "Gucci" },
+      { value: "saint_laurent", label: "Saint Laurent" },
+      { value: "jean_d_eve", label: "Jean D'eve" },
+      { value: "omega", label: "Omega" },
+      { value: "zenith", label: "Zenith" },
     ],
   },
   {
     id: "discount",
     name: "Discount",
     options: [
-      { value: "90", label: "90% or More" },
-      { value: "40", label: "40% or More" },
       { value: "20", label: "20% or More" },
+      { value: "40", label: "40% or More" },
       { value: "60", label: "60% or More" },
+      { value: "90", label: "90% or More" },
     ],
   },
   {
-    id: "Model",
+    id: "model",
     name: "Model",
     options: [
       { value: "deal_of_day", label: "Deal of the Day" },
@@ -102,21 +84,60 @@ const filtersData = [
     ],
   },
   {
+    id: "gender",
+    name: "Gender",
+    options: [
+      { value: "men", label: "Men" },
+      { value: "women", label: "Women" },
+      { value: "unisex", label: "Unisex" }
+    ],
+  },
+  {
+    id: "reference_number",
+    name: "Reference Number",
+    options: [
+      { value: "ref_001", label: "REF-001" },
+      { value: "ref_002", label: "REF-002" },
+      { value: "ref_003", label: "REF-003" },
+      { value: "ref_004", label: "REF-004" },
+      { value: "ref_005", label: "REF-005" },
+    ],
+  },
+  {
+    id: "dial_color",
+    name: "Dial Color",
+    options: [
+      { value: "black", label: "Black" },
+      { value: "white", label: "White" },
+      { value: "blue", label: "Blue" },
+      { value: "green", label: "Green" },
+      { value: "silver", label: "Silver" },
+      { value: "gold", label: "Gold" },
+      { value: "mother_of_pearl", label: "Mother of Pearl" },
+    ],
+  },
+  {
+    id: "strap_color",
+    name: "Strap Color",
+    options: [
+      { value: "black", label: "Black" },
+      { value: "brown", label: "Brown" },
+      { value: "white", label: "White" },
+      { value: "blue", label: "Blue" },
+      { value: "steel", label: "Steel" },
+      { value: "gold", label: "Gold" },
+      { value: "leather", label: "Leather" },
+    ],
+  },
+ 
+  {
     id: "availability",
     name: "Availability",
     options: [{ value: "in_stock", label: "Show in stock only" }],
   },
-  {
-    id: "gender",
-    name: "Gender",
-    options: [{ value: "men", label: "Men" },
-      
-      { value: "women", label: "Women" },
-      { value: "unisex", label: "Unisex" }],
-  },
 ];
 
-// Memoized menu items
+// Menu items data
 const menuItemsData = [
   { name: "Home", path: "/" },
   {
@@ -133,8 +154,8 @@ const menuItemsData = [
   { name: "Contact", path: "/contact" },
 ];
 
-// Filter section component to prevent re-renders
-const FilterSection = memo(({ section, activeFilters, toggleFilter }) => {
+// Filter section component
+const FilterSection = ({ section, activeFilters, toggleFilter }) => {
   return (
     <Disclosure as="div" className="border-b border-gray-200 py-4">
       {({ open }) => (
@@ -145,18 +166,12 @@ const FilterSection = memo(({ section, activeFilters, toggleFilter }) => {
                 {section.name}
               </span>
               <span className="ml-6 flex items-center">
-                <Suspense
-                  fallback={
-                    <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
-                  }
-                >
-                  <FiChevronDown
-                    className={`${
-                      open ? "-rotate-180" : "rotate-0"
-                    } h-5 xs:h-6 w-5 xs:w-6 transform transition-transform duration-200`}
-                    aria-hidden="true"
-                  />
-                </Suspense>
+                <FiChevronDown
+                  className={`${
+                    open ? "-rotate-180" : "rotate-0"
+                  } h-5 xs:h-6 w-5 xs:w-6 transform transition-transform duration-200`}
+                  aria-hidden="true"
+                />
               </span>
             </Disclosure.Button>
           </h3>
@@ -165,13 +180,7 @@ const FilterSection = memo(({ section, activeFilters, toggleFilter }) => {
               {section.id === "brand" && (
                 <div className="relative mb-3">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <Suspense
-                      fallback={
-                        <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
-                      }
-                    >
-                      <FiSearch className="h-4 xs:h-5 w-4 xs:w-5 text-gray-400" />
-                    </Suspense>
+                    <FiSearch className="h-4 xs:h-5 w-4 xs:w-5 text-gray-400" />
                   </div>
                   <input
                     type="text"
@@ -182,47 +191,22 @@ const FilterSection = memo(({ section, activeFilters, toggleFilter }) => {
               )}
               {section.options.map((option, optionIdx) => (
                 <div key={option.value} className="flex items-center">
-                  {section.id === "rating" ? (
-                    <div className="flex items-center">
-                      <input
-                        id={`filter-mobile-${section.id}-${optionIdx}`}
-                        name={`${section.id}[]`}
-                        type="checkbox"
-                        className="h-4 xs:h-5 w-4 xs:w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        checked={
-                          activeFilters && activeFilters[section.id]?.includes(option.value) || false
-                        }
-                        onChange={() => toggleFilter && toggleFilter(section.id, option.value)}
-                      />
-                      <label
-                        htmlFor={`filter-mobile-${section.id}-${optionIdx}`}
-                        className="ml-2 xs:ml-3 text-xs xs:text-sm text-gray-600"
-                      >
-                        <span className="text-yellow-400 text-sm xs:text-base">
-                          {option.label}
-                        </span>
-                      </label>
-                    </div>
-                  ) : (
-                    <>
-                      <input
-                        id={`filter-mobile-${section.id}-${optionIdx}`}
-                        name={`${section.id}[]`}
-                        type="checkbox"
-                        className="h-4 xs:h-5 w-4 xs:w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        checked={
-                          activeFilters && activeFilters[section.id]?.includes(option.value) || false
-                        }
-                        onChange={() => toggleFilter && toggleFilter(section.id, option.value)}
-                      />
-                      <label
-                        htmlFor={`filter-mobile-${section.id}-${optionIdx}`}
-                        className="ml-2 xs:ml-3 text-xs xs:text-sm text-gray-600"
-                      >
-                        {option.label}
-                      </label>
-                    </>
-                  )}
+                  <input
+                    id={`filter-${section.id}-${optionIdx}`}
+                    name={`${section.id}[]`}
+                    type="checkbox"
+                    className="h-4 xs:h-5 w-4 xs:w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    checked={
+                      activeFilters && activeFilters[section.id]?.includes(option.value) || false
+                    }
+                    onChange={() => toggleFilter && toggleFilter(section.id, option.value)}
+                  />
+                  <label
+                    htmlFor={`filter-${section.id}-${optionIdx}`}
+                    className="ml-2 xs:ml-3 text-xs xs:text-sm text-gray-600"
+                  >
+                    {option.label}
+                  </label>
                 </div>
               ))}
             </div>
@@ -231,12 +215,10 @@ const FilterSection = memo(({ section, activeFilters, toggleFilter }) => {
       )}
     </Disclosure>
   );
-});
+};
 
-FilterSection.displayName = "FilterSection";
-
-// Menu item component to prevent re-renders
-const MenuItem = memo(({ item, dropdown, setDropdown }) => {
+// Menu item component
+const MenuItem = ({ item, dropdown, setDropdown }) => {
   const hasSubmenu = item.subMenu && item.subMenu.length > 0;
 
   return (
@@ -249,18 +231,12 @@ const MenuItem = memo(({ item, dropdown, setDropdown }) => {
         >
           <span className="font-medium text-sm xs:text-base">{item.name}</span>
           <span className="text-gray-400 transition-transform duration-300">
-            <Suspense
-              fallback={
-                <div className="h-3 w-3 bg-gray-200 rounded animate-pulse"></div>
-              }
-            >
-              <FaChevronDown
-                size={12}
-                className={`transform transition-transform duration-300 ${
-                  dropdown === item.name ? "rotate-180" : "rotate-0"
-                }`}
-              />
-            </Suspense>
+            <FaChevronDown
+              size={12}
+              className={`transform transition-transform duration-300 ${
+                dropdown === item.name ? "rotate-180" : "rotate-0"
+              }`}
+            />
           </span>
         </button>
       ) : (
@@ -297,18 +273,13 @@ const MenuItem = memo(({ item, dropdown, setDropdown }) => {
       )}
     </div>
   );
-});
-
-MenuItem.displayName = "MenuItem";
+};
 
 const FilterSidebar = ({ 
-  activeFilters, 
+  activeFilters = {}, 
   toggleFilter, 
   mobileFiltersOpen, 
   setMobileFiltersOpen,
-  brands,
-  brandSearch,
-  setBrandSearch,
   clearAllFilters,
   applyFilters 
 }) => {
@@ -328,7 +299,7 @@ const FilterSidebar = ({
 
   // Check if there are any active filters
   const hasActiveFilters = useMemo(() => {
-    return Object.values(activeFilters).some(arr => arr.length > 0);
+    return Object.values(activeFilters).some(arr => arr && arr.length > 0);
   }, [activeFilters]);
 
   // Check if temp filters are different from active filters
@@ -351,15 +322,19 @@ const FilterSidebar = ({
   const handleApplyFilters = () => {
     // Update the actual active filters with temp filters
     Object.keys(tempFilters).forEach(type => {
-      tempFilters[type].forEach(value => {
-        if (!activeFilters[type]?.includes(value)) {
+      const tempValues = tempFilters[type] || [];
+      const activeValues = activeFilters[type] || [];
+      
+      // Add new filters
+      tempValues.forEach(value => {
+        if (!activeValues.includes(value)) {
           toggleFilter(type, value);
         }
       });
       
       // Remove filters that are no longer in temp
-      activeFilters[type]?.forEach(value => {
-        if (!tempFilters[type]?.includes(value)) {
+      activeValues.forEach(value => {
+        if (!tempValues.includes(value)) {
           toggleFilter(type, value);
         }
       });
@@ -423,13 +398,7 @@ const FilterSidebar = ({
             onClick={openMenu}
             className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200"
           >
-            <Suspense
-              fallback={
-                <div className="h-5 xs:h-6 w-5 xs:w-6 bg-gray-200 rounded animate-pulse"></div>
-              }
-            >
-              <FiGrid className="h-5 xs:h-6 w-5 xs:w-6" />
-            </Suspense>
+            <FiGrid className="h-5 xs:h-6 w-5 xs:w-6" />
             <span className="text-[10px] xs:text-xs mt-0.5">Shop</span>
           </button>
 
@@ -439,13 +408,7 @@ const FilterSidebar = ({
             className="flex flex-col items-center justify-center text-indigo-600 p-1 xs:p-2 transition-colors duration-200"
             aria-label="Open filters"
           >
-            <Suspense
-              fallback={
-                <div className="h-5 xs:h-6 w-5 xs:w-6 bg-gray-200 rounded animate-pulse"></div>
-              }
-            >
-              <FiFilter className="h-5 xs:h-6 w-5 xs:w-6" />
-            </Suspense>
+            <FiFilter className="h-5 xs:h-6 w-5 xs:w-6" />
             <span className="text-[10px] xs:text-xs mt-0.5">Filters</span>
             {hasActiveFilters && (
               <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
@@ -455,13 +418,7 @@ const FilterSidebar = ({
           {/* Waitlist */}
           <Link href="/wishlist">
             <button className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200">
-              <Suspense
-                fallback={
-                  <div className="h-5 xs:h-6 w-5 xs:w-6 bg-gray-200 rounded animate-pulse"></div>
-                }
-              >
-                <FiClock className="h-5 xs:h-6 w-5 xs:w-6" />
-              </Suspense>
+              <FiClock className="h-5 xs:h-6 w-5 xs:w-6" />
               <span className="text-[10px] xs:text-xs mt-0.5">Waitlist</span>
             </button>
           </Link>
@@ -469,13 +426,7 @@ const FilterSidebar = ({
           {/* Cart */}
           <Link href="/cart">
             <button className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200">
-              <Suspense
-                fallback={
-                  <div className="h-5 xs:h-6 w-5 xs:w-6 bg-gray-200 rounded animate-pulse"></div>
-                }
-              >
-                <FiShoppingCart className="h-5 xs:h-6 w-5 xs:w-6" />
-              </Suspense>
+              <FiShoppingCart className="h-5 xs:h-6 w-5 xs:w-6" />
               <span className="text-[10px] xs:text-xs mt-0.5">Cart</span>
             </button>
           </Link>
@@ -483,13 +434,7 @@ const FilterSidebar = ({
           {/* My Account */}
           <Link href="/UserProfile">
             <button className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200">
-              <Suspense
-                fallback={
-                  <div className="h-5 xs:h-6 w-5 xs:w-6 bg-gray-200 rounded animate-pulse"></div>
-                }
-              >
-                <FiUser className="h-5 xs:h-6 w-5 xs:w-6" />
-              </Suspense>
+              <FiUser className="h-5 xs:h-6 w-5 xs:w-6" />
               <span className="text-[10px] xs:text-xs mt-0.5">My Account</span>
             </button>
           </Link>
@@ -524,13 +469,7 @@ const FilterSidebar = ({
               className="p-1 xs:p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
               aria-label="Close filters"
             >
-              <Suspense
-                fallback={
-                  <div className="h-5 xs:h-6 w-5 xs:w-6 bg-gray-200 rounded animate-pulse"></div>
-                }
-              >
-                <FaTimes size={18} />
-              </Suspense>
+              <FaTimes size={18} />
             </button>
           </div>
 
@@ -591,13 +530,7 @@ const FilterSidebar = ({
               className="p-1 xs:p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
               aria-label="Close menu"
             >
-              <Suspense
-                fallback={
-                  <div className="h-5 xs:h-6 w-5 xs:w-6 bg-gray-200 rounded animate-pulse"></div>
-                }
-              >
-                <FaTimes size={18} />
-              </Suspense>
+              <FaTimes size={18} />
             </button>
           </div>
 
@@ -663,4 +596,4 @@ const FilterSidebar = ({
   );
 };
 
-export default memo(FilterSidebar);
+export default FilterSidebar;
