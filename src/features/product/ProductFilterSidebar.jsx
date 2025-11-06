@@ -87,9 +87,9 @@ const filtersData = [
     id: "gender",
     name: "Gender",
     options: [
-      { value: "men", label: "Men" },
+      { value: "men/unisex", label: "Men/unisex" },
       { value: "women", label: "Women" },
-      { value: "unisex", label: "Unisex" }
+     
     ],
   },
   {

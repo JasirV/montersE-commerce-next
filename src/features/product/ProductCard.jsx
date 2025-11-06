@@ -6,7 +6,6 @@ import axios from "axios";
 import { FiHeart, FiClock, FiBell } from "react-icons/fi";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
-import newCurrency from "../../assets/newSymbole.png";
 import { useCurrency } from "@/app/CurrencyContext";
 import { GlobalContext } from "@/components/shared/context/GlobalContext";
 
@@ -87,7 +86,7 @@ const PriceDisplay = ({ price, mrp, isSoldOut = false }) => {
 };
 
 // Stock status indicator
-const StockStatus = ({ isSoldOut, stockQuantity }) => {
+const StockStatus = ({ isSoldOut }) => {
   if (!isSoldOut) return null;
 
   return (
