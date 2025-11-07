@@ -35,7 +35,7 @@ import {
   Link2, 
   Package, 
   BarChart3,
-  Mail,
+
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import newCurrency from "../../assets/newSymbole.png";

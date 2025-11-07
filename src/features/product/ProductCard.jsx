@@ -377,8 +377,7 @@ const ProductCard = ({ product }) => {
         {/* Clickable Image Container */}
         <div
           className="relative w-full pb-[100%] sm:pb-[90%] md:pb-[85%] lg:pb-[80%] xl:pb-[76%] overflow-hidden cursor-pointer"
-          onClick={handleProductClick}
-        >
+          onClick={handleProductClick}>
           {imageUrl && (
             <Image
               src={imageUrl}

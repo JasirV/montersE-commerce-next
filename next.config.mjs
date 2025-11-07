@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     images: {
-    domains: ['montres.ae','res.cloudinary.com',"lh3.googleusercontent.com","platform-lookaside.fbsbx.com","images.unsplash.com"]
+    domains: ['montres.ae','res.cloudinary.com',"lh3.googleusercontent.com","platform-lookaside.fbsbx.com","unoptimized: true"]
   },
  
   env: {
