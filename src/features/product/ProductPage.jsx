@@ -26,7 +26,7 @@ const ProductPage = () => {
   const productsSectionRef = useRef(null);
 
   const { category, subcategory } = useParams();
-  const productsPerPage = 20; // Increased for 5 columns
+  const productsPerPage = 16; // 4 columns × 4 rows = 16 products per page
 
   const [activeFilters, setActiveFilters] = useState({
     category: [],
@@ -212,15 +212,15 @@ const ProductPage = () => {
 
   return (
     <div className="bg-[#f8f5f2] min-h-screen">
-      <div className="container mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 py-4 xs:py-5 sm:py-6 md:py-8 lg:py-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Breadcrumbs */}
-        <nav className="flex mb-4 xs:mb-5 sm:mb-6" aria-label="Breadcrumb">
-          <ol className="inline-flex items-center space-x-2 text-sm xs:text-base">
+        <nav className="flex mb-6" aria-label="Breadcrumb">
+          <ol className="inline-flex items-center space-x-2 text-sm">
             <li className="inline-flex items-center">
               <FiHome className="w-4 h-4 mr-2 text-gray-600" />
               <a
                 href="/"
-                className="inline-flex items-center font-bold text-gray-900 hover:text-[#8b6b4a] transition-colors duration-200"
+                className="inline-flex items-center font-bold text-gray-900 hover:text-blue-600 transition-colors duration-200"
               >
                 Home
               </a>
@@ -243,20 +243,20 @@ const ProductPage = () => {
         {/* Mobile Filter Button */}
         <button
           type="button"
-          className="md:hidden flex items-center gap-2 mb-4 xs:mb-5 text-gray-700 text-sm xs:text-base px-4 py-2.5 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200"
+          className="md:hidden flex items-center gap-2 mb-6 text-gray-700 text-sm px-4 py-2.5 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200"
           onClick={() => setMobileFiltersOpen(true)}
           aria-label="Open filters"
         >
-          <FiFilter className="h-4 w-4 xs:h-5 xs:w-5" />
+          <FiFilter className="h-4 w-4" />
           <span className="font-medium">Filters</span>
           {Object.values(activeFilters).some(arr => arr.length > 0) && (
-            <span className="bg-[#8b6b4a] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {Object.values(activeFilters).flat().length}
             </span>
           )}
         </button>
 
-        <div className="flex flex-col md:flex-row gap-6 xs:gap-7 sm:gap-8">
+        <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar */}
           <aside className="md:w-72 lg:w-80">
             <FilterSidebar
@@ -276,14 +276,14 @@ const ProductPage = () => {
           <main className="flex-1 min-w-0" ref={productsSectionRef}>
             {/* Header Section */}
             {!loading && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 xs:p-5 sm:p-6 mb-5 xs:mb-6 sm:mb-7">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 xs:gap-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                    <h1 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-0">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-0">
                       {category ? `${category.charAt(0).toUpperCase() + category.slice(1)}` : 'All Products'}
                       {subcategory && ` / ${subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}`}
                     </h1>
-                    <p className="text-sm xs:text-base font-semibold text-gray-700 bg-gray-50 px-3 py-1 rounded-lg">
+                    <p className="text-sm font-semibold text-gray-700 bg-gray-50 px-3 py-1 rounded-lg">
                       {sortedProducts.length} {sortedProducts.length === 1 ? "product" : "products"} found
                     </p>
                   </div>
@@ -292,7 +292,7 @@ const ProductPage = () => {
                   <div className="flex items-center gap-3">
                     <label
                       htmlFor="sort"
-                      className="text-sm xs:text-base font-semibold text-gray-700 whitespace-nowrap"
+                      className="text-sm font-semibold text-gray-700 whitespace-nowrap"
                     >
                       Sort by:
                     </label>
@@ -301,7 +301,7 @@ const ProductPage = () => {
                         id="sort"
                         value={sortOption}
                         onChange={(e) => setSortOption(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm xs:text-base focus:border-[#8b6b4a] focus:ring-2 focus:ring-[#8b6b4a] focus:ring-opacity-20 transition-all duration-200 appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                        className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:ring-opacity-20 transition-all duration-200 appearance-none cursor-pointer shadow-sm hover:shadow-md"
                         aria-label="Sort products"
                       >
                         <option value="featured">Featured</option>
@@ -326,12 +326,12 @@ const ProductPage = () => {
                         values.map((val) => (
                           <span
                             key={`${type}-${val}`}
-                            className="inline-flex items-center rounded-full bg-[#8b6b4a] bg-opacity-10 px-3 py-1.5 text-sm font-medium text-[#8b6b4a]"
+                            className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-800"
                           >
                             {val}
                             <button
                               type="button"
-                              className="ml-2 hover:text-[#6a4f36] transition-colors duration-200"
+                              className="ml-2 hover:text-blue-600 transition-colors duration-200"
                               onClick={() => toggleFilter(type, val)}
                               aria-label={`Remove ${val} filter`}
                             >
@@ -355,13 +355,13 @@ const ProductPage = () => {
 
             {/* Loading State */}
             {loading && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xs:gap-5 sm:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                 {[...Array(productsPerPage)].map((_, i) => (
                   <div
                     key={i}
                     className="bg-white rounded-xl p-4 animate-pulse shadow-sm border border-gray-100"
                   >
-                    <div className="h-48 xs:h-52 bg-gray-200 rounded-lg mb-4"></div>
+                    <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
                     <div className="h-4 bg-gray-200 rounded mb-3"></div>
                     <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                     <div className="h-6 bg-gray-200 rounded w-1/2"></div>
@@ -370,19 +370,19 @@ const ProductPage = () => {
               </div>
             )}
 
-            {/* Products Grid - 5 columns on xl screens */}
+            {/* Products Grid - 4 columns layout */}
             {!loading && products.products?.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xs:gap-5 sm:gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                   <Suspense
                     fallback={
-                      <div className="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xs:gap-5 sm:gap-6">
+                      <div className="col-span-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                         {[...Array(productsPerPage)].map((_, i) => (
                           <div
                             key={i}
                             className="bg-white rounded-xl p-4 animate-pulse shadow-sm border border-gray-100"
                           >
-                            <div className="h-48 xs:h-52 bg-gray-200 rounded-lg mb-4"></div>
+                            <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
                             <div className="h-4 bg-gray-200 rounded mb-3"></div>
                             <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                             <div className="h-6 bg-gray-200 rounded w-1/2"></div>
@@ -406,20 +406,20 @@ const ProductPage = () => {
               </>
             ) : (
               !loading && (
-                <div className="text-center py-12 xs:py-16 sm:py-20 bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
                   <div className="max-w-md mx-auto">
                     <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                       <FiX className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h3 className="text-xl xs:text-2xl font-bold text-gray-900 mb-2">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
                       No products found
                     </h3>
-                    <p className="text-gray-600 mb-6 text-sm xs:text-base">
+                    <p className="text-gray-600 mb-6 text-sm">
                       Try adjusting your search or filter criteria.
                     </p>
                     <button
                       onClick={clearAllFilters}
-                      className="px-6 py-3 text-sm xs:text-base font-semibold rounded-lg bg-[#8b6b4a] text-white hover:bg-[#6a4f36] transition-colors duration-200 shadow-sm hover:shadow-md"
+                      className="px-6 py-3 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 shadow-sm hover:shadow-md"
                       aria-label="Clear all filters"
                     >
                       Clear all filters
@@ -478,7 +478,7 @@ const MobileResponsivePagination = ({
   const isLastPage = currentPage === totalPages;
 
   return (
-    <div className="mt-8 sm:mt-10">
+    <div className="mt-8">
       {/* Desktop Layout */}
       <div className="hidden sm:flex items-center justify-center space-x-2">
         {/* Previous Button */}
@@ -488,7 +488,7 @@ const MobileResponsivePagination = ({
           className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all duration-200 ${
             isFirstPage
               ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
-              : "text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md"
+              : "text-gray-700 bg-white border-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:shadow-md"
           }`}
           aria-label="Previous page"
         >
@@ -506,7 +506,7 @@ const MobileResponsivePagination = ({
                   onClick={() => onPageChange(page)}
                   className={`flex items-center justify-center w-9 h-9 text-sm font-medium rounded-lg border transition-all duration-200 ${
                     currentPage === page
-                      ? "bg-[#8b6b4a] text-white border-[#8b6b4a] shadow-md"
+                      ? "bg-blue-600 text-white border-blue-600 shadow-md"
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md"
                   }`}
                   aria-label={`Page ${page}`}
@@ -526,7 +526,7 @@ const MobileResponsivePagination = ({
           className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all duration-200 ${
             isLastPage
               ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
-              : "text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md"
+              : "text-gray-700 bg-white border-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:shadow-md"
           }`}
           aria-label="Next page"
         >
@@ -544,7 +544,7 @@ const MobileResponsivePagination = ({
             className={`flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-200 ${
               isFirstPage
                 ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
-                : "text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md"
+                : "text-gray-700 bg-white border-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:shadow-md"
             }`}
             aria-label="Previous page"
           >
@@ -570,7 +570,7 @@ const MobileResponsivePagination = ({
             className={`flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-200 ${
               isLastPage
                 ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
-                : "text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md"
+                : "text-gray-700 bg-white border-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:shadow-md"
             }`}
             aria-label="Next page"
           >
@@ -591,7 +591,7 @@ const MobileResponsivePagination = ({
                       onClick={() => onPageChange(page)}
                       className={`flex items-center justify-center min-w-10 h-10 px-3 text-base font-medium rounded-lg border transition-all duration-200 ${
                         currentPage === page
-                          ? "bg-[#8b6b4a] text-white border-[#8b6b4a] shadow-md"
+                          ? "bg-blue-600 text-white border-blue-600 shadow-md"
                           : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md"
                       }`}
                       aria-label={`Page ${page}`}

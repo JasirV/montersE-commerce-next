@@ -3,7 +3,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
-import { FiHeart, FiClock, FiBell } from "react-icons/fi";
+import { FiHeart, FiClock, FiBell, FiStar } from "react-icons/fi";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
 import { useCurrency } from "@/app/CurrencyContext";
@@ -19,7 +19,7 @@ const WishlistIcon = ({
   return (
     <button
       onClick={onClick}
-      className={`absolute top-1 xs:top-2 sm:top-3 left-1 xs:left-2 sm:left-3 rounded-full p-1.5 xs:p-2 shadow-md hover:shadow-lg transition-all duration-200 ${
+      className={`absolute top-2 left-2 rounded-full p-1.5 shadow-md hover:shadow-lg transition-all duration-200 ${
         isSoldOut
           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
           : isWishlisted
@@ -30,9 +30,7 @@ const WishlistIcon = ({
       disabled={isSoldOut && !isWishlisted}
     >
       <FiHeart
-        className={`w-3 h-3 xs:w-4 xs:h-4 ${
-          isWishlisted ? "fill-current" : ""
-        }`}
+        className={`w-3 h-3 ${isWishlisted ? "fill-current" : ""}`}
       />
     </button>
   );
@@ -43,16 +41,39 @@ const ProductBadge = ({ badge }) => {
   if (!badge) return null;
 
   return (
-    <div className="absolute top-1 xs:top-2 sm:top-3 right-1 xs:right-2 sm:right-3">
-      <span className="inline-block bg-red-600 text-white text-xs xs:text-sm font-medium px-2 py-1 rounded-full">
+    <div className="absolute top-2 right-2">
+      <span className="inline-block bg-red-600 text-white text-xs font-medium px-2 py-1 rounded-full">
         {badge}
       </span>
     </div>
   );
 };
 
-// Price display component - NORMAL COLORS FOR ALL ITEMS
-const PriceDisplay = ({ price, mrp, isSoldOut = false }) => {
+// Rating component
+const RatingDisplay = ({ rating }) => {
+  if (!rating) return null;
+
+  return (
+    <div className="flex items-center gap-1 mt-1">
+      <div className="flex items-center">
+        {[...Array(5)].map((_, i) => (
+          <FiStar
+            key={i}
+            className={`w-3 h-3 ${
+              i < Math.floor(rating)
+                ? "text-yellow-400 fill-current"
+                : "text-gray-300"
+            }`}
+          />
+        ))}
+      </div>
+      <span className="text-xs text-gray-600">({rating})</span>
+    </div>
+  );
+};
+
+// Price display component
+const PriceDisplay = ({ price, mrp, discount, isSoldOut = false }) => {
   const { currency, rate } = useCurrency();
 
   const formatPrice = (value) => {
@@ -64,41 +85,67 @@ const PriceDisplay = ({ price, mrp, isSoldOut = false }) => {
   };
 
   return (
-    <div className="mt-1 xs:mt-1.5 sm:mt-2 flex justify-between items-center">
-      {price ? (
-        <span className="text-xs xs:text-sm md:text-base font-bold text-[#1a1a1a] flex items-center gap-1">
-        
-          {formatPrice(price)}
-          {currency}
-        </span>
-      ) : (
-        <span className="text-xs text-gray-500">Price not available</span>
-      )}
+    <div className="mt-2">
+      <div className="flex items-center gap-2">
+        {price ? (
+          <span className="text-lg font-bold text-[#1a1a1a]">
+            {currency}
+            {formatPrice(price)}
+          </span>
+        ) : (
+          <span className="text-sm text-gray-500">Price not available</span>
+        )}
 
-      {mrp && (
-        <span className="text-[10px] xs:text-xs text-gray-500 line-through flex items-center gap-1">
-          {currency}
-          {formatPrice(mrp)}
-        </span>
+        {mrp && (
+          <span className="text-sm text-gray-500 line-through">
+            {currency}
+            {formatPrice(mrp)}
+          </span>
+        )}
+      </div>
+      
+      {discount && (
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded">
+            {discount}% off
+          </span>
+          {mrp && price && (
+            <span className="text-xs text-gray-500">
+              You save {currency}
+              {formatPrice(parseFloat(mrp) - parseFloat(price))}
+            </span>
+          )}
+        </div>
       )}
     </div>
   );
 };
 
 // Stock status indicator
-const StockStatus = ({ isSoldOut }) => {
-  if (!isSoldOut) return null;
+const StockStatus = ({ isSoldOut, stockQuantity }) => {
+  if (isSoldOut) {
+    return (
+      <div className="flex items-center justify-center gap-1 mt-2 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200">
+        <FiClock className="w-3 h-3 text-red-500" />
+        <span className="text-xs text-red-600 font-medium">Out of Stock</span>
+      </div>
+    );
+  }
 
-  return (
-    <div className="flex items-center justify-center gap-1 mt-2 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200">
-      <FiClock className="w-3 h-3 text-red-500" />
-      <span className="text-xs text-red-600 font-medium">Out of Stock</span>
-    </div>
-  );
+  if (stockQuantity && stockQuantity < 10) {
+    return (
+      <div className="flex items-center justify-center gap-1 mt-2 px-3 py-1.5 bg-orange-50 rounded-lg border border-orange-200">
+        <span className="text-xs text-orange-600 font-medium">
+          Only {stockQuantity} left!
+        </span>
+      </div>
+    );
+  }
+
+  return null;
 };
 
 const ProductCard = ({ product }) => {
- 
   const { decrementWishlist, incrementWishlist, user } =
     useContext(GlobalContext);
   const imageUrl = product?.images?.[0]?.url;
@@ -115,6 +162,11 @@ const ProductCard = ({ product }) => {
 
   // Check if product is sold out
   const isSoldOut = product.stockQuantity === 0;
+
+  // Calculate discount percentage
+  const discountPercentage = product.regularPrice && product.salePrice 
+    ? Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100)
+    : null;
 
   // Fetch user's wishlists
   useEffect(() => {
@@ -208,7 +260,6 @@ const ProductCard = ({ product }) => {
 
       setIsSubscribing(true);
 
-      // Use the correct API endpoint
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/restock-notifications/subscribe`,
         {
@@ -222,8 +273,6 @@ const ProductCard = ({ product }) => {
           },
         }
       );
-
-      // console.log("Restock subscription response:", response);
 
       if (response.data.success) {
         setShowRestockModal(false);
@@ -370,23 +419,31 @@ const ProductCard = ({ product }) => {
   return (
     <>
       <div
-        className={`group bg-white rounded-md sm:rounded-lg overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition duration-300 transform hover:-translate-y-0.5 xs:hover:-translate-y-1 relative ${
-          isSoldOut ? "border border-gray-200" : ""
+        className={`group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition duration-300 transform hover:-translate-y-1 relative border border-gray-100 ${
+          isSoldOut ? "opacity-80" : ""
         }`}
       >
+        {/* Sponsored Badge */}
+        {product.sponsored && (
+          <div className="absolute top-0 left-0 z-10 bg-blue-600 text-white text-xs px-2 py-1 rounded-br-lg">
+            Sponsored
+          </div>
+        )}
+
         {/* Clickable Image Container */}
         <div
-          className="relative w-full pb-[100%] sm:pb-[90%] md:pb-[85%] lg:pb-[80%] xl:pb-[76%] overflow-hidden cursor-pointer"
-          onClick={handleProductClick}>
+          className="relative w-full pb-[100%] overflow-hidden cursor-pointer bg-gray-50"
+          onClick={handleProductClick}
+        >
           {imageUrl && (
             <Image
               src={imageUrl}
               alt={product?.name || "Product image"}
               unoptimized
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
               className={`absolute top-0 left-0 w-full h-full object-cover object-center transition duration-500 ${
-                isSoldOut ? "grayscale opacity-90" : "group-hover:scale-105"
+                isSoldOut ? "grayscale opacity-70" : "group-hover:scale-105"
               }`}
               priority={false}
             />
@@ -408,44 +465,71 @@ const ProductCard = ({ product }) => {
 
         {/* Clickable Content Area */}
         <div
-          className="p-2 xs:p-3 sm:p-3 md:p-4 cursor-pointer"
+          className="p-4 cursor-pointer"
           onClick={handleProductClick}
         >
-          {/* Product Name - NORMAL COLOR FOR ALL ITEMS */}
-          <h3 className="text-xs xs:text-sm md:text-base font-semibold text-[#1a1a1a] mt-0.5 xs:mt-1 line-clamp-2 min-h-[2.5rem] xs:min-h-[3rem]">
+          {/* Brand Name */}
+          {product.brand && (
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+              {product.brand}
+            </div>
+          )}
+
+          {/* Product Name */}
+          <h3 className="text-sm font-semibold text-[#1a1a1a] line-clamp-2 min-h-[2.5rem] mb-2">
             {product.name}
           </h3>
 
-          {/* Price Display - NORMAL COLOR FOR ALL ITEMS */}
+          {/* Rating */}
+          <RatingDisplay rating={product.rating} />
+
+          {/* Price Display */}
           <PriceDisplay
             price={product.salePrice}
             mrp={product.regularPrice}
+            discount={discountPercentage}
             isSoldOut={isSoldOut}
           />
+
+          {/* Assured Badge */}
+          {product.assured && (
+            <div className="flex items-center gap-1 mt-2">
+              <span className="text-blue-600 text-xs font-medium bg-blue-50 px-2 py-0.5 rounded">
+                💬 Assured
+              </span>
+            </div>
+          )}
 
           {/* Stock Status */}
           <StockStatus
             isSoldOut={isSoldOut}
             stockQuantity={product.stockQuantity}
           />
+
+          {/* Bank Offer */}
+          {product.bankOffer && (
+            <div className="mt-2 text-xs text-green-600 font-medium">
+              {product.bankOffer}
+            </div>
+          )}
         </div>
 
         {/* Buttons Section - Not clickable for navigation */}
-        <div className="px-2 xs:px-3 sm:px-3 md:px-4 pb-2 xs:pb-3 sm:pb-3 md:pb-4">
+        <div className="px-4 pb-4">
           <div className="flex gap-2">
             {isSoldOut ? (
               <button
                 onClick={handleRestockNotify}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-1.5 xs:py-2 rounded text-xs xs:text-sm transition-colors duration-200 hover:from-[#1a447a] hover:to-[#005099] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center gap-1"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2 rounded text-sm transition-colors duration-200 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center gap-1"
                 aria-label={`Notify when ${product.name} is back in stock`}
               >
-                <FiBell className="w-3 h-3" />
+                <FiBell className="w-4 h-4" />
                 Notify Me
               </button>
             ) : (
               <button
                 onClick={handleViewDetails}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-1.5 xs:py-2 rounded text-xs xs:text-sm transition-colors duration-200 hover:from-[#1a447a] hover:to-[#005099] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2 rounded text-sm transition-colors duration-200 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={`View details for ${product.name}`}
                 disabled={isLoading}
               >
@@ -487,7 +571,7 @@ const ProductCard = ({ product }) => {
                 <button
                   onClick={handleRestockSubscribe}
                   disabled={isSubscribing}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-md hover:from-[#1a447a] hover:to-[#005099] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-md hover:from-blue-700 hover:to-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubscribing ? "Subscribing..." : "Notify Me"}
                 </button>
