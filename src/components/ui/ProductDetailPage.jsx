@@ -524,18 +524,17 @@ const ProductDetailPage = () => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
-  // Out of Stock Banner Component
+  // Updated Out of Stock Banner Component - Less intrusive
   const OutOfStockBanner = () => (
-    <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-4 mb-6">
+    <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-4 mb-4">
       <div className="flex items-center gap-3">
         <div className="bg-red-100 p-2 rounded-full">
           <FaClock className="text-red-600 text-lg" />
         </div>
         <div className="flex-1">
-          <h3 className="font-semibold text-red-800 text-lg">Out of Stock</h3>
-          <p className="text-red-700 text-sm mt-1">
-            This product is currently unavailable. Get notified when it's back
-            in stock.
+          <h3 className="font-semibold text-red-800 text-sm">Out of Stock</h3>
+          <p className="text-red-700 text-xs mt-1">
+            This product is currently unavailable. Get notified when it's back in stock.
           </p>
         </div>
         {isSubscribed && (
@@ -631,6 +630,7 @@ const ProductDetailPage = () => {
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-sm text-gray-500">{product.brand}</span>
+                
                 </div>
               </div>
 
@@ -638,13 +638,11 @@ const ProductDetailPage = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleWishlistToggle}
-                  disabled={wishlistLoading || (isSoldOut && !isWishlisted)}
+                  disabled={wishlistLoading}
                   className={`p-3 rounded-xl border transition-colors ${
                     wishlistLoading ? "opacity-50 cursor-not-allowed" : ""
                   } ${
-                    isSoldOut && !isWishlisted
-                      ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed"
-                      : "bg-white border-gray-200 hover:bg-gray-50"
+                    "bg-white border-gray-200 hover:bg-gray-50"
                   }`}
                 >
                   {wishlistLoading ? (
@@ -655,8 +653,6 @@ const ProductDetailPage = () => {
                       className={
                         isWishlisted
                           ? "text-red-500 fill-red-500"
-                          : isSoldOut && !isWishlisted
-                          ? "text-gray-400"
                           : "text-gray-600"
                       }
                     />
@@ -775,7 +771,7 @@ const ProductDetailPage = () => {
                           selectedImage === (image.url || image)
                             ? "border-red-500 shadow-lg scale-105"
                             : "border-gray-200 hover:border-red-300"
-                        } ${isSoldOut ? "grayscale opacity-70" : ""}`}
+                        }`}
                         onClick={() => handleImageSelect(image)}
                       >
                         <Image
@@ -826,11 +822,7 @@ const ProductDetailPage = () => {
               {/* Main Image Container */}
               <div className="flex-1 order-1 lg:order-2">
                 <div
-                  className={`w-full h-72 sm:h-96 lg:h-[500px] bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border-2 ${
-                    isSoldOut
-                      ? "border-red-200 grayscale opacity-90"
-                      : "border-gray-100"
-                  }`}
+                  className={`w-full h-72 sm:h-96 lg:h-[500px] bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border-2 border-gray-100`}
                 >
                   <Image
                     src={
@@ -840,18 +832,10 @@ const ProductDetailPage = () => {
                     unoptimized
                     width={600}
                     height={600}
-                    className={`object-contain w-full h-full ${
-                      isSoldOut ? "grayscale opacity-80" : ""
-                    }`}
+                    className="object-contain w-full h-full"
                     priority
                   />
-                  {isSoldOut && (
-                    <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                      <div className="bg-red-600 text-white px-6 py-3 rounded-xl font-semibold text-xl">
-                        OUT OF STOCK
-                      </div>
-                    </div>
-                  )}
+                 
                 </div>
 
                 {/* Image Counter for Mobile */}
@@ -870,14 +854,20 @@ const ProductDetailPage = () => {
 
             {/* Right Column - Details */}
             <div className="space-y-6">
-              {/* Out of Stock Banner */}
+              {/* Out of Stock Banner - Less prominent */}
               {isSoldOut && <OutOfStockBanner />}
 
               {/* Price Section */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+              <div className={`rounded-2xl p-6 border ${
+                isSoldOut 
+                  ? "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200" 
+                  : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100"
+              }`}>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <div className="text-3xl sm:text-4xl font-bold text-gray-900 flex items-center">
+                    <div className={`text-3xl sm:text-4xl font-bold flex items-center ${
+                      isSoldOut ? "text-gray-600" : "text-gray-900"
+                    }`}>
                       <Image
                         src={newCurrency}
                         alt="Currency"
@@ -976,7 +966,7 @@ const ProductDetailPage = () => {
                 )}
               </div>
 
-              {/* Premium Features */}
+              {/* Premium Features - Always visible */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-4">
                 <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <FaHeadset className="text-blue-600 text-2xl mx-auto mb-2" />

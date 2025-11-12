@@ -239,16 +239,16 @@ const Navbar = ({ onSignUpClick }) => {
                 onClick={toggleMobileMenu}
               >
                 {isMobileMenuOpen ? (
-                  <FaTimes size={20} />
+                  <FaTimes size={24} />
                 ) : (
-                  <FaBars size={20} />
+                  <FaBars size={24} />
                 )}
               </button>
               <Link href="/" className="flex items-center">
                 <Image
                   src={logo}
                   alt="Montres"
-                  className="h-8 md:h-10 w-auto"
+                  className="h-14 w-auto md:h-14 md:w-auto" // increased size
                   priority
                 />
               </Link>

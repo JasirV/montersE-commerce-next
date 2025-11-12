@@ -254,7 +254,7 @@ const ImageSlider = ({
               alt={`${productName} - Image ${index + 1}`}
               fill
               className={`object-cover object-center transition-transform duration-300 ${
-                isSoldOut ? "grayscale opacity-70" : "group-hover:scale-105"
+                isSoldOut 
               }`}
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
               priority={index === 0}
