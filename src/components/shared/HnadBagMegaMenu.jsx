@@ -2,46 +2,44 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import watchImage from "../../assets/classic.jpg";
+import handbagImage from "../../assets/handbags.jpg";
 
-const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
+const HandBagMegaMenu = ({ data, isMobile = false }) => {
   const categories = [
-    "Luxury",
-    "Sports", 
-    "Classic",
-    "Dress",
-    "Chronograph",
-    "Automatic",
-    "Smart",
-    "Vintage",
+    "Bags",
+    "Crossbody Bags",
+    "Shoulder Bags",
+    "Clutch Bags",
+    "Backpacks",
+    "Evening Bags",
+    "Satchels",
   ];
 
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
   const allBrands = [
-    "A. Lange & Sohne",
-    "Audemars Piguet",
-    "Baume Et Mercier",
-    "Bell And Ross",
-    "Blancpain",
-    "Breguet",
-    "Breitling",
-    "Bulova",
+    "Louis Vuitton",
+    "Gucci",
+    "Chanel",
+    "Prada",
+    "Hermès",
+    "Dior",
+    "Fendi",
     "Burberry",
-    "Cartier",
-    "Casio",
-    "Certina",
-    "Chopard",
-    "Citizen",
-    "Daniel Wellington",
-    "Diesel",
+    "Michael Kors",
+    "Coach",
+    "Kate Spade",
+    "Tory Burch",
+    "Saint Laurent",
+    "Bottega Veneta",
+    "Balenciaga",
+    "Valentino",
   ];
 
   const [selectedLetter, setSelectedLetter] = useState(null);
 
   const filteredBrands = useMemo(() => {
     if (!selectedLetter) return allBrands;
-
     return allBrands.filter((brand) =>
       brand.toLowerCase().startsWith(selectedLetter.toLowerCase())
     );
@@ -53,7 +51,6 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
 
   const handleLetterClickWithScroll = (letter) => {
     handleLetterClick(letter);
-
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       setTimeout(() => {
         const brandsSection = document.getElementById("brands-section");
@@ -64,9 +61,17 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
     }
   };
 
-  // Helper function to generate category URLs
-  const getCategoryUrl = (category) => {
-    return `/watches/${category.toLowerCase()}`;
+  // Helper function to generate URLs
+  const generateCategoryUrl = (category) => {
+    return `/leathers/${category.toLowerCase().replace(/\s+/g, "-")}`;
+  };
+
+  const generateBrandUrl = (brand) => {
+    return `/leathers/brands/${brand.toLowerCase().replace(/\s+/g, "-")}`;
+  };
+
+  const generateProductUrl = (productId) => {
+    return `/leathers/product/${productId}`;
   };
 
   // ---------- MOBILE VIEW ----------
@@ -75,15 +80,15 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
       <div className="pl-4 pb-4 space-y-4">
         {/* Categories */}
         <div>
-          <h4 className="font-semibold text-gray-900 mb-1">Watches By Style</h4>
+          <h4 className="font-semibold text-gray-900 mb-1">Handbags By Style</h4>
           <ul className="space-y-2">
             {categories.map((category, index) => (
               <li key={index}>
                 <Link
-                  href={getCategoryUrl(category)}
+                  href={generateCategoryUrl(category)}
                   className="text-gray-600 hover:text-amber-600 block py-1 text-sm"
                 >
-                  {category} Watches
+                  {category}
                 </Link>
               </li>
             ))}
@@ -94,7 +99,7 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
         <div>
           <h4 className="font-semibold text-gray-900 mb-2">Browse Brands</h4>
           <div className="flex flex-wrap gap-1 mb-3">
-            {letters.map((letter, i) => (
+            {letters?.map((letter, i) => (
               <button
                 key={i}
                 onClick={() => handleLetterClickWithScroll(letter)}
@@ -115,7 +120,7 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
               {filteredBrands.map((brand, index) => (
                 <Link
                   key={index}
-                  href={`/brands/${brand.toLowerCase().replace(/\s+/g, "-")}`}
+                  href={generateBrandUrl(brand)}
                   className="hover:text-amber-600 cursor-pointer transition-colors truncate py-1"
                 >
                   {brand}
@@ -125,21 +130,49 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
           </div>
         </div>
 
-        {/* Shop All Watches Button - Mobile */}
+        {/* Shop All Handbags Button - Mobile */}
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="text-center">
             <h4 className="font-bold text-amber-800 text-lg mb-2">
-              Explore Our Watch Collection
+              Explore Our Handbag Collection
             </h4>
             <p className="text-amber-700 text-sm mb-3">
-              Discover premium timepieces for every occasion
+              Discover premium handbags for every occasion
             </p>
             <Link
-              href="/watches"
+              href="/leathers/bags"
               className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold text-sm transition-colors inline-block w-full"
             >
-              Shop All Watches
+              Shop All Handbags
             </Link>
+          </div>
+        </div>
+
+        {/* Featured Products */}
+        <div>
+          <h4 className="font-semibold text-gray-900 mb-2">Featured</h4>
+          <div className="space-y-3">
+            {data?.featuredProducts?.map((product) => (
+              <Link
+                key={product.id}
+                href={generateProductUrl(product.id)}
+                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50"
+              >
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 object-cover rounded"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{product.name}</p>
+                  <p className="text-amber-600 text-sm font-semibold">
+                    AED {product.price}
+                  </p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
@@ -153,28 +186,28 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
         {/* LEFT SIDEBAR - Categories */}
         <div className="lg:w-[20%] bg-gray-50 p-5 border-b lg:border-b-0 lg:border-r border-gray-200">
           <h3 className="font-semibold text-gray-900 mb-3 text-base lg:text-lg">
-            Watches By Style
+            Handbags By Style
           </h3>
           <ul className="space-y-2 text-gray-700 text-sm lg:text-base leading-relaxed">
             {categories.map((category, index) => (
               <li key={index}>
                 <Link
-                  href={getCategoryUrl(category)}
+                  href={generateCategoryUrl(category)}
                   className="hover:text-amber-600 transition-colors cursor-pointer py-1 lg:py-0 block"
                 >
-                  {category} Watches
+                  {category}
                 </Link>
               </li>
             ))}
           </ul>
 
-          {/* Shop All Watches Button - Desktop Sidebar */}
+          {/* Shop All Handbags Button - Desktop Sidebar */}
           <div className="mt-6 pt-4 border-t border-gray-200">
             <Link
-              href="/watches"
+              href="/leathers/bags"
               className="bg-amber-500 hover:bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold text-sm transition-colors w-full block"
             >
-              Shop All Watches
+              Shop All Handbags
             </Link>
           </div>
         </div>
@@ -224,11 +257,11 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
 
           {/* Brand List */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 lg:gap-y-2 lg:gap-x-6 text-sm text-gray-700 max-h-[200px] lg:max-h-[180px] overflow-y-auto pr-2 mb-4">
-            {filteredBrands.length > 0 ? (
-              filteredBrands.map((brand, index) => (
+            {filteredBrands?.length > 0 ? (
+              filteredBrands?.map((brand, index) => (
                 <Link
                   key={index}
-                  href={`/brands/${brand.toLowerCase().replace(/\s+/g, "-")}`}
+                  href={generateBrandUrl(brand)}
                   className="hover:text-amber-600 cursor-pointer transition-colors truncate py-1 lg:py-0"
                 >
                   {brand}
@@ -242,14 +275,14 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
           </div>
         </div>
 
-        {/* RIGHT SIDEBAR - Big Watch Image & Promotion */}
+        {/* RIGHT SIDEBAR - Big Handbag Image & Promotion */}
         <div className="lg:w-[25%] bg-gradient-to-b from-gray-50 to-white p-5 border-t lg:border-t-0 lg:border-l border-gray-200">
-          {/* Big Watch Image */}
+          {/* Big Handbag Image */}
           <div className="mb-6">
             <div className="relative group overflow-hidden rounded-lg">
               <Image
-                src={watchImage || "/api/placeholder/300/400"}
-                alt="Luxury Watch Collection"
+                src={handbagImage || "/api/placeholder/300/400"}
+                alt="Luxury Handbag Collection"
                 width={300}
                 height={400}
                 className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
@@ -257,7 +290,7 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                 <div className="text-white">
                   <h4 className="font-bold text-lg mb-1">Luxury Collection</h4>
-                  <p className="text-sm opacity-90">Premium Timepieces</p>
+                  <p className="text-sm opacity-90">Premium Handbags</p>
                 </div>
               </div>
             </div>
@@ -268,4 +301,4 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
   );
 };
 
-export default WatchMegaMenu;
+export default HandBagMegaMenu;

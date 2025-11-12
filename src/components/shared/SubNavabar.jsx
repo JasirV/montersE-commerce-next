@@ -14,22 +14,17 @@ import {
   FaRupeeSign,
 } from "react-icons/fa";
 import Link from "next/link";
-import Rolex from "../../assets/Rolex Submariner.jpg";
-import Omega from "../../assets/Omega Seamaster.jpg";
-import WatchCollection from "../../assets/Watch Collection.jpg";
-import LeatherWallet from "../../assets/Leather Wallet.jpg";
-import LeatherSale from "../../assets/Leather Sale.jpg";
-import LeatherBag from "../../assets/Leather Bag.jpg";
-import SilverCufflinks from "../../assets/Silver Cufflinks.jpg";
-import FountainPen from "../../assets/Fountain Pen.jpg";
-import AccessoryDeals from "../../assets/Accessory Deals.jpg";
 import { useCurrency } from "@/app/CurrencyContext";
 import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
 import axios from "axios";
 
-// Import the MegaMenu component
-import MegaMenu from "./MegaMenu";
+// Import the MegaMenu components
+import WatchMegaMenu from "./MegaMenu";
+import BrandsMegaMenu from "./BrandsMegaMenu";
+import HandBagMegaMenu from './HnadBagMegaMenu';
+import JewelryMegaMenu from './JewelryMegaMenu';
+import AccessoriesMegaMenu from './AccessoriesMegaMenu';
 
 const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currency, setCurrency, setRate } = useCurrency();
@@ -47,120 +42,14 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mega Menu Data
-  const megaMenuData = {
-    watches: {
-      categories: [
-        { name: "luxury Watches", path: "/watches/luxury" },
-        { name: "Sports Watches", path: "/watches/sports" },
-        { name: "Classic&Dress Watches", path: "/watches/classic" },
-        { name: "Vintage Watches", path: "/watches/Vintage" },
-        { name: "Limited Editions ", path: "/watches/LimitedEditions " },
-      ],
-      featuredProducts: [
-        {
-          id: 1,
-          name: "Rolex Submariner",
-          price: "8,500",
-          image: Rolex,
-          width: 80,
-          height: 80,
-        },
-        {
-          id: 2,
-          name: "Omega Seamaster",
-          price: "4,200",
-          image: Omega,
-          width: 80,
-          height: 80,
-        },
-      ],
-      promotion: {
-        title: "Watch Collection",
-        description: "Premium timepieces 30% off",
-        image: WatchCollection,
-        width: 300,
-        height: 128,
-        cta: "Shop Watches",
-      },
-    },
-    leathers: {
-      categories: [
-        { name: "Bags", path: "/leathers/bags" },
-        { name: "Wallets", path: "/leathers/wallets" },
-        { name: "Belts", path: "/leathers/belts" },
-        { name: "Briefcases", path: "/leathers/briefcases" },
-        { name: "Accessories", path: "/leathers/accessories" },
-      ],
-      featuredProducts: [
-        {
-          id: 3,
-          name: "Premium Leather Bag",
-          price: "299",
-          image: LeatherBag,
-          width: 80,
-          height: 80,
-        },
-        {
-          id: 4,
-          name: "Genuine Leather Wallet",
-          price: "89",
-          image: LeatherWallet,
-          width: 80,
-          height: 80,
-        },
-      ],
-      promotion: {
-        title: "Leather Sale",
-        description: "Genuine leather items 25% off",
-        image: LeatherSale,
-        width: 300,
-        height: 128,
-        cta: "Shop Leather",
-      },
-    },
-    accessories: {
-      categories: [
-        { name: "Pens", path: "/accessories/pens" },
-        { name: "Cufflinks", path: "/accessories/cufflinks" },
-        { name: "Bracelets", path: "/accessories/bracelets" },
-        { name: "Scarves", path: "/accessories/scarves" },
-        { name: "Umbrellas", path: "/accessories/umbrellas" },
-      ],
-      featuredProducts: [
-        {
-          id: 5,
-          name: "Premium Fountain Pen",
-          price: "199",
-          image: FountainPen,
-          width: 80,
-          height: 80,
-        },
-        {
-          id: 6,
-          name: "Silver Cufflinks",
-          price: "129",
-          image: SilverCufflinks,
-          width: 80,
-          height: 80,
-        },
-      ],
-      promotion: {
-        title: "Accessory Deals",
-        description: "Luxury accessories up to 40% off",
-        image: AccessoryDeals,
-        width: 300,
-        height: 128,
-        cta: "Shop Accessories",
-      },
-    },
-  };
-
-  // Menu Items
+  // Menu Items with mega menu data
   const menuItems = [
     {
       name: "SHOP BY BRANDS",
       path: "/shop",
+      hasMegaMenu: true,
+      megaMenuType: "brands",
+      megaMenuData: {} // Add your actual data here
     },
     {
       name: "EXCLUSIVE COLLECTION",
@@ -170,55 +59,29 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       name: "WATCHES",
       path: "/watches",
       hasMegaMenu: true,
-      megaMenuKey: "watches",
-      subMenu: [
-        { name: "Women", path: "/watches/women" },
-        { name: "Men/Unisex", path: "/watches/men-unisex" },
-      ],
+      megaMenuType: "watches",
+      megaMenuData: {} // Add your actual data here
     },
     {
-      name: "CLOCKS",
-      path: "/clocks",
-    },
-    {
-      name: "LEATHERS",
-      path: "/leathers",
+      name: "HANDBAGS",
+      path: "/handbags",
       hasMegaMenu: true,
-      megaMenuKey: "leathers",
-      subMenu: [
-        {
-          name: "Bags",
-          path: "/leathers/bags",
-          subMenu: [
-            { name: "Women", path: "/leathers/bags/women" },
-            { name: "Men/Unisex", path: "/leathers/bags/men-unisex" },
-          ],
-        },
-        { name: "Wallets", path: "/leathers/wallets" },
-        { name: "Belts", path: "/leathers/belts" },
-      ],
+      megaMenuType: "handbags",
+      megaMenuData: {} // Add your actual data here
     },
     {
       name: "ACCESSORIES",
       path: "/accessories",
       hasMegaMenu: true,
-      megaMenuKey: "accessories",
-      subMenu: [
-        { name: "Pens", path: "/accessories/pens" },
-        { name: "Cufflinks", path: "/accessories/cufflinks" },
-        { name: "Cards", path: "/accessories/cards" },
-        { name: "Scarfs", path: "/accessories/scarfs" },
-        { name: "Bracelets", path: "/accessories/bracelets" },
-        { name: "Umbrellas", path: "/accessories/umbrellas" },
-      ],
+      megaMenuType: "accessories",
+      megaMenuData: {} // Add your actual data here
     },
     {
       name: "JEWELRY",
       path: "/jewelry",
-      subMenu: [
-        { name: "Rings", path: "/jewelry/rings" },
-        { name: "Ear Rings", path: "/jewelry/ear-rings" },
-      ],
+      hasMegaMenu: true,
+      megaMenuType: "jewelry",
+      megaMenuData: {} // Add your actual data here
     },
     {
       name: "BRAND NEW",
@@ -348,6 +211,58 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
             {selectedCurrency.symbol}
           </span>
         );
+    }
+  };
+
+  // Function to render the appropriate mega menu for desktop
+  const renderMegaMenu = (item) => {
+    if (!item.hasMegaMenu || !item.megaMenuData) return null;
+
+    const megaMenuProps = {
+      data: item.megaMenuData,
+      isMobile: false,
+      onItemClick: closeMobileMenu
+    };
+
+    switch (item.megaMenuType) {
+      case "brands":
+        return <BrandsMegaMenu {...megaMenuProps} />;
+      case "watches":
+        return <WatchMegaMenu {...megaMenuProps} />;
+      case "handbags":
+        return <HandBagMegaMenu {...megaMenuProps} />;
+      case "jewelry":
+        return <JewelryMegaMenu {...megaMenuProps} />;
+      case "accessories":
+        return <AccessoriesMegaMenu {...megaMenuProps} />;
+      default:
+        return null;
+    }
+  };
+
+  // Function to render the appropriate mega menu for mobile
+  const renderMobileMegaMenu = (item) => {
+    if (!item.hasMegaMenu || !item.megaMenuData) return null;
+
+    const megaMenuProps = {
+      data: item.megaMenuData,
+      isMobile: true,
+      onItemClick: closeMobileMenu
+    };
+
+    switch (item.megaMenuType) {
+      case "brands":
+        return <BrandsMegaMenu {...megaMenuProps} />;
+      case "watches":
+        return <WatchMegaMenu {...megaMenuProps} />;
+      case "handbags":
+        return <HandBagMegaMenu {...megaMenuProps} />;
+      case "jewelry":
+        return <JewelryMegaMenu {...megaMenuProps} />;
+      case "accessories":
+        return <AccessoriesMegaMenu {...megaMenuProps} />;
+      default:
+        return null;
     }
   };
 
@@ -558,13 +473,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                     </Link>
 
                     {/* Mega Menu for specific items */}
-                    {item.hasMegaMenu && dropdown === item.name && (
-                      <MegaMenu
-                        data={megaMenuData[item.megaMenuKey]}
-                        megaMenuKey={item.megaMenuKey}
-                        isMobile={false}
-                      />
-                    )}
+                    {item.hasMegaMenu &&
+                      dropdown === item.name &&
+                      renderMegaMenu(item)}
 
                     {/* Regular Submenu for other items */}
                     {item.subMenu &&
@@ -732,15 +643,9 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               {/* Mobile Menu Content */}
               {(item.hasMegaMenu || item.subMenu) && dropdown === item.name && (
                 <div className="bg-white">
-                  {item.hasMegaMenu ? (
-                    <MegaMenu
-                      data={megaMenuData[item.megaMenuKey]}
-                      megaMenuKey={item.megaMenuKey}
-                      isMobile={true}
-                    />
-                  ) : (
-                    renderMobileSubMenu(item.subMenu, item.name)
-                  )}
+                  {item.hasMegaMenu
+                    ? renderMobileMegaMenu(item)
+                    : renderMobileSubMenu(item.subMenu, item.name)}
                 </div>
               )}
             </div>

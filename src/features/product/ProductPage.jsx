@@ -3,7 +3,7 @@
 import React, { useState, useMemo, Suspense, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import ProductCard from "./ProductCard";
-import FilterSidebar from "./ProductFilterSidebar";
+import FilterSidebar from "./ShopeBYFilterSidebar";
 import { fetchProduct } from "../../service/productService";
 import { FiFilter, FiX, FiChevronLeft, FiChevronRight, FiHome } from "react-icons/fi";
 

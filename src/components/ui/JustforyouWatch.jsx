@@ -224,7 +224,7 @@ const JustforyouWatch = () => {
         setError(null);
 
         const response = await axios.get(
-          "https://api.montres.ae/api/home/trusted"
+          "http://localhost:9000/api/home/trusted"
         );
 
         console.log("Response data.data:", response.data.data);
@@ -389,17 +389,8 @@ const JustforyouWatch = () => {
           </div>
         )}
 
-        {/* Loading Overlay */}
-        {loading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl xs:rounded-2xl p-6 xs:p-8 text-center mx-4">
-              <div className="animate-spin rounded-full h-10 xs:h-12 w-10 xs:w-12 border-b-2 border-[#1e518e] mx-auto mb-3 xs:mb-4"></div>
-              <p className="text-gray-700 font-semibold text-sm xs:text-base">
-                Loading Luxury Timepieces...
-              </p>
-            </div>
-          </div>
-        )}
+
+      
       </div>
     </section>
   );

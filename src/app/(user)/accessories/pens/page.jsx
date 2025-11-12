@@ -14,7 +14,7 @@ import React, {
   useState,
 } from "react";
 import { FiFilter } from "react-icons/fi";
-import FilterSidebar from "@/features/product/ProductFilterSidebar";
+import FilterSidebar from "@/features/product/ShopeBYFilterSidebar";
 
 const page = () => {
   const [crrentPage, setCurrentPage] = useState(1);

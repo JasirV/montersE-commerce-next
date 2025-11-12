@@ -1,45 +1,39 @@
 "use client";
-import ProductCard from "@/features/product/ProductCard";
-import { WatchBycategory } from "@/service/productService";
+
+import React, { useState, useMemo, Suspense, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import React, {
-  memo,
-  Suspense,
-  useEffect,
-  useMemo,
-  useState,
-  useRef,
-} from "react";
-import { FiFilter, FiX, FiChevronLeft, FiChevronRight, FiHome } from "react-icons/fi";
-import FilterSidebar from "@/features/product/ProductFilterSidebar";
+import ProductCard from "@/features/product/ProductCard";
+import WatchByFilterSidebar from "@/features/product/WatchByFilterSidebar";
+import { WatchBycategory } from "@/service/productService";
+import { FiFilter, FiX, FiChevronLeft, FiChevronRight, FiHome, FiGrid, FiList } from "react-icons/fi";
 
 const Page = () => {
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [sortOption, setSortOption] = useState("featured");
+  const [viewMode, setViewMode] = useState("grid");
+  const [brandSearch, setBrandSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [products, setProducts] = useState({ 
-    products: [], 
-    totalPages: 0, 
-    currentPage: 1, 
-    totalProducts: 0 
+  const [shouldApplyFilters, setShouldApplyFilters] = useState(false);
+  const [products, setProducts] = useState({
+    products: [],
+    totalPages: 0,
+    currentPage: 1,
+    totalProducts: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortOption, setSortOption] = useState("featured");
-  const { category, subcategory } = useParams();
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [brandSearch, setBrandSearch] = useState("");
-  const [shouldApplyFilters, setShouldApplyFilters] = useState(false);
-  
+
   // Ref for scroll target
   const productsSectionRef = useRef(null);
 
-  const productsPerPage = 20; // Increased for 5 columns
+  const { category, subcategory } = useParams();
+  const productsPerPage = 16; // 4 columns × 4 rows = 16 products per page
 
   const [activeFilters, setActiveFilters] = useState({
     category: [],
     price: [],
     brand: [],
     discount: [],
-    rating: [],
     availability: [],
     badges: [],
     gender: [],
@@ -48,10 +42,11 @@ const Page = () => {
   });
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
+    const loadProducts = async () => {
       try {
-        const { data, error, isLoading } = await WatchBycategory("luxury", {
+        setLoading(true);
+        setError(null);
+        const { data, error: fetchError } = await WatchBycategory("luxury", {
           page: currentPage,
           limit: productsPerPage,
           category: activeFilters.category,
@@ -63,34 +58,53 @@ const Page = () => {
           movement: activeFilters.movement,
           material: activeFilters.material
         });
-        if (data) {
-          setProducts(data || { 
-            products: [], 
-            totalPages: 0, 
-            currentPage: 1, 
-            totalProducts: 0 
-          });
-        } else {
-          setError(error);
+        
+        if (fetchError) {
+          throw new Error(fetchError);
         }
+
+        setProducts(
+          data || {
+            products: [],
+            totalPages: 0,
+            currentPage: 1,
+            totalProducts: 0,
+          }
+        );
       } catch (err) {
-        setError(err.message);
+        console.error("Error fetching products:", err);
+        setError("Failed to load luxury watches. Please try again later.");
       } finally {
         setLoading(false);
         setShouldApplyFilters(false);
       }
     };
-    fetchProducts();
+
+    loadProducts();
   }, [currentPage, shouldApplyFilters]);
 
-  // Scroll to top when page changes
+  // Smooth scroll to products section when page changes
   useEffect(() => {
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: 'smooth'
+      behavior: "smooth",
     });
   }, [currentPage]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const toggleFilter = (type, value) => {
+    setActiveFilters((prev) => {
+      const updated = prev[type].includes(value)
+        ? prev[type].filter((v) => v !== value)
+        : [...prev[type], value];
+      return { ...prev, [type]: updated };
+    });
+    setCurrentPage(1);
+  };
 
   const clearAllFilters = () => {
     setActiveFilters({
@@ -98,7 +112,6 @@ const Page = () => {
       price: [],
       brand: [],
       discount: [],
-      rating: [],
       availability: [],
       badges: [],
       gender: [],
@@ -109,39 +122,21 @@ const Page = () => {
     setShouldApplyFilters(true);
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const toggleFilter = (type, value) => {
-    setActiveFilters((prev) => {
-      const updated = prev[type]?.includes(value)
-        ? prev[type].filter((v) => v !== value)
-        : [...prev[type], value];
-      return { ...prev, [type]: updated };
-    });
-    setCurrentPage(1);
-  };
-
-  const applyFilters = () => {
-    setCurrentPage(1);
-    setShouldApplyFilters(true);
-  };
-
   const categoryFilteredProducts = useMemo(() => {
     if (loading) return [];
-    return products?.products?.filter((p) => {
-      const isCategoryMatch =
-        p.categories &&
-        p.categories.some((cat) =>
-          cat?.toLowerCase()?.includes(category?.toLowerCase())
-        );
+    return products.products.filter((p) => {
+      const categoriesArray = Array.isArray(p.categories)
+        ? p.categories
+        : [p.categories].filter(Boolean);
+
+      const isCategoryMatch = categoriesArray.some((cat) =>
+        cat?.toLowerCase()?.includes(category?.toLowerCase())
+      );
 
       if (subcategory) {
         return (
           isCategoryMatch &&
-          p.categories &&
-          p.categories.some((cat) =>
+          categoriesArray.some((cat) =>
             cat.toLowerCase().includes(subcategory.toLowerCase())
           )
         );
@@ -151,6 +146,7 @@ const Page = () => {
     });
   }, [category, subcategory, products, loading]);
 
+  // Filter products based on active filters
   const filteredProducts = useMemo(() => {
     return categoryFilteredProducts.filter((p) => {
       if (
@@ -165,11 +161,6 @@ const Page = () => {
       if (
         activeFilters.availability.includes("fastDelivery") &&
         !p.fastDelivery
-      )
-        return false;
-      if (
-        activeFilters.rating.length &&
-        p.rating < Math.min(...activeFilters.rating)
       )
         return false;
       if (
@@ -196,6 +187,7 @@ const Page = () => {
     });
   }, [categoryFilteredProducts, activeFilters]);
 
+  // Sort products
   const sortedProducts = useMemo(() => {
     if (!sortOption) return filteredProducts;
 
@@ -227,19 +219,27 @@ const Page = () => {
   // Calculate display range for pagination
   const getDisplayRange = () => {
     const startItem = (currentPage - 1) * productsPerPage + 1;
-    const endItem = Math.min(currentPage * productsPerPage, products.totalProducts || 0);
+    const endItem = Math.min(
+      currentPage * productsPerPage,
+      products.totalProducts || 0
+    );
     return { startItem, endItem };
   };
 
   const { startItem, endItem } = getDisplayRange();
 
+  const applyFilters = () => {
+    setCurrentPage(1);
+    setShouldApplyFilters(true);
+    setMobileFiltersOpen(false);
+  };
+
   return (
     <div className="bg-[#f8f5f2] min-h-screen">
-      <div className="container mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 py-4 xs:py-5 sm:py-6 md:py-8 lg:py-10">
-        
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Breadcrumbs */}
-        <nav className="flex mb-4 xs:mb-5 sm:mb-6" aria-label="Breadcrumb">
-          <ol className="inline-flex items-center space-x-2 text-sm xs:text-base">
+        <nav className="flex mb-6" aria-label="Breadcrumb">
+          <ol className="inline-flex items-center space-x-2 text-sm">
             <li className="inline-flex items-center">
               <FiHome className="w-4 h-4 mr-2 text-gray-600" />
               <a
@@ -264,26 +264,54 @@ const Page = () => {
           </ol>
         </nav>
 
-        {/* Mobile Filter Button */}
-        <button
-          type="button"
-          className="md:hidden flex items-center gap-2 mb-4 xs:mb-5 text-gray-700 text-sm xs:text-base px-4 py-2.5 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200"
-          onClick={() => setMobileFiltersOpen(true)}
-          aria-label="Open filters"
-        >
-          <FiFilter className="h-4 w-4 xs:h-5 xs:w-5" />
-          <span className="font-medium">Filters</span>
-          {Object.values(activeFilters).some(arr => arr.length > 0) && (
-            <span className="bg-[#8b6b4a] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {Object.values(activeFilters).flat().length}
-            </span>
-          )}
-        </button>
+        {/* Mobile Filter Button and View Toggle */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            type="button"
+            className="md:hidden flex items-center gap-2 text-gray-700 text-sm px-4 py-2.5 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200"
+            onClick={() => setMobileFiltersOpen(true)}
+            aria-label="Open filters"
+          >
+            <FiFilter className="h-4 w-4" />
+            <span className="font-medium">Filters</span>
+            {Object.values(activeFilters).some(arr => arr.length > 0) && (
+              <span className="bg-[#8b6b4a] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {Object.values(activeFilters).flat().length}
+              </span>
+            )}
+          </button>
 
-        <div className="flex flex-col md:flex-row gap-6 xs:gap-7 sm:gap-8">
+          {/* View Mode Toggle - Mobile Only */}
+          <div className="md:hidden flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === "grid" 
+                  ? "bg-[#8b6b4a] text-white" 
+                  : "text-gray-600 hover:text-[#8b6b4a]"
+              }`}
+              aria-label="Grid view"
+            >
+              <FiGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === "list" 
+                  ? "bg-[#8b6b4a] text-white" 
+                  : "text-gray-600 hover:text-[#8b6b4a]"
+              }`}
+              aria-label="List view"
+            >
+              <FiList className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar */}
           <aside className="md:w-72 lg:w-80">
-            <FilterSidebar
+            <WatchByFilterSidebar
               activeFilters={activeFilters}
               toggleFilter={toggleFilter}
               mobileFiltersOpen={mobileFiltersOpen}
@@ -300,43 +328,72 @@ const Page = () => {
           <main className="flex-1 min-w-0" ref={productsSectionRef}>
             {/* Header Section */}
             {!loading && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 xs:p-5 sm:p-6 mb-5 xs:mb-6 sm:mb-7">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 xs:gap-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                    <h1 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-0">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-0">
                       {category ? `${category.charAt(0).toUpperCase() + category.slice(1)} Luxury Watches` : 'Luxury Watches'}
                       {subcategory && ` / ${subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}`}
                     </h1>
-                    <p className="text-sm xs:text-base font-semibold text-gray-700 bg-gray-50 px-3 py-1 rounded-lg">
-                      {sortedProducts.length} {sortedProducts.length === 1 ? "luxury watch" : "luxury watches"} found
+                    <p className="text-sm font-semibold text-gray-700 bg-gray-50 px-3 py-1 rounded-lg">
+                      {sortedProducts.length} {sortedProducts.length === 1 ? "watch" : "watches"} found
                     </p>
                   </div>
                   
-                  {/* Enhanced Sort Filter */}
-                  <div className="flex items-center gap-3">
-                    <label
-                      htmlFor="sort"
-                      className="text-sm xs:text-base font-semibold text-gray-700 whitespace-nowrap"
-                    >
-                      Sort by:
-                    </label>
-                    <div className="relative flex-1 min-w-[180px]">
-                      <select
-                        id="sort"
-                        value={sortOption}
-                        onChange={(e) => setSortOption(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm xs:text-base focus:border-[#8b6b4a] focus:ring-2 focus:ring-[#8b6b4a] focus:ring-opacity-20 transition-all duration-200 appearance-none cursor-pointer shadow-sm hover:shadow-md"
-                        aria-label="Sort luxury watches"
+                  {/* Enhanced Controls */}
+                  <div className="flex items-center gap-4">
+                    {/* View Mode Toggle - Desktop */}
+                    <div className="hidden md:flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
+                      <button
+                        onClick={() => setViewMode("grid")}
+                        className={`p-2 rounded-md transition-all duration-200 ${
+                          viewMode === "grid" 
+                            ? "bg-[#8b6b4a] text-white" 
+                            : "text-gray-600 hover:text-[#8b6b4a]"
+                        }`}
+                        aria-label="Grid view"
                       >
-                        <option value="featured">Featured</option>
-                        <option value="priceLowHigh">Price: Low to High</option>
-                        <option value="priceHighLow">Price: High to Low</option>
-                        <option value="rating">Top Rated</option>
-                        <option value="discount">Best Discount</option>
-                        <option value="newest">Newest Arrivals</option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                        <FiChevronLeft className="h-4 w-4 text-gray-400 transform -rotate-90" />
+                        <FiGrid className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setViewMode("list")}
+                        className={`p-2 rounded-md transition-all duration-200 ${
+                          viewMode === "list" 
+                            ? "bg-[#8b6b4a] text-white" 
+                            : "text-gray-600 hover:text-[#8b6b4a]"
+                        }`}
+                        aria-label="List view"
+                      >
+                        <FiList className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Sort Filter */}
+                    <div className="flex items-center gap-3">
+                      <label
+                        htmlFor="sort"
+                        className="text-sm font-semibold text-gray-700 whitespace-nowrap"
+                      >
+                        Sort by:
+                      </label>
+                      <div className="relative flex-1 min-w-[180px]">
+                        <select
+                          id="sort"
+                          value={sortOption}
+                          onChange={(e) => setSortOption(e.target.value)}
+                          className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm focus:border-[#8b6b4a] focus:ring-2 focus:ring-[#8b6b4a] focus:ring-opacity-20 transition-all duration-200 appearance-none cursor-pointer shadow-sm hover:shadow-md"
+                          aria-label="Sort luxury watches"
+                        >
+                          <option value="featured">Featured</option>
+                          <option value="priceLowHigh">Price: Low to High</option>
+                          <option value="priceHighLow">Price: High to Low</option>
+                          <option value="rating">Top Rated</option>
+                          <option value="discount">Best Discount</option>
+                          <option value="newest">Newest Arrivals</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                          <FiChevronLeft className="h-4 w-4 text-gray-400 transform -rotate-90" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -380,34 +437,52 @@ const Page = () => {
 
             {/* Loading State */}
             {loading && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xs:gap-5 sm:gap-6">
+              <div className={`grid gap-4 sm:gap-6 ${
+                viewMode === "grid" 
+                  ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4" 
+                  : "grid-cols-1"
+              }`}>
                 {[...Array(productsPerPage)].map((_, i) => (
                   <div
                     key={i}
-                    className="bg-white rounded-xl p-4 animate-pulse shadow-sm border border-gray-100"
+                    className={`bg-white rounded-xl p-4 animate-pulse shadow-sm border border-gray-100 ${
+                      viewMode === "list" ? "flex gap-4" : ""
+                    }`}
                   >
-                    <div className="h-48 xs:h-52 bg-gray-200 rounded-lg mb-4"></div>
-                    <div className="h-4 bg-gray-200 rounded mb-3"></div>
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                    <div className={`bg-gray-200 rounded-lg ${
+                      viewMode === "list" ? "w-32 h-32 flex-shrink-0" : "h-48 mb-4"
+                    }`}></div>
+                    <div className={`${viewMode === "list" ? "flex-1" : ""}`}>
+                      <div className="h-4 bg-gray-200 rounded mb-3"></div>
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Products Grid - 5 columns on xl screens */}
+            {/* Products Grid */}
             {!loading && products.products?.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xs:gap-5 sm:gap-6">
+                <div className={`gap-4 sm:gap-6 ${
+                  viewMode === "grid" 
+                    ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4" 
+                    : "flex flex-col gap-6"
+                }`}>
                   <Suspense
                     fallback={
-                      <div className="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xs:gap-5 sm:gap-6">
+                      <div className={`gap-4 sm:gap-6 ${
+                        viewMode === "grid" 
+                          ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4" 
+                          : "flex flex-col gap-6"
+                      }`}>
                         {[...Array(productsPerPage)].map((_, i) => (
                           <div
                             key={i}
                             className="bg-white rounded-xl p-4 animate-pulse shadow-sm border border-gray-100"
                           >
-                            <div className="h-48 xs:h-52 bg-gray-200 rounded-lg mb-4"></div>
+                            <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
                             <div className="h-4 bg-gray-200 rounded mb-3"></div>
                             <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                             <div className="h-6 bg-gray-200 rounded w-1/2"></div>
@@ -417,7 +492,12 @@ const Page = () => {
                     }
                   >
                     {products.products.map((product) => (
-                      <ProductCard key={product._id} product={product} />
+                      <div key={product._id} className={viewMode === "list" ? "bg-white rounded-xl shadow-sm border border-gray-100" : ""}>
+                        <ProductCard 
+                          product={product} 
+                          viewMode={viewMode}
+                        />
+                      </div>
                     ))}
                   </Suspense>
                 </div>
@@ -431,20 +511,20 @@ const Page = () => {
               </>
             ) : (
               !loading && (
-                <div className="text-center py-12 xs:py-16 sm:py-20 bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
                   <div className="max-w-md mx-auto">
                     <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                       <FiX className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h3 className="text-xl xs:text-2xl font-bold text-gray-900 mb-2">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
                       No luxury watches found
                     </h3>
-                    <p className="text-gray-600 mb-6 text-sm xs:text-base">
-                      Try adjusting your search or filter criteria.
+                    <p className="text-gray-600 mb-6 text-sm">
+                      Try adjusting your search or filter criteria to find more luxury watches.
                     </p>
                     <button
                       onClick={clearAllFilters}
-                      className="px-6 py-3 text-sm xs:text-base font-semibold rounded-lg bg-[#8b6b4a] text-white hover:bg-[#6a4f36] transition-colors duration-200 shadow-sm hover:shadow-md"
+                      className="px-6 py-3 text-sm font-semibold rounded-lg bg-[#8b6b4a] text-white hover:bg-[#6a4f36] transition-colors duration-200 shadow-sm hover:shadow-md"
                       aria-label="Clear all filters"
                     >
                       Clear all filters
@@ -461,10 +541,10 @@ const Page = () => {
 };
 
 // Mobile Responsive Pagination Component
-const MobileResponsivePagination = memo(({ 
-  currentPage, 
-  totalPages, 
-  onPageChange 
+const MobileResponsivePagination = ({
+  currentPage,
+  totalPages,
+  onPageChange,
 }) => {
   const generatePageNumbers = () => {
     if (totalPages <= 7) {
@@ -475,7 +555,7 @@ const MobileResponsivePagination = memo(({
     pages.push(1);
 
     if (currentPage > 3) {
-      pages.push('...');
+      pages.push("...");
     }
 
     const start = Math.max(2, currentPage - 1);
@@ -486,7 +566,7 @@ const MobileResponsivePagination = memo(({
     }
 
     if (currentPage < totalPages - 2) {
-      pages.push('...');
+      pages.push("...");
     }
 
     if (totalPages > 1) {
@@ -503,7 +583,7 @@ const MobileResponsivePagination = memo(({
   const isLastPage = currentPage === totalPages;
 
   return (
-    <div className="mt-8 sm:mt-10">
+    <div className="mt-8">
       {/* Desktop Layout */}
       <div className="hidden sm:flex items-center justify-center space-x-2">
         {/* Previous Button */}
@@ -512,8 +592,8 @@ const MobileResponsivePagination = memo(({
           disabled={isFirstPage}
           className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all duration-200 ${
             isFirstPage
-              ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-              : 'text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md'
+              ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+              : "text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md"
           }`}
           aria-label="Previous page"
         >
@@ -524,18 +604,18 @@ const MobileResponsivePagination = memo(({
         <div className="flex items-center space-x-2">
           {pageNumbers.map((page, index) => (
             <React.Fragment key={index}>
-              {page === '...' ? (
+              {page === "..." ? (
                 <span className="px-3 py-1 text-sm text-gray-500">...</span>
               ) : (
                 <button
                   onClick={() => onPageChange(page)}
                   className={`flex items-center justify-center w-9 h-9 text-sm font-medium rounded-lg border transition-all duration-200 ${
                     currentPage === page
-                      ? 'bg-[#8b6b4a] text-white border-[#8b6b4a] shadow-md'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md'
+                      ? "bg-[#8b6b4a] text-white border-[#8b6b4a] shadow-md"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md"
                   }`}
                   aria-label={`Page ${page}`}
-                  aria-current={currentPage === page ? 'page' : undefined}
+                  aria-current={currentPage === page ? "page" : undefined}
                 >
                   {page}
                 </button>
@@ -550,8 +630,8 @@ const MobileResponsivePagination = memo(({
           disabled={isLastPage}
           className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all duration-200 ${
             isLastPage
-              ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-              : 'text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md'
+              ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+              : "text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md"
           }`}
           aria-label="Next page"
         >
@@ -568,8 +648,8 @@ const MobileResponsivePagination = memo(({
             disabled={isFirstPage}
             className={`flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-200 ${
               isFirstPage
-                ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-                : 'text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md'
+                ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                : "text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md"
             }`}
             aria-label="Previous page"
           >
@@ -594,8 +674,8 @@ const MobileResponsivePagination = memo(({
             disabled={isLastPage}
             className={`flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-200 ${
               isLastPage
-                ? 'text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200'
-                : 'text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md'
+                ? "text-gray-400 cursor-not-allowed bg-gray-100 border-gray-200"
+                : "text-gray-700 bg-white border-gray-300 hover:bg-[#8b6b4a] hover:text-white hover:border-[#8b6b4a] hover:shadow-md"
             }`}
             aria-label="Next page"
           >
@@ -609,18 +689,18 @@ const MobileResponsivePagination = memo(({
             <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide max-w-full px-3 py-2 bg-white rounded-xl shadow-sm border border-gray-200">
               {pageNumbers.map((page, index) => (
                 <React.Fragment key={index}>
-                  {page === '...' ? (
+                  {page === "..." ? (
                     <span className="px-3 py-1 text-base text-gray-500">...</span>
                   ) : (
                     <button
                       onClick={() => onPageChange(page)}
                       className={`flex items-center justify-center min-w-10 h-10 px-3 text-base font-medium rounded-lg border transition-all duration-200 ${
                         currentPage === page
-                          ? 'bg-[#8b6b4a] text-white border-[#8b6b4a] shadow-md'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md'
+                          ? "bg-[#8b6b4a] text-white border-[#8b6b4a] shadow-md"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md"
                       }`}
                       aria-label={`Page ${page}`}
-                      aria-current={currentPage === page ? 'page' : undefined}
+                      aria-current={currentPage === page ? "page" : undefined}
                     >
                       {page}
                     </button>
@@ -633,8 +713,6 @@ const MobileResponsivePagination = memo(({
       </div>
     </div>
   );
-});
-
-MobileResponsivePagination.displayName = "MobileResponsivePagination";
+};
 
 export default Page;

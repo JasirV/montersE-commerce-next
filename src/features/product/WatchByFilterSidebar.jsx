@@ -13,99 +13,193 @@ import {
   FiShoppingCart,
   FiUser, 
   FiClock, 
-  FiGrid 
+  FiGrid,
+  FiPlus,
+  FiMinus
 } from "react-icons/fi";
 import { 
   FaTimes, 
-  FaChevronDown, 
+  FaChevronDown,
+  FaSlidersH
 } from "react-icons/fa";
 
-// Updated filter data with new structure
+// Complete filter data structure
 const filtersData = [
   {
-    id: "category",
-    name: "Category",
+    id: "type",
+    name: "TYPE OF WATCH",
+    type: "checkbox",
     options: [
-      { value: "watch", label: "Watch" },
-      { value: "home_accessories", label: "Home Accessories" },
-      { value: "leather", label: "Leather" },
-      { value: "personal_accessories", label: "Personal Accessories" },
-      { value: "jewellery", label: "Jewellery" },
-      { value: "gold", label: "Gold" },
-    ],
-  },
-  {
-    id: "price",
-    name: "Price",
-    options: [
-      { value: "1-500", label: "AED 1 - AED 500" },
-      { value: "501-1000", label: "AED 501 - AED 1,000" },
-      { value: "1001-5000", label: "AED 1,001 - AED 5,000" },
-      { value: "5001-10000", label: "AED 5,001 - AED 10,000" },
-      { value: "10001-20000", label: "AED 10,001 - AED 20,000" },
-      { value: "20001-40000", label: "AED 20,001 - AED 40,000" },
-      { value: "40000-50000", label: "AED 40,000 - AED 50,000" },
+      { value: "wrist_watch", label: "Wrist Watch" },
+      { value: "pocket_watch", label: "Pocket Watch" },
+      { value: "clocks", label: "Clocks" },
+      { value: "stopwatch", label: "Stopwatch" },
+      { value: "smart_watch", label: "Smart Watch" },
     ],
   },
   {
     id: "brand",
-    name: "Brand",
+    name: "BRAND",
+    type: "search-checkbox",
     options: [
       { value: "rolex", label: "Rolex" },
-      { value: "longines", label: "Longines" },
-      { value: "tiffany_co", label: "Tiffany & Co" },
-      { value: "christian_dior", label: "Christian Dior" },
-      { value: "gucci", label: "Gucci" },
-      { value: "saint_laurent", label: "Saint Laurent" },
-      { value: "jean_d_eve", label: "Jean D'eve" },
       { value: "omega", label: "Omega" },
-      { value: "zenith", label: "Zenith" },
-    ],
-  },
-  {
-    id: "discount",
-    name: "Discount",
-    options: [
-      { value: "20", label: "20% or More" },
-      { value: "40", label: "40% or More" },
-      { value: "60", label: "60% or More" },
-      { value: "90", label: "90% or More" },
+      { value: "patek_philippe", label: "Patek Philippe" },
+      { value: "audemars_piguet", label: "Audemars Piguet" },
+      { value: "cartier", label: "Cartier" },
+      { value: "tag_heuer", label: "TAG Heuer" },
+      { value: "breitling", label: "Breitling" },
+      { value: "iwc", label: "IWC" },
+      { value: "hublot", label: "Hublot" },
+      { value: "longines", label: "Longines" },
+      { value: "tissot", label: "Tissot" },
+      { value: "seiko", label: "Seiko" },
+      { value: "casio", label: "Casio" },
+      { value: "fossil", label: "Fossil" },
+      { value: "apple", label: "Apple Watch" },
+      { value: "samsung", label: "Samsung Galaxy Watch" },
     ],
   },
   {
     id: "model",
-    name: "Model",
+    name: "MODEL",
+    type: "search-checkbox",
     options: [
-      { value: "deal_of_day", label: "Deal of the Day" },
-      { value: "in_demand", label: "In Demand" },
-      { value: "moglix_choice", label: "Moglix Choice" },
-      { value: "same_day_dispatch", label: "Same Day Dispatch" },
-      { value: "top_seller", label: "Top Seller" },
-    ],
-  },
-  {
-    id: "gender",
-    name: "Gender",
-    options: [
-      { value: "men/unisex", label: "Men/unisex" },
-      { value: "women", label: "Women" },
-     
+      { value: "submariner", label: "Submariner" },
+      { value: "daytona", label: "Daytona" },
+      { value: "datejust", label: "Datejust" },
+      { value: "speedmaster", label: "Speedmaster" },
+      { value: "seamaster", label: "Seamaster" },
+      { value: "nautilus", label: "Nautilus" },
+      { value: "royal_oak", label: "Royal Oak" },
+      { value: "santos", label: "Santos" },
+      { value: "tank", label: "Tank" },
+      { value: "carrera", label: "Carrera" },
     ],
   },
   {
     id: "reference_number",
-    name: "Reference Number",
+    name: "REFERENCE NUMBER",
+    type: "search-checkbox",
     options: [
-      { value: "ref_001", label: "REF-001" },
-      { value: "ref_002", label: "REF-002" },
-      { value: "ref_003", label: "REF-003" },
-      { value: "ref_004", label: "REF-004" },
-      { value: "ref_005", label: "REF-005" },
+      { value: "ref_124060", label: "124060" },
+      { value: "ref_126610", label: "126610" },
+      { value: "ref_116500", label: "116500" },
+      { value: "ref_126234", label: "126234" },
+      { value: "ref_311_30_42_30_01_005", label: "311.30.42.30.01.005" },
+      { value: "ref_210_22_42_20_03_001", label: "210.22.42.20.03.001" },
+      { value: "ref_5711_1a", label: "5711/1A" },
+      { value: "ref_15202st", label: "15202ST" },
+      { value: "ref_wssa0018", label: "WSSA0018" },
+      { value: "ref_wsta0029", label: "WSTA0029" },
     ],
   },
   {
+    id: "price",
+    name: "PRICE",
+    type: "price-range",
+    options: [
+      { value: "0-1000", label: "Under AED 1,000" },
+      { value: "1000-5000", label: "AED 1,000 - AED 5,000" },
+      { value: "5000-10000", label: "AED 5,000 - AED 10,000" },
+      { value: "10000-20000", label: "AED 10,000 - AED 20,000" },
+      { value: "20000-50000", label: "AED 20,000 - AED 50,000" },
+      { value: "50000-100000", label: "AED 50,000 - AED 100,000" },
+      { value: "100000-500000", label: "AED 100,000 - AED 500,000" },
+      { value: "500000-1000000", label: "AED 500,000 - AED 1,000,000" },
+      { value: "1000000+", label: "Over AED 1,000,000" },
+    ],
+    range: {
+      min: 0,
+      max: 1000000,
+      step: 1000,
+    }
+  },
+  {
+    id: "gender",
+    name: "GENDER",
+    type: "checkbox",
+    options: [
+      { value: "men_unisex", label: "Men / Unisex" },
+      { value: "women", label: "Women" },
+    ],
+  },
+  {
+    id: "condition",
+    name: "CONDITION",
+    type: "checkbox",
+    options: [
+      { value: "brand_new", label: "Brand New" },
+      { value: "unworn_like_new", label: "Unworn / Like New" },
+      { value: "pre_owned", label: "Pre-Owned" },
+      { value: "not_working_parts", label: "Not Working / For Parts" },
+    ],
+  },
+  {
+    id: "item_condition",
+    name: "ITEM CONDITION",
+    type: "checkbox",
+    options: [
+      { value: "excellent", label: "Excellent" },
+      { value: "good", label: "Good" },
+      { value: "fair", label: "Fair" },
+      { value: "poor", label: "Poor / Not Working / For Parts" },
+    ],
+  },
+  {
+    id: "scope_of_delivery",
+    name: "SCOPE OF DELIVERY",
+    type: "checkbox",
+    options: [
+      { value: "full_set", label: "Full Set (Watch + Original Box + Original Papers)" },
+      { value: "watch_with_papers", label: "Watch with Original Papers" },
+      { value: "watch_with_box", label: "Watch with Original Box" },
+      { value: "watch_only", label: "Watch Only" },
+      { value: "watch_with_safe_box", label: "Watch with Montres Safe Box" },
+    ],
+  },
+  {
+    id: "included_accessories",
+    name: "INCLUDED ACCESSORIES",
+    type: "checkbox",
+    options: [
+      { value: "extra_strap", label: "Extra Strap" },
+      { value: "original_strap", label: "Original Strap" },
+      { value: "warranty_card", label: "Warranty Card" },
+      { value: "certificate", label: "Certificate" },
+      { value: "travel_case", label: "Travel Case" },
+      { value: "bezel_protector", label: "Bezel Protector" },
+      { value: "cleaning_cloth", label: "Cleaning Cloth" },
+      { value: "other_accessories", label: "Other Accessories" },
+    ],
+  },
+  {
+    id: "availability",
+    name: "AVAILABILITY",
+    type: "checkbox",
+    options: [
+      { value: "in_stock", label: "In Stock" },
+      { value: "sold_out", label: "Sold Out" },
+    ],
+  },
+  {
+    id: "badges",
+    name: "BADGES",
+    type: "checkbox",
+    options: [
+      { value: "popular", label: "Popular" },
+      { value: "new_arrivals", label: "New Arrivals" },
+    
+    ],
+  },
+];
+
+// Advanced filters for modal
+const advancedFiltersData = [
+  {
     id: "dial_color",
     name: "Dial Color",
+    type: "checkbox",
     options: [
       { value: "black", label: "Black" },
       { value: "white", label: "White" },
@@ -114,11 +208,15 @@ const filtersData = [
       { value: "silver", label: "Silver" },
       { value: "gold", label: "Gold" },
       { value: "mother_of_pearl", label: "Mother of Pearl" },
+      { value: "grey", label: "Grey" },
+      { value: "brown", label: "Brown" },
+      { value: "champagne", label: "Champagne" },
     ],
   },
   {
     id: "strap_color",
     name: "Strap Color",
+    type: "checkbox",
     options: [
       { value: "black", label: "Black" },
       { value: "brown", label: "Brown" },
@@ -126,14 +224,68 @@ const filtersData = [
       { value: "blue", label: "Blue" },
       { value: "steel", label: "Steel" },
       { value: "gold", label: "Gold" },
-      { value: "leather", label: "Leather" },
+      { value: "silver", label: "Silver" },
+      { value: "green", label: "Green" },
+      { value: "red", label: "Red" },
     ],
   },
- 
   {
-    id: "availability",
-    name: "Availability",
-    options: [{ value: "in_stock", label: "Show in stock only" }],
+    id: "strap_material",
+    name: "Strap Material",
+    type: "checkbox",
+    options: [
+      { value: "stainless_steel", label: "Stainless Steel" },
+      { value: "leather", label: "Leather" },
+      { value: "rubber", label: "Rubber" },
+      { value: "ceramic", label: "Ceramic" },
+      { value: "titanium", label: "Titanium" },
+      { value: "gold", label: "Gold" },
+      { value: "fabric", label: "Fabric" },
+      { value: "silicone", label: "Silicone" },
+    ],
+  },
+  {
+    id: "case_size",
+    name: "Case Size (mm)",
+    type: "checkbox",
+    options: [
+      { value: "28-32", label: "28-32mm" },
+      { value: "33-36", label: "33-36mm" },
+      { value: "37-39", label: "37-39mm" },
+      { value: "40-42", label: "40-42mm" },
+      { value: "43-45", label: "43-45mm" },
+      { value: "46-48", label: "46-48mm" },
+      { value: "49+", label: "49mm and above" },
+    ],
+  },
+  {
+    id: "strap_size",
+    name: "Strap Size (mm)",
+    type: "checkbox",
+    options: [
+      { value: "14-16", label: "14-16mm" },
+      { value: "17-19", label: "17-19mm" },
+      { value: "20-22", label: "20-22mm" },
+      { value: "23-25", label: "23-25mm" },
+      { value: "26-28", label: "26-28mm" },
+    ],
+  },
+  {
+    id: "year_of_production",
+    name: "Year of Production",
+    type: "checkbox",
+    options: [
+      { value: "2020-2024", label: "2020-2024" },
+      { value: "2015-2019", label: "2015-2019" },
+      { value: "2010-2014", label: "2010-2014" },
+      { value: "2000-2009", label: "2000-2009" },
+      { value: "1990-1999", label: "1990-1999" },
+      { value: "1980-1989", label: "1980-1989" },
+      { value: "1970-1979", label: "1970-1979" },
+      { value: "1960-1969", label: "1960-1969" },
+      { value: "1950-1959", label: "1950-1959" },
+      { value: "pre_1950", label: "Pre-1950" },
+    ],
   },
 ];
 
@@ -155,7 +307,28 @@ const menuItemsData = [
 ];
 
 // Filter section component
-const FilterSection = ({ section, activeFilters, toggleFilter }) => {
+const FilterSection = ({ section, activeFilters, toggleFilter, searchTerms, setSearchTerms }) => {
+  const [localSearch, setLocalSearch] = useState("");
+  
+  const searchTerm = searchTerms?.[section.id] || "";
+  const setSearchTerm = (value) => {
+    setSearchTerms?.(prev => ({ ...prev, [section.id]: value }));
+  };
+
+  // Filter options based on search
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm) return section.options;
+    return section.options.filter(option => 
+      option.label.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [section.options, searchTerm]);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setLocalSearch(value);
+    setSearchTerm(value);
+  };
+
   return (
     <Disclosure as="div" className="border-b border-gray-200 py-4">
       {({ open }) => (
@@ -177,19 +350,70 @@ const FilterSection = ({ section, activeFilters, toggleFilter }) => {
           </h3>
           <Disclosure.Panel className="pt-4 pb-2 transition-all duration-300 ease-in-out">
             <div className="space-y-3">
-              {section.id === "brand" && (
+              {/* Search input for searchable sections */}
+              {(section.type === "search-checkbox") && (
                 <div className="relative mb-3">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                     <FiSearch className="h-4 xs:h-5 w-4 xs:w-5 text-gray-400" />
                   </div>
                   <input
                     type="text"
+                    value={localSearch}
+                    onChange={handleSearchChange}
                     className="block w-full rounded-lg border-0 py-1.5 xs:py-2 pl-8 xs:pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 text-xs xs:text-sm"
-                    placeholder="Search brands"
+                    placeholder={`Search ${section.name.toLowerCase()}...`}
                   />
                 </div>
               )}
-              {section.options.map((option, optionIdx) => (
+
+              {/* Price Range Slider */}
+              {section.type === "price-range" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">AED {activeFilters?.priceRange?.min || section.range.min}</span>
+                    <span className="text-sm text-gray-600">AED {activeFilters?.priceRange?.max || section.range.max}</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min={section.range.min}
+                      max={section.range.max}
+                      step={section.range.step}
+                      value={activeFilters?.priceRange?.max || section.range.max}
+                      onChange={(e) => toggleFilter?.('priceRange', { 
+                        min: activeFilters?.priceRange?.min || section.range.min, 
+                        max: parseInt(e.target.value) 
+                      })}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      value={activeFilters?.priceRange?.min || ''}
+                      onChange={(e) => toggleFilter?.('priceRange', { 
+                        min: parseInt(e.target.value) || section.range.min, 
+                        max: activeFilters?.priceRange?.max || section.range.max 
+                      })}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      value={activeFilters?.priceRange?.max || ''}
+                      onChange={(e) => toggleFilter?.('priceRange', { 
+                        min: activeFilters?.priceRange?.min || section.range.min, 
+                        max: parseInt(e.target.value) || section.range.max 
+                      })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Checkbox options */}
+              {filteredOptions.map((option, optionIdx) => (
                 <div key={option.value} className="flex items-center">
                   <input
                     id={`filter-${section.id}-${optionIdx}`}
@@ -209,6 +433,13 @@ const FilterSection = ({ section, activeFilters, toggleFilter }) => {
                   </label>
                 </div>
               ))}
+
+              {/* Show message if no results */}
+              {filteredOptions.length === 0 && (
+                <div className="text-center text-gray-500 text-xs py-2">
+                  No {section.name.toLowerCase()} found
+                </div>
+              )}
             </div>
           </Disclosure.Panel>
         </>
@@ -275,7 +506,75 @@ const MenuItem = ({ item, dropdown, setDropdown }) => {
   );
 };
 
-const FilterSidebar = ({ 
+// Advanced Filters Modal
+const AdvancedFiltersModal = ({ isOpen, onClose, activeFilters, toggleFilter }) => {
+  const [searchTerms, setSearchTerms] = useState({});
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center">
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white w-full max-w-2xl max-h-[90vh] md:max-h-[80vh] md:rounded-2xl shadow-xl transform transition-all">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h2 className="text-lg font-bold text-gray-900">Advanced Filters</h2>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+          >
+            <FaTimes size={20} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="overflow-y-auto p-4 space-y-4 max-h-[calc(90vh-120px)]">
+          {advancedFiltersData.map((section) => (
+            <FilterSection
+              key={section.id}
+              section={section}
+              activeFilters={activeFilters}
+              toggleFilter={toggleFilter}
+              searchTerms={searchTerms}
+              setSearchTerms={setSearchTerms}
+            />
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-4 sticky bottom-0 bg-white">
+          <div className="flex gap-3">
+            <button
+              className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+              onClick={() => {
+                // Clear only advanced filters
+                advancedFiltersData.forEach(section => {
+                  toggleFilter(section.id, null, true);
+                });
+              }}
+            >
+              Clear Advanced
+            </button>
+            <button
+              className="flex-1 px-4 py-3 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+              onClick={onClose}
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const WatchByFilterSidebar = ({ 
   activeFilters = {}, 
   toggleFilter, 
   mobileFiltersOpen, 
@@ -287,6 +586,8 @@ const FilterSidebar = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [tempFilters, setTempFilters] = useState(activeFilters);
+  const [searchTerms, setSearchTerms] = useState({});
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Memoize data
   const filters = useMemo(() => filtersData, []);
@@ -299,7 +600,8 @@ const FilterSidebar = ({
 
   // Check if there are any active filters
   const hasActiveFilters = useMemo(() => {
-    return Object.values(activeFilters).some(arr => arr && arr.length > 0);
+    return Object.values(activeFilters).some(arr => arr && arr.length > 0) || 
+           activeFilters.priceRange;
   }, [activeFilters]);
 
   // Check if temp filters are different from active filters
@@ -308,12 +610,29 @@ const FilterSidebar = ({
   }, [tempFilters, activeFilters]);
 
   // Handle filter changes in temp state
-  const handleTempFilterChange = (type, value) => {
+  const handleTempFilterChange = (type, value, clear = false) => {
     setTempFilters((prev) => {
+      if (clear) {
+        const newFilters = { ...prev };
+        delete newFilters[type];
+        return newFilters;
+      }
+
+      if (type === 'priceRange') {
+        return { ...prev, [type]: value };
+      }
+
       const currentValues = prev[type] || [];
       const updated = currentValues.includes(value)
         ? currentValues.filter((v) => v !== value)
         : [...currentValues, value];
+      
+      if (updated.length === 0) {
+        const newFilters = { ...prev };
+        delete newFilters[type];
+        return newFilters;
+      }
+      
       return { ...prev, [type]: updated };
     });
   };
@@ -322,6 +641,11 @@ const FilterSidebar = ({
   const handleApplyFilters = () => {
     // Update the actual active filters with temp filters
     Object.keys(tempFilters).forEach(type => {
+      if (type === 'priceRange') {
+        // Price range is handled differently
+        return;
+      }
+      
       const tempValues = tempFilters[type] || [];
       const activeValues = activeFilters[type] || [];
       
@@ -339,6 +663,13 @@ const FilterSidebar = ({
         }
       });
     });
+
+    // Handle price range
+    if (tempFilters.priceRange && (!activeFilters.priceRange || 
+        tempFilters.priceRange.min !== activeFilters.priceRange.min || 
+        tempFilters.priceRange.max !== activeFilters.priceRange.max)) {
+      toggleFilter('priceRange', tempFilters.priceRange);
+    }
     
     setMobileFiltersOpen(false);
   };
@@ -383,14 +714,18 @@ const FilterSidebar = ({
       if (e.key === "Escape" && isMenuOpen) {
         closeMenu();
       }
+      if (e.key === "Escape" && showAdvancedFilters) {
+        setShowAdvancedFilters(false);
+      }
     };
 
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [isMenuOpen]);
+  }, [isMenuOpen, showAdvancedFilters]);
 
   return (
     <>
+      {/* Mobile Bottom Navigation */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-30">
         <div className="flex justify-around items-center h-14 xs:h-16">
           {/* Shop */}
@@ -415,6 +750,15 @@ const FilterSidebar = ({
             )}
           </button>
 
+          {/* Advanced Filters */}
+          <button
+            onClick={() => setShowAdvancedFilters(true)}
+            className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200"
+          >
+            <FaSlidersH className="h-5 xs:h-6 w-5 xs:w-6" />
+            <span className="text-[10px] xs:text-xs mt-0.5">Advanced</span>
+          </button>
+
           {/* Waitlist */}
           <Link href="/wishlist">
             <button className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200">
@@ -430,18 +774,10 @@ const FilterSidebar = ({
               <span className="text-[10px] xs:text-xs mt-0.5">Cart</span>
             </button>
           </Link>
-
-          {/* My Account */}
-          <Link href="/UserProfile">
-            <button className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200">
-              <FiUser className="h-5 xs:h-6 w-5 xs:w-6" />
-              <span className="text-[10px] xs:text-xs mt-0.5">My Account</span>
-            </button>
-          </Link>
         </div>
       </div>
 
-      {/* Mobile sidebar overlay and sidebar */}
+      {/* Mobile Filters Sidebar */}
       <div
         className={`md:hidden fixed inset-0 z-50 ${
           mobileFiltersOpen ? "block" : "hidden"
@@ -481,6 +817,8 @@ const FilterSidebar = ({
                 section={section} 
                 activeFilters={tempFilters}
                 toggleFilter={handleTempFilterChange}
+                searchTerms={searchTerms}
+                setSearchTerms={setSearchTerms}
               />
             ))}
           </div>
@@ -502,6 +840,14 @@ const FilterSidebar = ({
           </div>
         </div>
       </div>
+
+      {/* Advanced Filters Modal */}
+      <AdvancedFiltersModal
+        isOpen={showAdvancedFilters}
+        onClose={() => setShowAdvancedFilters(false)}
+        activeFilters={activeFilters}
+        toggleFilter={toggleFilter}
+      />
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
@@ -569,12 +915,23 @@ const FilterSidebar = ({
               )}
             </div>
 
+            {/* Advanced Filters Button for Desktop */}
+            <button
+              onClick={() => setShowAdvancedFilters(true)}
+              className="w-full mb-4 px-4 py-3 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200 flex items-center justify-center gap-2"
+            >
+              <FaSlidersH size={16} />
+              Advanced Filters
+            </button>
+
             {filters.map((section) => (
               <FilterSection
                 key={section.id}
                 section={section}
                 activeFilters={activeFilters}
                 toggleFilter={toggleFilter}
+                searchTerms={searchTerms}
+                setSearchTerms={setSearchTerms}
               />
             ))}
 
@@ -596,4 +953,4 @@ const FilterSidebar = ({
   );
 };
 
-export default FilterSidebar;
+export default WatchByFilterSidebar;

@@ -11,7 +11,7 @@ import React, {
   useRef,
 } from "react";
 import { FiFilter, FiX, FiChevronLeft, FiChevronRight, FiHome } from "react-icons/fi";
-import FilterSidebar from "@/features/product/ProductFilterSidebar";
+import FilterSidebar from "../../../../features/product/WatchByFilterSidebar";
 
 const Page = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,7 +32,7 @@ const Page = () => {
   // Ref for scroll target
   const productsSectionRef = useRef(null);
 
-  const productsPerPage = 20; // Increased for 5 columns
+  const productsPerPage = 16; // Optimized for 4 columns
 
   const [activeFilters, setActiveFilters] = useState({
     category: [],
@@ -294,7 +294,7 @@ const Page = () => {
         <div className="flex flex-col md:flex-row gap-6 xs:gap-7 sm:gap-8">
           {/* Sidebar */}
           <aside className="md:w-72 lg:w-80">
-            {/* <FilterSidebar
+            <FilterSidebar
               activeFilters={activeFilters}
               toggleFilter={toggleFilter}
               mobileFiltersOpen={mobileFiltersOpen}
@@ -304,7 +304,7 @@ const Page = () => {
               setBrandSearch={setBrandSearch}
               clearAllFilters={clearAllFilters}
               applyFilters={applyFilters}
-            /> */}
+            />
           </aside>
 
           {/* Products Section with ref for scrolling */}
@@ -392,14 +392,14 @@ const Page = () => {
 
             {/* Loading State */}
             {loading && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xs:gap-5 sm:gap-6">
-                {[...Array(productsPerPage)].map((_, i) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 xs:gap-5 sm:gap-6">
+                {[...Array(8)].map((_, i) => (
                   <div
                     key={i}
-                    className="bg-white rounded-xl p-4 animate-pulse shadow-sm border border-gray-100"
+                    className="bg-white rounded-xl p-3 xs:p-4 animate-pulse shadow-sm border border-gray-100"
                   >
-                    <div className="h-48 xs:h-52 bg-gray-200 rounded-lg mb-4"></div>
-                    <div className="h-4 bg-gray-200 rounded mb-3"></div>
+                    <div className="aspect-[3/4] bg-gray-200 rounded-lg mb-3 xs:mb-4"></div>
+                    <div className="h-4 bg-gray-200 rounded mb-2 xs:mb-3"></div>
                     <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                     <div className="h-6 bg-gray-200 rounded w-1/2"></div>
                   </div>
@@ -407,20 +407,20 @@ const Page = () => {
               </div>
             )}
 
-            {/* Products Grid - 5 columns on xl screens */}
+            {/* Products Grid - Optimized for 4 columns on desktop */}
             {!loading && products.products?.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xs:gap-5 sm:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 lg:gap-6">
                   <Suspense
                     fallback={
-                      <div className="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xs:gap-5 sm:gap-6">
-                        {[...Array(productsPerPage)].map((_, i) => (
+                      <div className="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 lg:gap-6">
+                        {[...Array(8)].map((_, i) => (
                           <div
                             key={i}
-                            className="bg-white rounded-xl p-4 animate-pulse shadow-sm border border-gray-100"
+                            className="bg-white rounded-xl p-3 xs:p-4 animate-pulse shadow-sm border border-gray-100"
                           >
-                            <div className="h-48 xs:h-52 bg-gray-200 rounded-lg mb-4"></div>
-                            <div className="h-4 bg-gray-200 rounded mb-3"></div>
+                            <div className="aspect-[3/4] bg-gray-200 rounded-lg mb-3 xs:mb-4"></div>
+                            <div className="h-4 bg-gray-200 rounded mb-2 xs:mb-3"></div>
                             <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                             <div className="h-6 bg-gray-200 rounded w-1/2"></div>
                           </div>
@@ -429,7 +429,12 @@ const Page = () => {
                     }
                   >
                     {products.products.map((product) => (
-                      <ProductCard key={product._id} product={product} />
+                      <div key={product._id} className="flex justify-center">
+                        <ProductCard 
+                          product={product} 
+                          className="w-full max-w-[280px] mx-auto"
+                        />
+                      </div>
                     ))}
                   </Suspense>
                 </div>

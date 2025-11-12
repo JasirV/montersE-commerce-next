@@ -1,15 +1,15 @@
 "use client";
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
-import { FiHeart, FiClock, FiBell, FiStar } from "react-icons/fi";
+import { FiHeart, FiClock, FiBell, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
 import { useCurrency } from "@/app/CurrencyContext";
 import { GlobalContext } from "@/components/shared/context/GlobalContext";
 
-// Wishlist icon component
+// Mobile Optimized Wishlist Icon
 const WishlistIcon = ({
   isWishlisted,
   onClick,
@@ -19,7 +19,7 @@ const WishlistIcon = ({
   return (
     <button
       onClick={onClick}
-      className={`absolute top-2 left-2 rounded-full p-1.5 shadow-md hover:shadow-lg transition-all duration-200 ${
+      className={`absolute top-2 left-2 rounded-full p-2 shadow-md hover:shadow-lg transition-all duration-200 z-30 md:p-1.5 ${
         isSoldOut
           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
           : isWishlisted
@@ -30,26 +30,26 @@ const WishlistIcon = ({
       disabled={isSoldOut && !isWishlisted}
     >
       <FiHeart
-        className={`w-3 h-3 ${isWishlisted ? "fill-current" : ""}`}
+        className={`w-4 h-4 md:w-3 md:h-3 ${isWishlisted ? "fill-current" : ""}`}
       />
     </button>
   );
 };
 
-// Product Badge component
+// Mobile Optimized Product Badge
 const ProductBadge = ({ badge }) => {
   if (!badge) return null;
 
   return (
-    <div className="absolute top-2 right-2">
-      <span className="inline-block bg-red-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+    <div className="absolute top-2 right-2 z-30">
+      <span className="inline-block bg-red-600 text-white text-xs font-medium px-2 py-1 rounded-full md:text-xs">
         {badge}
       </span>
     </div>
   );
 };
 
-// Rating component
+// Mobile Optimized Rating
 const RatingDisplay = ({ rating }) => {
   if (!rating) return null;
 
@@ -59,7 +59,7 @@ const RatingDisplay = ({ rating }) => {
         {[...Array(5)].map((_, i) => (
           <FiStar
             key={i}
-            className={`w-3 h-3 ${
+            className={`w-3 h-3 md:w-3 md:h-3 ${
               i < Math.floor(rating)
                 ? "text-yellow-400 fill-current"
                 : "text-gray-300"
@@ -67,12 +67,12 @@ const RatingDisplay = ({ rating }) => {
           />
         ))}
       </div>
-      <span className="text-xs text-gray-600">({rating})</span>
+      <span className="text-xs text-gray-600 md:text-xs">({rating})</span>
     </div>
   );
 };
 
-// Price display component
+// Mobile Optimized Price Display
 const PriceDisplay = ({ price, mrp, discount, isSoldOut = false }) => {
   const { currency, rate } = useCurrency();
 
@@ -86,18 +86,18 @@ const PriceDisplay = ({ price, mrp, discount, isSoldOut = false }) => {
 
   return (
     <div className="mt-2">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         {price ? (
-          <span className="text-lg font-bold text-[#1a1a1a]">
+          <span className="text-lg font-bold text-[#1a1a1a] md:text-lg">
             {currency}
             {formatPrice(price)}
           </span>
         ) : (
-          <span className="text-sm text-gray-500">Price not available</span>
+          <span className="text-sm text-gray-500 md:text-sm">Price not available</span>
         )}
 
         {mrp && (
-          <span className="text-sm text-gray-500 line-through">
+          <span className="text-sm text-gray-500 line-through md:text-sm">
             {currency}
             {formatPrice(mrp)}
           </span>
@@ -105,12 +105,12 @@ const PriceDisplay = ({ price, mrp, discount, isSoldOut = false }) => {
       </div>
       
       {discount && (
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded">
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded md:text-xs">
             {discount}% off
           </span>
           {mrp && price && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 md:text-xs">
               You save {currency}
               {formatPrice(parseFloat(mrp) - parseFloat(price))}
             </span>
@@ -121,21 +121,21 @@ const PriceDisplay = ({ price, mrp, discount, isSoldOut = false }) => {
   );
 };
 
-// Stock status indicator
+// Mobile Optimized Stock Status
 const StockStatus = ({ isSoldOut, stockQuantity }) => {
   if (isSoldOut) {
     return (
-      <div className="flex items-center justify-center gap-1 mt-2 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200">
-        <FiClock className="w-3 h-3 text-red-500" />
-        <span className="text-xs text-red-600 font-medium">Out of Stock</span>
+      <div className="flex items-center justify-center gap-1 mt-2 px-3 py-2 bg-red-50 rounded-lg border border-red-200 md:py-1.5">
+        <FiClock className="w-3 h-3 text-red-500 md:w-3 md:h-3" />
+        <span className="text-xs text-red-600 font-medium md:text-xs">Out of Stock</span>
       </div>
     );
   }
 
   if (stockQuantity && stockQuantity < 10) {
     return (
-      <div className="flex items-center justify-center gap-1 mt-2 px-3 py-1.5 bg-orange-50 rounded-lg border border-orange-200">
-        <span className="text-xs text-orange-600 font-medium">
+      <div className="flex items-center justify-center gap-1 mt-2 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200 md:py-1.5">
+        <span className="text-xs text-orange-600 font-medium md:text-xs">
           Only {stockQuantity} left!
         </span>
       </div>
@@ -145,10 +145,179 @@ const StockStatus = ({ isSoldOut, stockQuantity }) => {
   return null;
 };
 
+// Mobile Optimized Image Slider
+const ImageSlider = ({ 
+  images, 
+  productName, 
+  isSoldOut, 
+  onImageClick,
+  autoSlideInterval = 5000 
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false); // Disable auto-play on mobile by default
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Minimum swipe distance for mobile
+  const minSwipeDistance = 30;
+
+  const handleTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      handleNext();
+    } else if (isRightSwipe) {
+      handlePrev();
+    }
+  };
+
+  const handlePrev = useCallback(() => {
+    setIsAutoPlaying(false);
+    setCurrentIndex((prevIndex) =>
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+    );
+  }, [images.length]);
+
+  const handleNext = useCallback(() => {
+    setIsAutoPlaying(false);
+    setCurrentIndex((prevIndex) =>
+      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+    );
+  }, [images.length]);
+
+  // Auto slide only on desktop
+  useEffect(() => {
+    if (!isAutoPlaying || images.length <= 1) return;
+    
+    // Disable auto-slide on mobile
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) return;
+
+    const slideInterval = setInterval(handleNext, autoSlideInterval);
+    return () => clearInterval(slideInterval);
+  }, [isAutoPlaying, images.length, autoSlideInterval, handleNext]);
+
+  // Enable auto-play only on desktop
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    setIsAutoPlaying(!isMobile);
+  }, []);
+
+  if (!images || images.length === 0) {
+    return (
+      <div 
+        className="relative w-full pb-[100%] bg-gray-100 flex items-center justify-center cursor-pointer"
+        onClick={onImageClick}
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-gray-400 text-sm">No Image</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="relative w-full pb-[100%] overflow-hidden cursor-pointer bg-gray-50 group"
+      onClick={onImageClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Image Slider Container */}
+      <div
+        className="absolute top-0 left-0 w-full h-full flex transition-transform duration-500 ease-out"
+        style={{
+          transform: `translateX(-${currentIndex * 100}%)`,
+        }}
+      >
+        {images.map((img, index) => (
+          <div 
+            key={index} 
+            className="relative w-full h-full flex-shrink-0"
+          >
+            <Image
+              src={img}
+              alt={`${productName} - Image ${index + 1}`}
+              fill
+              className={`object-cover object-center transition-transform duration-300 ${
+                isSoldOut ? "grayscale opacity-70" : "group-hover:scale-105"
+              }`}
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+              priority={index === 0}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Navigation Arrows - Hidden on mobile, show on hover for desktop */}
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrev();
+            }}
+            className="absolute left-1 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 transition-all duration-200 md:opacity-0 md:group-hover:opacity-100 z-20 md:left-2 md:p-1.5"
+            aria-label="Previous image"
+          >
+            <FiChevronLeft className="w-4 h-4 md:w-4 md:h-4" />
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleNext();
+            }}
+            className="absolute right-1 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 transition-all duration-200 md:opacity-0 md:group-hover:opacity-100 z-20 md:right-2 md:p-1.5"
+            aria-label="Next image"
+          >
+            <FiChevronRight className="w-4 h-4 md:w-4 md:h-4" />
+          </button>
+        </>
+      )}
+
+      {/* Dot Indicators - Always visible on mobile */}
+      {images.length > 1 && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+          {images.map((_, index) => (
+            <button
+              key={index}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAutoPlaying(false);
+                setCurrentIndex(index);
+              }}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                index === currentIndex
+                  ? "bg-white scale-125"
+                  : "bg-white bg-opacity-50 hover:bg-opacity-70"
+              }`}
+              aria-label={`Go to image ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProductCard = ({ product }) => {
   const { decrementWishlist, incrementWishlist, user } =
     useContext(GlobalContext);
-  const imageUrl = product?.images?.[0]?.url;
   const router = useRouter();
   const { currency, rate } = useCurrency();
   const [isWishlisted, setIsWishlisted] = useState(
@@ -159,6 +328,14 @@ const ProductCard = ({ product }) => {
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [email, setEmail] = useState("");
   const [isSubscribing, setIsSubscribing] = useState(false);
+
+  // Prepare images array
+  const images = useCallback(() => {
+    if (product?.images?.length > 0) {
+      return product.images.map(img => img.url || img);
+    }
+    return ['/placeholder-image.jpg'];
+  }, [product?.images]);
 
   // Check if product is sold out
   const isSoldOut = product.stockQuantity === 0;
@@ -213,9 +390,8 @@ const ProductCard = ({ product }) => {
     }
   }, [user]);
 
-  // Handle click on product card (image, name, price, etc.)
+  // Handle click on product card
   const handleProductClick = () => {
-    console.log("Navigating to product:", product);
     router.push(`/ProductDetailPage/${product._id}`);
   };
 
@@ -234,8 +410,8 @@ const ProductCard = ({ product }) => {
         Toastify({
           text: "Please login to get restock notifications",
           duration: 4000,
-          gravity: "top",
-          position: "right",
+          gravity: "bottom", // Better for mobile
+          position: "center",
           close: true,
           style: {
             background: "linear-gradient(to right, #ff5f6d, #ffc371)",
@@ -248,8 +424,8 @@ const ProductCard = ({ product }) => {
         Toastify({
           text: "Please enter your email address",
           duration: 4000,
-          gravity: "top",
-          position: "right",
+          gravity: "bottom",
+          position: "center",
           close: true,
           style: {
             background: "linear-gradient(to right, #ff5f6d, #ffc371)",
@@ -277,12 +453,10 @@ const ProductCard = ({ product }) => {
       if (response.data.success) {
         setShowRestockModal(false);
         Toastify({
-          text:
-            response.data.message ||
-            "Successfully subscribed for restock notifications!",
+          text: response.data.message || "Successfully subscribed for restock notifications!",
           duration: 4000,
-          gravity: "top",
-          position: "right",
+          gravity: "bottom",
+          position: "center",
           close: true,
           style: {
             background: "linear-gradient(to right, #059669, #047857)",
@@ -302,8 +476,8 @@ const ProductCard = ({ product }) => {
       Toastify({
         text: errorMessage,
         duration: 4000,
-        gravity: "top",
-        position: "right",
+        gravity: "bottom",
+        position: "center",
         close: true,
         style: {
           background: "linear-gradient(to right, #dc2626, #b91c1c)",
@@ -321,7 +495,7 @@ const ProductCard = ({ product }) => {
     setShowRestockModal(true);
   };
 
-  // Toggle Wishlist (Add/Remove)
+  // Toggle Wishlist
   const handleToggleWishlist = async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -330,8 +504,8 @@ const ProductCard = ({ product }) => {
       Toastify({
         text: "Cannot add sold out product to wishlist",
         duration: 4000,
-        gravity: "top",
-        position: "right",
+        gravity: "bottom",
+        position: "center",
         close: true,
         style: {
           background: "linear-gradient(to right, #ff5f6d, #ffc371)",
@@ -346,8 +520,8 @@ const ProductCard = ({ product }) => {
         Toastify({
           text: "Please login to manage wishlist",
           duration: 4000,
-          gravity: "top",
-          position: "right",
+          gravity: "bottom",
+          position: "center",
           close: true,
           style: {
             background: "linear-gradient(to right, #ff5f6d, #ffc371)",
@@ -360,8 +534,8 @@ const ProductCard = ({ product }) => {
         Toastify({
           text: "No wishlist available",
           duration: 4000,
-          gravity: "top",
-          position: "right",
+          gravity: "bottom",
+          position: "center",
           close: true,
           style: {
             background: "linear-gradient(to right, #ff5f6d, #ffc371)",
@@ -416,38 +590,28 @@ const ProductCard = ({ product }) => {
     }
   };
 
-  return (
+ return (
     <>
       <div
-        className={`group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition duration-300 transform hover:-translate-y-1 relative border border-gray-100 ${
+        className={`group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative border border-gray-100 w-full h-full flex flex-col ${
           isSoldOut ? "opacity-80" : ""
         }`}
       >
         {/* Sponsored Badge */}
         {product.sponsored && (
-          <div className="absolute top-0 left-0 z-10 bg-blue-600 text-white text-xs px-2 py-1 rounded-br-lg">
+          <div className="absolute top-0 left-0 z-30 bg-blue-600 text-white text-xs px-2 py-1 rounded-br-xl">
             Sponsored
           </div>
         )}
 
-        {/* Clickable Image Container */}
-        <div
-          className="relative w-full pb-[100%] overflow-hidden cursor-pointer bg-gray-50"
-          onClick={handleProductClick}
-        >
-          {imageUrl && (
-            <Image
-              src={imageUrl}
-              alt={product?.name || "Product image"}
-              unoptimized
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-              className={`absolute top-0 left-0 w-full h-full object-cover object-center transition duration-500 ${
-                isSoldOut ? "grayscale opacity-70" : "group-hover:scale-105"
-              }`}
-              priority={false}
-            />
-          )}
+        {/* Image Container - Fixed Aspect Ratio */}
+        <div className="relative flex-shrink-0">
+          <ImageSlider
+            images={images()}
+            productName={product.name}
+            isSoldOut={isSoldOut}
+            onImageClick={handleProductClick}
+          />
 
           {/* Wishlist Icon */}
           <WishlistIcon
@@ -457,80 +621,80 @@ const ProductCard = ({ product }) => {
             className={isLoading ? "opacity-50 cursor-not-allowed" : ""}
           />
 
-          {/* Show regular badge only if product is not sold out and has a badge */}
+          {/* Product Badge */}
           {!isSoldOut && product.badge && (
             <ProductBadge badge={product.badge} />
           )}
         </div>
 
-        {/* Clickable Content Area */}
-        <div
-          className="p-4 cursor-pointer"
+        {/* Content Area - Flexible */}
+        <div 
+          className="flex-1 p-3 cursor-pointer flex flex-col justify-between md:p-4"
           onClick={handleProductClick}
         >
-          {/* Brand Name */}
-          {product.brand && (
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              {product.brand}
-            </div>
-          )}
+          <div className="flex-1">
+            {/* Brand */}
+            {product.brand && (
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1 line-clamp-1">
+                {product.brand}
+              </div>
+            )}
 
-          {/* Product Name */}
-          <h3 className="text-sm font-semibold text-[#1a1a1a] line-clamp-2 min-h-[2.5rem] mb-2">
-            {product.name}
-          </h3>
+            {/* Product Name */}
+            <h3 className="text-sm font-semibold text-[#1a1a1a] line-clamp-2 min-h-[2.5rem] mb-2 leading-tight">
+              {product.name}
+            </h3>
 
-          {/* Rating */}
-          <RatingDisplay rating={product.rating} />
+            {/* Rating */}
+            <RatingDisplay rating={product.rating} />
 
-          {/* Price Display */}
-          <PriceDisplay
-            price={product.salePrice}
-            mrp={product.regularPrice}
-            discount={discountPercentage}
-            isSoldOut={isSoldOut}
-          />
+            {/* Price */}
+            <PriceDisplay
+              price={product.salePrice}
+              mrp={product.regularPrice}
+              discount={discountPercentage}
+              isSoldOut={isSoldOut}
+            />
 
-          {/* Assured Badge */}
-          {product.assured && (
-            <div className="flex items-center gap-1 mt-2">
-              <span className="text-blue-600 text-xs font-medium bg-blue-50 px-2 py-0.5 rounded">
-                💬 Assured
-              </span>
-            </div>
-          )}
+            {/* Assured Badge */}
+            {product.assured && (
+              <div className="flex items-center gap-1 mt-2">
+                <span className="text-blue-600 text-xs font-medium bg-blue-50 px-2 py-1 rounded">
+                  💬 Assured
+                </span>
+              </div>
+            )}
 
-          {/* Stock Status */}
-          <StockStatus
-            isSoldOut={isSoldOut}
-            stockQuantity={product.stockQuantity}
-          />
+            {/* Stock Status */}
+            <StockStatus
+              isSoldOut={isSoldOut}
+              stockQuantity={product.stockQuantity}
+            />
 
-          {/* Bank Offer */}
-          {product.bankOffer && (
-            <div className="mt-2 text-xs text-green-600 font-medium">
-              {product.bankOffer}
-            </div>
-          )}
+            {/* Bank Offer */}
+            {product.bankOffer && (
+              <div className="mt-2 text-xs text-green-600 font-medium line-clamp-1">
+                {product.bankOffer}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Buttons Section - Not clickable for navigation */}
-        <div className="px-4 pb-4">
+        {/* Bottom Buttons - Fixed Height */}
+        <div className="flex-shrink-0 px-3 pb-3 md:px-4 md:pb-4">
           <div className="flex gap-2">
             {isSoldOut ? (
               <button
                 onClick={handleRestockNotify}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2 rounded text-sm transition-colors duration-200 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center gap-1"
-                aria-label={`Notify when ${product.name} is back in stock`}
+                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 min-h-[44px]"
               >
-                <FiBell className="w-4 h-4" />
-                Notify Me
+                <FiBell className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">Notify Me</span>
               </button>
             ) : (
               <button
                 onClick={handleViewDetails}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2 rounded text-sm transition-colors duration-200 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label={`View details for ${product.name}`}
+                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200  active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                 disabled={isLoading}
               >
                 View Details
@@ -540,43 +704,48 @@ const ProductCard = ({ product }) => {
         </div>
       </div>
 
-      {/* Restock Notification Modal */}
+      {/* Mobile Optimized Restock Modal */}
       {showRestockModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Get Restock Notification
-            </h3>
-            <p className="text-gray-600 mb-4">
-              We'll send you an email when <strong>{product.name}</strong> is
-              back in stock.
-            </p>
-            <div className="space-y-3">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 p-4 md:items-center md:p-4">
+          <div className="bg-white rounded-t-2xl rounded-b-none w-full max-w-md mx-auto shadow-2xl md:rounded-2xl md:max-w-sm">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">
+                Get Restock Notification
+              </h3>
+              <p className="text-gray-600 mb-4 text-sm text-center">
+                We'll notify you when <strong className="text-blue-600">{product.name}</strong> is back in stock.
+              </p>
+
               <input
                 type="email"
-                placeholder="Enter your email"
+                placeholder="Enter your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 text-sm"
                 disabled={isSubscribing}
               />
-              <div className="flex gap-2">
+
+              <div className="flex gap-3">
                 <button
                   onClick={() => setShowRestockModal(false)}
-                  className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-3 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 font-medium text-sm"
                   disabled={isSubscribing}
                 >
                   Cancel
                 </button>
+
                 <button
                   onClick={handleRestockSubscribe}
                   disabled={isSubscribing}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-md hover:from-blue-700 hover:to-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 font-medium text-sm"
                 >
                   {isSubscribing ? "Subscribing..." : "Notify Me"}
                 </button>
               </div>
             </div>
+            
+            {/* Safe area for mobile */}
+            <div className="h-2 bg-transparent md:hidden"></div>
           </div>
         </div>
       )}

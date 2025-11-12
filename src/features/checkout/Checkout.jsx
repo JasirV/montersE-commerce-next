@@ -99,6 +99,8 @@ const CheckoutPage = () => {
     }
   }, [selectedAddress]);
 
+
+
   const calculateTotals = async () => {
     try {
       setLoading(true);
@@ -212,7 +214,9 @@ const CheckoutPage = () => {
     }
   };
 
-  // Fixed fallback calculation with safe product access
+
+
+  // Fixed fallback calculation - VAT is 0 since already included
   const calculateTotalsFallback = () => {
     const validItems = checkoutProducts.filter(isValidProduct);
     
@@ -226,9 +230,8 @@ const CheckoutPage = () => {
     // Calculate shipping based on subtotal (free over 100 AED as example)
     const shippingValue = subtotalValue > 100 ? 0 : 20;
 
-    // Calculate VAT (5% as example for UAE)
-    const vatRate = 0.05;
-    const vatValue = subtotalValue * vatRate;
+    // VAT is 0 since already included in product prices
+    const vatValue = 0;
 
     const finalTotalValue = subtotalValue + shippingValue + vatValue;
 
@@ -386,7 +389,7 @@ const CheckoutPage = () => {
       console.log("Creating order with data:", orderData);
 
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/order/`,
+        `${process.env.NEXT_PUBLIC_BASEURL}/order/create`,
         orderData,
         {
           headers: {
@@ -1024,14 +1027,9 @@ const CheckoutPage = () => {
                         >
                           View Terms
                         </button>
-                        {/* Modal is rendered outside of button */}
-                        <ShippingTermsModal
-                          isOpen={isShippingModalOpen}
-                          onClose={() => setIsShippingModalOpen(false)}
-                        />
                       </div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-gray-600">VAT</span>
+                        <span className="text-gray-600">VAT (Included)</span>
                         <span className="font-medium">
                           {vatAmount.toFixed(2)} AED
                         </span>
@@ -1076,39 +1074,38 @@ const CheckoutPage = () => {
                     </div>
                   </label>
 
-            {/* Tabby Payment Option */}
-<label
-  className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-    paymentMethod === "tabby"
-      ? "border-blue-500 bg-blue-50"
-      : "border-gray-200"
-  }`}
->
-  <div className="flex items-center flex-1">
-    <input
-      type="radio"
-      name="payment"
-      value="tabby"
-      checked={paymentMethod === "tabby"}
-      onChange={() => setPaymentMethod("tabby")}
-      className="mr-3 text-blue-600"
-    />
-    <div>
-      <p className="font-medium">Pay later with Tabby</p>
-      <p className="text-sm text-gray-600 mt-1">Use any card.</p>
-    </div>
-  </div>
+                  {/* Tabby Payment Option */}
+                  <label
+                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                      paymentMethod === "tabby"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center flex-1">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value="tabby"
+                        checked={paymentMethod === "tabby"}
+                        onChange={() => setPaymentMethod("tabby")}
+                        className="mr-3 text-blue-600"
+                      />
+                      <div>
+                        <p className="font-medium">Pay later with Tabby</p>
+                        <p className="text-sm text-gray-600 mt-1">Use any card.</p>
+                      </div>
+                    </div>
 
-  <div className="w-12 h-8 relative ml-4">
-    <Image
-      src={TabbyLogo} // Add Tabby logo in your public folder
-      alt="Tabby"
-      fill
-      className="object-contain"
-    />
-  </div>
-</label>
-
+                    <div className="w-12 h-8 relative ml-4">
+                      <Image
+                        src={TabbyLogo}
+                        alt="Tabby"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </label>
                 </div>
 
                 {/* Privacy Policy */}
@@ -1175,6 +1172,11 @@ const CheckoutPage = () => {
           </div>
         )}
 
+        {/* Shipping Terms Modal */}
+        <ShippingTermsModal
+          isOpen={isShippingModalOpen}
+          onClose={() => setIsShippingModalOpen(false)}
+        />
       </div>
     </div>
   );
