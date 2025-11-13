@@ -222,7 +222,7 @@ const Navbar = ({ onSignUpClick }) => {
     { term: "Luxury Watches for Men", path: "/search?q=luxury+watches+men" },
   ];
 
-  return (
+return (
     <>
       <header
         className={`w-full bg-white sticky top-0 z-50 transition-all duration-300 ${
@@ -248,7 +248,9 @@ const Navbar = ({ onSignUpClick }) => {
                 <Image
                   src={logo}
                   alt="Montres"
-                  className="h-14 w-auto md:h-14 md:w-auto" // increased size
+                  className="h-10 w-auto md:h-12 lg:h-14" // Responsive height scaling
+                  width={160} // Control width for desktop
+                  height={56} // Control height for desktop
                   priority
                 />
               </Link>
@@ -495,10 +497,12 @@ const Navbar = ({ onSignUpClick }) => {
                     className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                   >
                     {user.picture ? (
-                      <img
+                      <Image
                         src={user.picture}
                         alt={user.name || "User"}
                         className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                        width={32}
+                        height={32}
                       />
                     ) : (
                       <div className="w-8 h-8 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] rounded-full flex items-center justify-center text-white text-sm font-medium">
@@ -588,10 +592,12 @@ const Navbar = ({ onSignUpClick }) => {
                         className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 border-b last:border-b-0"
                       >
                         {product.images?.[0]?.url ? (
-                          <img
+                          <Image
                             src={product.images[0].url}
                             alt={product.name}
-                            className="w-10 h-10 object-cover rounded"
+                            width={40}
+                            height={40}
+                            className="object-cover rounded"
                           />
                         ) : (
                           <div className="w-10 h-10 bg-gray-200 rounded" />

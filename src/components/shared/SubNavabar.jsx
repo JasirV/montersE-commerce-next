@@ -21,7 +21,7 @@ import axios from "axios";
 
 // Import the MegaMenu components
 import WatchMegaMenu from "./MegaMenu";
-import BrandsMegaMenu from "./BrandsMegaMenu";
+import ShopeBrandsMegaMenu from "./BrandsMegaMenu";
 import HandBagMegaMenu from './HnadBagMegaMenu';
 import JewelryMegaMenu from './JewelryMegaMenu';
 import AccessoriesMegaMenu from './AccessoriesMegaMenu';
@@ -226,7 +226,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
     switch (item.megaMenuType) {
       case "brands":
-        return <BrandsMegaMenu {...megaMenuProps} />;
+        return <ShopeBrandsMegaMenu {...megaMenuProps} />;
       case "watches":
         return <WatchMegaMenu {...megaMenuProps} />;
       case "handbags":
@@ -252,7 +252,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
     switch (item.megaMenuType) {
       case "brands":
-        return <BrandsMegaMenu {...megaMenuProps} />;
+        return <ShopeBrandsMegaMenu {...megaMenuProps} />;
       case "watches":
         return <WatchMegaMenu {...megaMenuProps} />;
       case "handbags":
