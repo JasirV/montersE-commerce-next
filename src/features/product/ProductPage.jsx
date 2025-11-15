@@ -28,6 +28,7 @@ const ProductPage = () => {
     category: [],
     brand: [],
     model: [],
+    referenceNumber: [], // ✅ Added referenceNumber
     gender: [],
     availability: [],
     condition: [],
@@ -45,6 +46,11 @@ const ProductPage = () => {
   // Extract models from products for filter
   const models = useMemo(() => {
     return [...new Set(products.products.map(p => p.model).filter(Boolean))];
+  }, [products.products]);
+
+  // ✅ Extract reference numbers from products for filter
+  const referenceNumbers = useMemo(() => {
+    return [...new Set(products.products.map(p => p.referenceNumber).filter(Boolean))];
   }, [products.products]);
 
   // CORRECTED: Build API parameters from active filters
@@ -168,6 +174,7 @@ const ProductPage = () => {
       category: [],
       brand: [],
       model: [],
+      referenceNumber: [], // ✅ Added referenceNumber
       gender: [],
       availability: [],
       condition: [],
@@ -269,6 +276,7 @@ const ProductPage = () => {
               setMobileFiltersOpen={setMobileFiltersOpen}
               brands={brands}
               models={models}
+              referenceNumbers={referenceNumbers} // ✅ Pass referenceNumbers
               clearAllFilters={clearAllFilters}
               applyFilters={applyFilters}
             />
@@ -460,7 +468,7 @@ const ProductPage = () => {
   );
 };
 
-// Mobile Responsive Pagination Component
+// Mobile Responsive Pagination Component (keep the same as before)
 const MobileResponsivePagination = ({
   currentPage,
   totalPages,

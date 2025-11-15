@@ -1,4 +1,6 @@
 import api from "../api/axiosIntespter";
+
+
 export async function fetchProduct({
   id,
   page = 1,
@@ -14,9 +16,25 @@ export async function fetchProduct({
   availability = [],
   featured,
   search,
-  sortBy,
+  sortBy = "newest",
   minPrice,
   maxPrice,
+  referenceNumber = [],
+  // Advanced filters
+  type = [],
+  dialColor = [],
+  caseColor = [],
+  strapColor = [],
+  strapMaterial = [],
+  caseMaterial = [],
+  caseSize = [],
+  strapSize = [],
+  yearOfProduction = [],
+  waterResistance = [],
+  movement = [],
+  complications = [],
+  crystal = [],
+  includedAccessories = [],
 } = {}) {
   try {
     let endpoint = "products";
@@ -30,33 +48,38 @@ export async function fetchProduct({
     }
 
     // Handle array parameters
-    if (category && category.length > 0) {
-      category.forEach(cat => params.append("category", cat));
-    }
-    if (brand && brand.length > 0) {
-      brand.forEach(br => params.append("brand", br));
-    }
-    if (model && model.length > 0) {
-      model.forEach(m => params.append("model", m));
-    }
-    if (gender && gender.length > 0) {
-      gender.forEach(g => params.append("gender", g));
-    }
-    if (badges && badges.length > 0) {
-      badges.forEach(badge => params.append("badges", badge));
-    }
-    if (condition && condition.length > 0) {
-      condition.forEach(cond => params.append("condition", cond));
-    }
-    if (itemCondition && itemCondition.length > 0) {
-      itemCondition.forEach(itemCond => params.append("itemCondition", itemCond));
-    }
-    if (scopeOfDelivery && scopeOfDelivery.length > 0) {
-      scopeOfDelivery.forEach(scope => params.append("scopeOfDelivery", scope));
-    }
-    if (availability && availability.length > 0) {
-      availability.forEach(avail => params.append("availability", avail));
-    }
+    const arrayParams = {
+      category,
+      brand,
+      model,
+      gender,
+      condition,
+      itemCondition,
+      scopeOfDelivery,
+      badges,
+      availability,
+      referenceNumber,
+      type,
+      dialColor,
+      caseColor,
+      strapColor,
+      strapMaterial,
+      caseMaterial,
+      caseSize,
+      strapSize,
+      yearOfProduction,
+      waterResistance,
+      movement,
+      complications,
+      crystal,
+      includedAccessories,
+    };
+
+    Object.entries(arrayParams).forEach(([key, value]) => {
+      if (value && value.length > 0) {
+        value.forEach(item => params.append(key, item));
+      }
+    });
 
     // Price range
     if (minPrice !== undefined) params.append("minPrice", minPrice);
@@ -75,6 +98,7 @@ export async function fetchProduct({
   }
 }
 
+// Other existing functions remain the same...
 export async function LandingPageProduct() {
   try {
     const response = await api.get("products/home");
@@ -93,6 +117,8 @@ export async function WatchBycategory(category, { page = 1, limit = 15 } = {}) {
     return { data: null, error, isLoading: false };
   }
 }
+
+// ... other existing functions
 export async function LeatherBycategory(
   category,
   { page = 1, limit = 15 } = {}

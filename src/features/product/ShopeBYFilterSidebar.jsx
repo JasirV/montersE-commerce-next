@@ -15,6 +15,7 @@ const ShopeBYFilterSidebar = ({
   setMobileFiltersOpen,
   brands = [],
   models = [],
+  referenceNumbers = [], // ✅ Added referenceNumbers prop
   clearAllFilters,
   applyFilters
 }) => {
@@ -29,6 +30,7 @@ const ShopeBYFilterSidebar = ({
       category: activeFilters.category || [],
       brand: activeFilters.brand || [],
       model: activeFilters.model || [],
+      referenceNumber: activeFilters.referenceNumber || [], // ✅ Added referenceNumber
       gender: activeFilters.gender || [],
       availability: activeFilters.availability || [],
       condition: activeFilters.condition || [],
@@ -149,6 +151,7 @@ const ShopeBYFilterSidebar = ({
       category: [],
       brand: [],
       model: [],
+      referenceNumber: [], // ✅ Added referenceNumber
       gender: [],
       availability: [],
       condition: [],
@@ -431,6 +434,16 @@ const ShopeBYFilterSidebar = ({
               items={models}
               filterType="model"
               sectionKey="models"
+            />
+          </FilterSection>
+
+          {/* REFERENCE NUMBERS - NEW SECTION */}
+          <FilterSection title="REFERENCE NUMBERS">
+            <SearchableList 
+              placeholder="Search reference numbers..." 
+              items={referenceNumbers}
+              filterType="referenceNumber"
+              sectionKey="referenceNumbers"
             />
           </FilterSection>
 
