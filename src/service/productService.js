@@ -2,37 +2,71 @@ import api from "../api/axiosIntespter";
 export async function fetchProduct({
   id,
   page = 1,
-  limit = 15,
-  category,
-  brand,
-  price,
-  availability,
-  badges,
-  gender,
+  limit = 16,
+  category = [],
+  brand = [],
+  model = [],
+  gender = [],
+  condition = [],
+  itemCondition = [],
+  scopeOfDelivery = [],
+  badges = [],
+  availability = [],
   featured,
   search,
-  sortBy, // ✅ optional sorting param
+  sortBy,
+  minPrice,
+  maxPrice,
 } = {}) {
   try {
     let endpoint = "products";
     const params = new URLSearchParams();
 
-    // ✅ Add query params dynamically
-    if (id) params.append("id", id);
-    else {
+    if (id) {
+      params.append("id", id);
+    } else {
       params.append("page", page);
       params.append("limit", limit);
     }
 
-    if (category) params.append("category", category);  
-    if (brand) params.append("brand", brand);
-    if (price) params.append("price", price);
-    if (availability) params.append("availability", availability);
-    if (badges) params.append("badges", badges);
-    if (gender) params.append("gender", gender);
+    // Handle array parameters
+    if (category && category.length > 0) {
+      category.forEach(cat => params.append("category", cat));
+    }
+    if (brand && brand.length > 0) {
+      brand.forEach(br => params.append("brand", br));
+    }
+    if (model && model.length > 0) {
+      model.forEach(m => params.append("model", m));
+    }
+    if (gender && gender.length > 0) {
+      gender.forEach(g => params.append("gender", g));
+    }
+    if (badges && badges.length > 0) {
+      badges.forEach(badge => params.append("badges", badge));
+    }
+    if (condition && condition.length > 0) {
+      condition.forEach(cond => params.append("condition", cond));
+    }
+    if (itemCondition && itemCondition.length > 0) {
+      itemCondition.forEach(itemCond => params.append("itemCondition", itemCond));
+    }
+    if (scopeOfDelivery && scopeOfDelivery.length > 0) {
+      scopeOfDelivery.forEach(scope => params.append("scopeOfDelivery", scope));
+    }
+    if (availability && availability.length > 0) {
+      availability.forEach(avail => params.append("availability", avail));
+    }
+
+    // Price range
+    if (minPrice !== undefined) params.append("minPrice", minPrice);
+    if (maxPrice !== undefined) params.append("maxPrice", maxPrice);
+
+    // Other params
     if (featured !== undefined) params.append("featured", featured);
     if (search) params.append("search", search);
     if (sortBy) params.append("sortBy", sortBy);
+
     const response = await api.get(`${endpoint}?${params.toString()}`);
     return { data: response.data, error: null, isLoading: false };
   } catch (error) {
@@ -40,9 +74,6 @@ export async function fetchProduct({
     return { data: null, error, isLoading: false };
   }
 }
-
-
-
 
 export async function LandingPageProduct() {
   try {

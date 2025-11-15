@@ -1,59 +1,66 @@
-import React, { useState, useEffect } from 'react';
+"use client";
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ChevronDownIcon, 
   ChevronUpIcon, 
   XMarkIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  XCircleIcon
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 
-const ShopeBYFilterSidebar = () => {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [openSections, setOpenSections] = useState(new Set());
-  const [priceRange, setPriceRange] = useState([0, 10000]);
-  const [selectedFilters, setSelectedFilters] = useState({
-    categories: [],
-    brands: [],
-    models: [],
-    referenceNumbers: [],
-    gender: '',
-    availability: [],
-    condition: [],
-    itemCondition: [],
-    discount: [],
-    scopeOfDelivery: [],
-    badges: [],
-    luxuryBrands: [],
-    luxuryModels: [],
-    luxuryReferenceNumbers: []
-  });
+const ShopeBYFilterSidebar = ({ 
+  activeFilters = {}, 
+  toggleFilter, 
+  mobileFiltersOpen, 
+  setMobileFiltersOpen,
+  brands = [],
+  models = [],
+  clearAllFilters,
+  applyFilters
+}) => {
+  const [openSections, setOpenSections] = useState(new Set(['SHOP BY CATEGORY']));
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 50000 });
+  const [localFilters, setLocalFilters] = useState({});
+  const [searchTerms, setSearchTerms] = useState({});
 
-  // Dummy data
-  const dummyData = {
-    brands: [
-      'Rolex', 'Omega', 'Tag Heuer', 'Seiko', 'Casio', 
-      'Tissot', 'Fossil', 'Michael Kors', 'Apple', 'Samsung'
+  // Initialize local filters from activeFilters
+  useEffect(() => {
+    setLocalFilters({
+      category: activeFilters.category || [],
+      brand: activeFilters.brand || [],
+      model: activeFilters.model || [],
+      gender: activeFilters.gender || [],
+      availability: activeFilters.availability || [],
+      condition: activeFilters.condition || [],
+      itemCondition: activeFilters.itemCondition || [],
+      scopeOfDelivery: activeFilters.scopeOfDelivery || [],
+      badges: activeFilters.badges || [],
+    });
+    
+    // Initialize price range from active filters
+    if (activeFilters.priceRange) {
+      setPriceRange(activeFilters.priceRange);
+    } else {
+      setPriceRange({ min: 0, max: 50000 });
+    }
+  }, [activeFilters]);
+
+  // Filter options based on your API structure
+  const filterOptions = useMemo(() => ({
+    categories: ['Watch', 'Jewellery', 'Gold', 'Accessories', 'Leather Goods', 'Leather Bags'],
+    gender: ['Men/Unisex', 'Women'],
+    availability: ['In Stock', 'Sold Out'],
+    condition: ['Brand New', 'Unworn / Like New', 'Pre-Owned', 'Excellent', 'Not Working / For Parts'],
+    itemCondition: ['Excellent', 'Good', 'Fair', 'Poor / Not Working / For Parts'],
+    scopeOfDelivery: [
+      'Full Set (Watch + Original Box + Original Papers)',
+      'Watch with Original Papers',
+      'Watch with Original Box',
+      'Watch with Montres Safe Box',
+      'Watch Only'
     ],
-    models: [
-      'Submariner', 'Speedmaster', 'Aquaracer', 'Presage', 'G-Shock',
-      'Le Locle', 'Grant', 'Watch Series', 'Galaxy Watch', 'Datejust'
-    ],
-    referenceNumbers: [
-      'REF-001', 'REF-002', 'REF-003', 'REF-004', 'REF-005',
-      'REF-006', 'REF-007', 'REF-008', 'REF-009', 'REF-010'
-    ],
-    luxuryBrands: [
-      'Patek Philippe', 'Audemars Piguet', 'Richard Mille', 
-      'Vacheron Constantin', 'Jaeger-LeCoultre', 'Breguet'
-    ],
-    luxuryModels: [
-      'Nautilus', 'Royal Oak', 'RM 011', 'Overseas', 'Reverso', 'Classique'
-    ],
-    luxuryReferenceNumbers: [
-      'LUX-001', 'LUX-002', 'LUX-003', 'LUX-004', 'LUX-005'
-    ]
-  };
+    badges: ['Popular', 'New Arrivals']
+  }), []);
 
   const toggleSection = (section) => {
     const newOpenSections = new Set(openSections);
@@ -65,55 +72,96 @@ const ShopeBYFilterSidebar = () => {
     setOpenSections(newOpenSections);
   };
 
-  const handleFilterChange = (filterType, value, isChecked = null) => {
-    setSelectedFilters(prev => {
-      if (filterType === 'gender') {
-        return { ...prev, gender: isChecked ? value : '' };
-      }
+  const handleLocalFilterChange = (filterType, value, isChecked) => {
+    setLocalFilters(prev => {
+      const currentValues = prev[filterType] || [];
       
-      if (typeof isChecked === 'boolean') {
-        if (isChecked) {
-          return {
-            ...prev,
-            [filterType]: [...prev[filterType], value]
-          };
-        } else {
-          return {
-            ...prev,
-            [filterType]: prev[filterType].filter(item => item !== value)
-          };
-        }
+      let newValues;
+      if (isChecked) {
+        newValues = [...currentValues, value];
+      } else {
+        newValues = currentValues.filter(item => item !== value);
       }
-      
-      return prev;
+
+      return {
+        ...prev,
+        [filterType]: newValues
+      };
     });
   };
 
-  const clearAllFilters = () => {
-    setSelectedFilters({
-      categories: [],
-      brands: [],
-      models: [],
-      referenceNumbers: [],
-      gender: '',
+  const handlePriceRangeChange = (type, value) => {
+    setPriceRange(prev => ({
+      ...prev,
+      [type]: parseInt(value) || 0
+    }));
+  };
+
+  const handleSearchChange = (section, value) => {
+    setSearchTerms(prev => ({
+      ...prev,
+      [section]: value
+    }));
+  };
+
+  const getSearchResults = (items, section) => {
+    const searchTerm = searchTerms[section] || '';
+    if (!searchTerm) return items;
+    
+    return items.filter(item => 
+      item.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  // CORRECTED: Proper apply filters function
+  const handleApplyFilters = () => {
+    console.log('Applying filters from sidebar:', {
+      localFilters,
+      priceRange
+    });
+
+    // Clear all existing filters first
+    if (clearAllFilters) {
+      clearAllFilters();
+    }
+
+    // Apply all local filters
+    Object.keys(localFilters).forEach(key => {
+      localFilters[key].forEach(value => {
+        toggleFilter(key, value);
+      });
+    });
+
+    // Apply price range if not default
+    if (priceRange.min > 0 || priceRange.max < 50000) {
+      toggleFilter('priceRange', priceRange);
+    }
+
+    if (applyFilters) {
+      applyFilters();
+    }
+    setMobileFiltersOpen(false);
+  };
+
+  // CORRECTED: Better clear all function
+  const handleClearAll = () => {
+    setLocalFilters({
+      category: [],
+      brand: [],
+      model: [],
+      gender: [],
       availability: [],
       condition: [],
       itemCondition: [],
-      discount: [],
       scopeOfDelivery: [],
       badges: [],
-      luxuryBrands: [],
-      luxuryModels: [],
-      luxuryReferenceNumbers: []
     });
-    setPriceRange([0, 10000]);
-  };
-
-  const removeFilter = (filterType, value) => {
-    setSelectedFilters(prev => ({
-      ...prev,
-      [filterType]: prev[filterType].filter(item => item !== value)
-    }));
+    setPriceRange({ min: 0, max: 50000 });
+    setSearchTerms({});
+    
+    if (clearAllFilters) {
+      clearAllFilters();
+    }
   };
 
   const FilterSection = ({ 
@@ -152,21 +200,10 @@ const ShopeBYFilterSidebar = () => {
     placeholder, 
     items, 
     filterType,
-    selectedItems = [] 
+    sectionKey
   }) => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [localItems, setLocalItems] = useState(items);
-
-    useEffect(() => {
-      if (searchTerm) {
-        const filtered = items.filter(item => 
-          item.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setLocalItems(filtered);
-      } else {
-        setLocalItems(items);
-      }
-    }, [searchTerm, items]);
+    const filteredItems = getSearchResults(items, sectionKey);
+    const selectedItems = localFilters[filterType] || [];
 
     return (
       <div className="space-y-2">
@@ -175,18 +212,18 @@ const ShopeBYFilterSidebar = () => {
           <input
             type="text"
             placeholder={placeholder}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchTerms[sectionKey] || ''}
+            onChange={(e) => handleSearchChange(sectionKey, e.target.value)}
             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         <div className="max-h-48 overflow-y-auto space-y-2">
-          {localItems.map((item, index) => (
+          {filteredItems.map((item, index) => (
             <label key={index} className="flex items-center space-x-2 cursor-pointer group">
               <input
                 type="checkbox"
                 checked={selectedItems.includes(item)}
-                onChange={(e) => handleFilterChange(filterType, item, e.target.checked)}
+                onChange={(e) => handleLocalFilterChange(filterType, item, e.target.checked)}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <span className="text-sm text-gray-700 group-hover:text-gray-900">
@@ -194,7 +231,7 @@ const ShopeBYFilterSidebar = () => {
               </span>
             </label>
           ))}
-          {localItems.length === 0 && (
+          {filteredItems.length === 0 && (
             <div className="text-center text-gray-500 text-sm py-2">
               No items found
             </div>
@@ -204,69 +241,68 @@ const ShopeBYFilterSidebar = () => {
     );
   };
 
-  const PriceRangeChart = () => {
-    const pricePoints = [0, 1000, 2500, 5000, 7500, 10000];
-    const priceData = [20, 40, 60, 80, 100, 80, 60, 40, 30, 50];
-
+  const PriceRangeFilter = () => {
     return (
-      <div className="space-y-3">
-        {/* Price Range Slider */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700">Price Range</span>
-            <span className="text-sm font-semibold text-blue-600">
-              {priceRange[0].toLocaleString()} AED - {priceRange[1].toLocaleString()} AED
-            </span>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-600">AED {priceRange.min.toLocaleString()}</span>
+          <span className="text-sm text-gray-600">AED {priceRange.max.toLocaleString()}</span>
+        </div>
+        
+        {/* Range Slider */}
+        <div className="relative py-4">
+          <div className="relative h-2 bg-gray-200 rounded-lg">
+            <div 
+              className="absolute h-2 bg-blue-600 rounded-lg"
+              style={{
+                left: `${(priceRange.min / 50000) * 100}%`,
+                right: `${100 - (priceRange.max / 50000) * 100}%`
+              }}
+            ></div>
           </div>
-          
-          <div className="relative">
-            <input
-              type="range"
-              min="0"
-              max="10000"
-              step="100"
-              value={priceRange[0]}
-              onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
-              className="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer pointer-events-none"
-            />
-            <input
-              type="range"
-              min="0"
-              max="10000"
-              step="100"
-              value={priceRange[1]}
-              onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-              className="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer pointer-events-none"
-            />
-            <div className="relative h-2">
-              <div className="absolute h-2 bg-blue-500 rounded-lg" 
-                   style={{left: `${(priceRange[0]/10000)*100}%`, right: `${100-(priceRange[1]/10000)*100}%`}}>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-between text-xs text-gray-500">
-            {pricePoints.map((price) => (
-              <span key={price}>{price.toLocaleString()} AED</span>
-            ))}
-          </div>
+          <input
+            type="range"
+            min="0"
+            max="50000"
+            step="100"
+            value={priceRange.min}
+            onChange={(e) => handlePriceRangeChange('min', e.target.value)}
+            className="absolute w-full h-2 opacity-0 cursor-pointer top-4"
+          />
+          <input
+            type="range"
+            min="0"
+            max="50000"
+            step="100"
+            value={priceRange.max}
+            onChange={(e) => handlePriceRangeChange('max', e.target.value)}
+            className="absolute w-full h-2 opacity-0 cursor-pointer top-4"
+          />
         </div>
 
-        {/* Price Distribution Chart */}
-        <div className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">Price Distribution</span>
-          <div className="h-16 flex items-end space-x-1 bg-gray-50 rounded-lg p-2">
-            {priceData.map((height, index) => (
-              <div
-                key={index}
-                className="flex-1 bg-blue-400 rounded-t hover:bg-blue-500 transition-colors cursor-pointer"
-                style={{ height: `${height}%` }}
-                title={`${Math.round((index/priceData.length)*10000).toLocaleString()} AED`}
-              />
-            ))}
+        {/* Input Fields */}
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <label className="block text-xs text-gray-500 mb-1">Min Price</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={priceRange.min}
+              onChange={(e) => handlePriceRangeChange('min', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs text-gray-500 mb-1">Max Price</label>
+            <input
+              type="number"
+              placeholder="50000"
+              value={priceRange.max}
+              onChange={(e) => handlePriceRangeChange('max', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
         </div>
-
       </div>
     );
   };
@@ -276,7 +312,7 @@ const ShopeBYFilterSidebar = () => {
       <input
         type="checkbox"
         checked={checked}
-        onChange={(e) => handleFilterChange(filterType, label, e.target.checked)}
+        onChange={(e) => handleLocalFilterChange(filterType, label, e.target.checked)}
         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
       />
       <span className="text-sm text-gray-700 group-hover:text-gray-900">
@@ -291,7 +327,15 @@ const ShopeBYFilterSidebar = () => {
         type="radio"
         name={name}
         checked={checked}
-        onChange={(e) => handleFilterChange(filterType, label, e.target.checked)}
+        onChange={(e) => {
+          if (e.target.checked) {
+            // For radio buttons, replace the entire array with the selected value
+            setLocalFilters(prev => ({
+              ...prev,
+              [filterType]: [label]
+            }));
+          }
+        }}
         className="border-gray-300 text-blue-600 focus:ring-blue-500"
       />
       <span className="text-sm text-gray-700 group-hover:text-gray-900">
@@ -300,127 +344,66 @@ const ShopeBYFilterSidebar = () => {
     </label>
   );
 
-  // Active filters display
-  const ActiveFilters = () => {
-    const activeFilters = [];
-    
-    Object.entries(selectedFilters).forEach(([key, values]) => {
-      if (Array.isArray(values)) {
-        values.forEach(value => {
-          if (value) {
-            activeFilters.push({ type: key, value });
-          }
-        });
-      } else if (values) {
-        activeFilters.push({ type: key, value: values });
-      }
-    });
-
-    if (activeFilters.length === 0) return null;
-
-    return (
-      <div className="bg-white border-b border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-gray-900">Active Filters</h3>
-          <button
-            onClick={clearAllFilters}
-            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-          >
-            Clear All
-          </button>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {activeFilters.map((filter, index) => (
-            <span
-              key={index}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-            >
-              {filter.value}
-              <button
-                onClick={() => removeFilter(filter.type, filter.value)}
-                className="hover:text-blue-900"
-              >
-                <XCircleIcon className="h-4 w-4" />
-              </button>
-            </span>
-          ))}
-          {priceRange[0] > 0 || priceRange[1] < 10000 ? (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
-              Price: {priceRange[0].toLocaleString()} - {priceRange[1].toLocaleString()} AED
-              <button
-                onClick={() => setPriceRange([0, 10000])}
-                className="hover:text-green-900"
-              >
-                <XCircleIcon className="h-4 w-4" />
-              </button>
-            </span>
-          ) : null}
-        </div>
-      </div>
-    );
-  };
+  // Count total active filters for badge
+  const totalActiveFilters = useMemo(() => {
+    let count = Object.values(localFilters).reduce((total, current) => total + current.length, 0);
+    // Count price range as active if not default
+    if (priceRange.min > 0 || priceRange.max < 50000) {
+      count += 1;
+    }
+    return count;
+  }, [localFilters, priceRange]);
 
   return (
     <>
-      {/* Mobile Filter Button */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-40">
-        <button
-          onClick={() => setIsMobileOpen(true)}
-          className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center shadow-xl"
-        >
-          <FunnelIcon className="h-6 w-6" />
-          {Object.values(selectedFilters).flat().filter(Boolean).length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
-              {Object.values(selectedFilters).flat().filter(Boolean).length}
-            </span>
-          )}
-        </button>
-      </div>
-
       {/* Mobile Overlay */}
-      {isMobileOpen && (
+      {mobileFiltersOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
-          onClick={() => setIsMobileOpen(false)}
+          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+          onClick={() => setMobileFiltersOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:sticky top-0 left-0 h-screen lg:h-auto
-        w-full sm:w-80 lg:w-64 xl:w-72 bg-white z-50 lg:z-auto
+        fixed md:sticky top-0 left-0 h-screen md:h-auto
+        w-full sm:w-80 md:w-72 bg-white z-50 md:z-auto
         transform transition-transform duration-300 ease-in-out
         overflow-y-auto
-        shadow-xl lg:shadow-none
-        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        shadow-xl md:shadow-none
+        ${mobileFiltersOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10 shadow-sm">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-900">FILTERS</h2>
+            <h2 className="text-lg font-bold text-gray-900">
+              FILTERS
+              {totalActiveFilters > 0 && (
+                <span className="ml-2 bg-blue-600 text-white text-xs rounded-full w-5 h-5 inline-flex items-center justify-center">
+                  {totalActiveFilters}
+                </span>
+              )}
+            </h2>
             <button
-              onClick={() => setIsMobileOpen(false)}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={() => setMobileFiltersOpen(false)}
+              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        {/* Active Filters */}
-        <ActiveFilters />
-
         {/* Filter Content */}
-        <div className="p-4 space-y-6 pb-32 lg:pb-4">
+        <div className="p-4 space-y-6 pb-32 md:pb-4">
           {/* SHOP BY CATEGORY */}
           <FilterSection title="SHOP BY CATEGORY" isOpen={true}>
             <div className="space-y-2">
-              {['Watches', 'Accessories', 'Leather/Leather goods', 'Jewelry', 'Golds'].map((category) => (
+              {filterOptions.categories.map((category) => (
                 <CheckboxOption 
                   key={category} 
                   label={category} 
-                  filterType="categories"
-                  checked={selectedFilters.categories.includes(category)}
+                  filterType="category"
+                  checked={(localFilters.category || []).includes(category)}
                 />
               ))}
             </div>
@@ -428,16 +411,16 @@ const ShopeBYFilterSidebar = () => {
 
           {/* PRICE */}
           <FilterSection title="PRICE">
-            <PriceRangeChart />
+            <PriceRangeFilter />
           </FilterSection>
 
           {/* BRANDS */}
           <FilterSection title="BRANDS">
             <SearchableList 
               placeholder="Search brands..." 
-              items={dummyData.brands}
-              filterType="brands"
-              selectedItems={selectedFilters.brands}
+              items={brands}
+              filterType="brand"
+              sectionKey="brands"
             />
           </FilterSection>
 
@@ -445,129 +428,78 @@ const ShopeBYFilterSidebar = () => {
           <FilterSection title="MODELS">
             <SearchableList 
               placeholder="Search models..." 
-              items={dummyData.models}
-              filterType="models"
-              selectedItems={selectedFilters.models}
-            />
-          </FilterSection>
-
-          {/* REFERENCE NUMBERS */}
-          <FilterSection title="REFERENCE NUMBERS">
-            <SearchableList 
-              placeholder="Search reference numbers..." 
-              items={dummyData.referenceNumbers}
-              filterType="referenceNumbers"
-              selectedItems={selectedFilters.referenceNumbers}
+              items={models}
+              filterType="model"
+              sectionKey="models"
             />
           </FilterSection>
 
           {/* GENDER */}
           <FilterSection title="GENDER">
             <div className="space-y-2">
-              <RadioOption 
-                name="gender" 
-                label="Men / Unisex" 
-                filterType="gender"
-                checked={selectedFilters.gender === 'Men / Unisex'}
-              />
-              <RadioOption 
-                name="gender" 
-                label="Women" 
-                filterType="gender"
-                checked={selectedFilters.gender === 'Women'}
-              />
+              {filterOptions.gender.map((gender) => (
+                <RadioOption 
+                  key={gender}
+                  name="gender" 
+                  label={gender} 
+                  filterType="gender"
+                  checked={(localFilters.gender || []).includes(gender)}
+                />
+              ))}
             </div>
           </FilterSection>
 
           {/* AVAILABILITY */}
           <FilterSection title="AVAILABILITY">
             <div className="space-y-2">
-              <CheckboxOption 
-                label="In Stock" 
-                filterType="availability"
-                checked={selectedFilters.availability.includes('In Stock')}
-              />
-              <CheckboxOption 
-                label="Sold Out" 
-                filterType="availability"
-                checked={selectedFilters.availability.includes('Sold Out')}
-              />
+              {filterOptions.availability.map((availability) => (
+                <CheckboxOption 
+                  key={availability}
+                  label={availability} 
+                  filterType="availability"
+                  checked={(localFilters.availability || []).includes(availability)}
+                />
+              ))}
             </div>
           </FilterSection>
 
           {/* CONDITION */}
           <FilterSection title="CONDITION">
             <div className="space-y-2">
-              <CheckboxOption 
-                label="New Model" 
-                filterType="condition"
-                checked={selectedFilters.condition.includes('New Model')}
-              />
-              <CheckboxOption 
-                label="Unworn" 
-                filterType="condition"
-                checked={selectedFilters.condition.includes('Unworn')}
-              />
-              <CheckboxOption 
-                label="Used" 
-                filterType="condition"
-                checked={selectedFilters.condition.includes('Used')}
-              />
+              {filterOptions.condition.map((condition) => (
+                <CheckboxOption 
+                  key={condition}
+                  label={condition} 
+                  filterType="condition"
+                  checked={(localFilters.condition || []).includes(condition)}
+                />
+              ))}
             </div>
           </FilterSection>
 
           {/* ITEM CONDITION */}
           <FilterSection title="ITEM CONDITION">
             <div className="space-y-2">
-              <CheckboxOption 
-                label="Good" 
-                filterType="itemCondition"
-                checked={selectedFilters.itemCondition.includes('Good')}
-              />
-              <CheckboxOption 
-                label="Excellent" 
-                filterType="itemCondition"
-                checked={selectedFilters.itemCondition.includes('Excellent')}
-              />
+              {filterOptions.itemCondition.map((itemCondition) => (
+                <CheckboxOption 
+                  key={itemCondition}
+                  label={itemCondition} 
+                  filterType="itemCondition"
+                  checked={(localFilters.itemCondition || []).includes(itemCondition)}
+                />
+              ))}
             </div>
           </FilterSection>
-
-          {/* DISCOUNT */}
-          <FilterSection title="DISCOUNT">
-            <div className="space-y-3">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-                />
-                <span className="text-sm text-gray-700">Any %</span>
-              </label>
-              <div className="px-2">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>0%</span>
-                  <span>100%</span>
-                </div>
-              </div>
-            </div>
-          </FilterSection>
-
-      
 
           {/* SCOPE OF DELIVERY */}
           <FilterSection title="SCOPE OF DELIVERY">
             <div className="space-y-2">
-              {['Full Set', 'Box Only', 'Papers Only', 'Watch Only'].map((scope) => (
+              {filterOptions.scopeOfDelivery.map((scope) => (
                 <CheckboxOption 
                   key={scope} 
                   label={scope} 
                   filterType="scopeOfDelivery"
-                  checked={selectedFilters.scopeOfDelivery.includes(scope)}
+                  checked={(localFilters.scopeOfDelivery || []).includes(scope)}
                 />
               ))}
             </div>
@@ -576,39 +508,28 @@ const ShopeBYFilterSidebar = () => {
           {/* BADGES */}
           <FilterSection title="BADGES">
             <div className="space-y-2">
-              {['Popular', 'New Arrivals', 'Promoted'].map((badge) => (
-                <label key={badge} className="flex items-center space-x-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={selectedFilters.badges.includes(badge)}
-                    onChange={(e) => handleFilterChange('badges', badge, e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 group-hover:text-gray-900 flex items-center">
-                    {badge}
-                    {badge === 'New Arrivals' && (
-                      <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-800 text-xs rounded">New</span>
-                    )}
-                  </span>
-                </label>
+              {filterOptions.badges.map((badge) => (
+                <CheckboxOption 
+                  key={badge}
+                  label={badge} 
+                  filterType="badges"
+                  checked={(localFilters.badges || []).includes(badge)}
+                />
               ))}
             </div>
           </FilterSection>
 
           {/* Action Buttons - Sticky on Mobile */}
-          <div className="fixed bottom-0 left-0 right-0 lg:static bg-white border-t border-gray-200 p-4 lg:p-0 lg:border-t-0 lg:pt-4 space-y-2 shadow-lg lg:shadow-none">
+          <div className="fixed bottom-0 left-0 right-0 md:static bg-white border-t border-gray-200 p-4 md:p-0 md:border-t-0 md:pt-4 space-y-2 shadow-lg md:shadow-none">
             <button 
               className="w-full bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 rounded-lg font-semibold shadow-sm hover:from-[#1a477a] hover:to-[#005399] transition-colors"
-              onClick={() => {
-                console.log('Applied Filters:', { selectedFilters, priceRange });
-                setIsMobileOpen(false);
-              }}
+              onClick={handleApplyFilters}
             >
               Apply Filters
             </button>
             <button 
               className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
-              onClick={clearAllFilters}
+              onClick={handleClearAll}
             >
               Clear All
             </button>

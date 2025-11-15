@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import Navbar from "@/components/shared/Navbar";
 import AuthModal from "@/features/auth/AuthModal";
 import Landing from "@/components/shared/BannerPage";
@@ -13,15 +13,27 @@ import Footer from "@/components/shared/Footer";
 import ChatRobot from "@/components/ui/ChatRobot";
 import Watch from "@/layouts/Watch";
 import "../Mobile/responsive.css";
+import NewsletterModal from "@/components/modals/newsletterModal";
 
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [authAction, setAuthAction] = useState("login");
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleAuthAction = (action) => {
     setAuthAction(action);
     setModalIsOpen(true);
   };
+
+    // Auto-open modal after 3 seconds (optional)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsModalOpen(true)
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [])
+
+
 
   return (
     <div>
@@ -36,6 +48,10 @@ export default function IndexPage() {
         defaultAction={authAction}
       />
 
+     <NewsletterModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
       <Landing />
       <Home />
       <WatchBrand />

@@ -194,40 +194,44 @@ const filtersData = [
   },
 ];
 
+// Color options with actual color representation
+const colorOptions = [
+  { value: "black", label: "Black", color: "#000000" },
+  { value: "white", label: "White", color: "#FFFFFF", border: "1px solid #E5E7EB" },
+  { value: "blue", label: "Blue", color: "#3B82F6" },
+  { value: "green", label: "Green", color: "#10B981" },
+  { value: "silver", label: "Silver", color: "#9CA3AF" },
+  { value: "gold", label: "Gold", color: "#F59E0B" },
+  { value: "mother_of_pearl", label: "Mother of Pearl", color: "linear-gradient(45deg, #FFE5F1, #E0F7FA, #FFF9C4)" },
+  { value: "grey", label: "Grey", color: "#6B7280" },
+  { value: "brown", label: "Brown", color: "#92400E" },
+  { value: "champagne", label: "Champagne", color: "#FDE68A" },
+  { value: "red", label: "Red", color: "#EF4444" },
+  { value: "navy", label: "Navy", color: "#1E3A8A" },
+  { value: "burgundy", label: "Burgundy", color: "#831843" },
+  { value: "rose_gold", label: "Rose Gold", color: "#FBCFE8" },
+  { value: "bronze", label: "Bronze", color: "#D97706" },
+];
+
 // Advanced filters for modal
 const advancedFiltersData = [
   {
     id: "dial_color",
     name: "Dial Color",
-    type: "checkbox",
-    options: [
-      { value: "black", label: "Black" },
-      { value: "white", label: "White" },
-      { value: "blue", label: "Blue" },
-      { value: "green", label: "Green" },
-      { value: "silver", label: "Silver" },
-      { value: "gold", label: "Gold" },
-      { value: "mother_of_pearl", label: "Mother of Pearl" },
-      { value: "grey", label: "Grey" },
-      { value: "brown", label: "Brown" },
-      { value: "champagne", label: "Champagne" },
-    ],
+    type: "color-picker",
+    options: colorOptions,
+  },
+  {
+    id: "case_color",
+    name: "Case Color",
+    type: "color-picker",
+    options: colorOptions,
   },
   {
     id: "strap_color",
     name: "Strap Color",
-    type: "checkbox",
-    options: [
-      { value: "black", label: "Black" },
-      { value: "brown", label: "Brown" },
-      { value: "white", label: "White" },
-      { value: "blue", label: "Blue" },
-      { value: "steel", label: "Steel" },
-      { value: "gold", label: "Gold" },
-      { value: "silver", label: "Silver" },
-      { value: "green", label: "Green" },
-      { value: "red", label: "Red" },
-    ],
+    type: "color-picker",
+    options: colorOptions,
   },
   {
     id: "strap_material",
@@ -242,6 +246,20 @@ const advancedFiltersData = [
       { value: "gold", label: "Gold" },
       { value: "fabric", label: "Fabric" },
       { value: "silicone", label: "Silicone" },
+    ],
+  },
+  {
+    id: "case_material",
+    name: "Case Material",
+    type: "checkbox",
+    options: [
+      { value: "stainless_steel", label: "Stainless Steel" },
+      { value: "gold", label: "Gold" },
+      { value: "rose_gold", label: "Rose Gold" },
+      { value: "platinum", label: "Platinum" },
+      { value: "titanium", label: "Titanium" },
+      { value: "ceramic", label: "Ceramic" },
+      { value: "bronze", label: "Bronze" },
     ],
   },
   {
@@ -287,6 +305,58 @@ const advancedFiltersData = [
       { value: "pre_1950", label: "Pre-1950" },
     ],
   },
+  {
+    id: "water_resistance",
+    name: "Water Resistance",
+    type: "checkbox",
+    options: [
+      { value: "30m", label: "30m (3ATM)" },
+      { value: "50m", label: "50m (5ATM)" },
+      { value: "100m", label: "100m (10ATM)" },
+      { value: "200m", label: "200m (20ATM)" },
+      { value: "300m", label: "300m (30ATM)" },
+      { value: "500m+", label: "500m+ (Professional)" },
+    ],
+  },
+  {
+    id: "movement",
+    name: "Movement Type",
+    type: "checkbox",
+    options: [
+      { value: "automatic", label: "Automatic" },
+      { value: "manual_wind", label: "Manual Wind" },
+      { value: "quartz", label: "Quartz" },
+      { value: "solar", label: "Solar" },
+      { value: "kinetic", label: "Kinetic" },
+      { value: "smart", label: "Smart/Connected" },
+    ],
+  },
+  {
+    id: "complications",
+    name: "Complications",
+    type: "checkbox",
+    options: [
+      { value: "date", label: "Date" },
+      { value: "day_date", label: "Day-Date" },
+      { value: "chronograph", label: "Chronograph" },
+      { value: "moon_phase", label: "Moon Phase" },
+      { value: "gmt", label: "GMT" },
+      { value: "perpetual_calendar", label: "Perpetual Calendar" },
+      { value: "tourbillon", label: "Tourbillon" },
+      { value: "power_reserve", label: "Power Reserve" },
+    ],
+  },
+  {
+    id: "crystal",
+    name: "Crystal Material",
+    type: "checkbox",
+    options: [
+      { value: "sapphire", label: "Sapphire" },
+      { value: "mineral", label: "Mineral" },
+      { value: "plexiglas", label: "Plexiglas" },
+      { value: "hardlex", label: "Hardlex" },
+    ],
+  },
 ];
 
 // Menu items data
@@ -305,6 +375,48 @@ const menuItemsData = [
   { name: "About Us", path: "/about" },
   { name: "Contact", path: "/contact" },
 ];
+
+// Color Picker Component
+const ColorPicker = ({ options, selectedColors = [], onColorChange }) => {
+  return (
+    <div className="grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 gap-2 xs:gap-3">
+      {options.map((colorOption) => (
+        <button
+          key={colorOption.value}
+          className={`relative flex flex-col items-center p-1 xs:p-2 rounded-lg border-2 transition-all duration-200 ${
+            selectedColors.includes(colorOption.value)
+              ? "border-indigo-600 bg-indigo-50"
+              : "border-gray-200 hover:border-gray-300"
+          }`}
+          onClick={() => onColorChange(colorOption.value)}
+        >
+          {/* Color Circle */}
+          <div
+            className="w-6 h-6 xs:w-8 xs:h-8 rounded-full border border-gray-200 mb-1"
+            style={{ 
+              background: colorOption.color,
+              border: colorOption.border || 'none'
+            }}
+          />
+          
+          {/* Checkmark for selected */}
+          {selectedColors.includes(colorOption.value) && (
+            <div className="absolute -top-1 -right-1 bg-indigo-600 rounded-full p-0.5">
+              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          )}
+          
+          {/* Label */}
+          <span className="text-[10px] xs:text-xs text-gray-600 text-center leading-tight">
+            {colorOption.label}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+};
 
 // Filter section component
 const FilterSection = ({ section, activeFilters, toggleFilter, searchTerms, setSearchTerms }) => {
@@ -327,6 +439,11 @@ const FilterSection = ({ section, activeFilters, toggleFilter, searchTerms, setS
     const value = e.target.value;
     setLocalSearch(value);
     setSearchTerm(value);
+  };
+
+  // Handle color selection
+  const handleColorChange = (colorValue) => {
+    toggleFilter && toggleFilter(section.id, colorValue);
   };
 
   return (
@@ -364,6 +481,15 @@ const FilterSection = ({ section, activeFilters, toggleFilter, searchTerms, setS
                     placeholder={`Search ${section.name.toLowerCase()}...`}
                   />
                 </div>
+              )}
+
+              {/* Color Picker */}
+              {section.type === "color-picker" && (
+                <ColorPicker
+                  options={section.options}
+                  selectedColors={activeFilters?.[section.id] || []}
+                  onColorChange={handleColorChange}
+                />
               )}
 
               {/* Price Range Slider */}
@@ -413,7 +539,7 @@ const FilterSection = ({ section, activeFilters, toggleFilter, searchTerms, setS
               )}
 
               {/* Checkbox options */}
-              {filteredOptions.map((option, optionIdx) => (
+              {section.type === "checkbox" && filteredOptions.map((option, optionIdx) => (
                 <div key={option.value} className="flex items-center">
                   <input
                     id={`filter-${section.id}-${optionIdx}`}
@@ -435,7 +561,7 @@ const FilterSection = ({ section, activeFilters, toggleFilter, searchTerms, setS
               ))}
 
               {/* Show message if no results */}
-              {filteredOptions.length === 0 && (
+              {filteredOptions.length === 0 && section.type !== "color-picker" && (
                 <div className="text-center text-gray-500 text-xs py-2">
                   No {section.name.toLowerCase()} found
                 </div>
@@ -509,6 +635,93 @@ const MenuItem = ({ item, dropdown, setDropdown }) => {
 // Advanced Filters Modal
 const AdvancedFiltersModal = ({ isOpen, onClose, activeFilters, toggleFilter }) => {
   const [searchTerms, setSearchTerms] = useState({});
+  const [tempFilters, setTempFilters] = useState(activeFilters);
+
+  // Initialize temp filters when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setTempFilters(activeFilters);
+    }
+  }, [isOpen, activeFilters]);
+
+  // Handle filter changes in temp state
+  const handleTempFilterChange = (type, value, clear = false) => {
+    setTempFilters((prev) => {
+      if (clear) {
+        const newFilters = { ...prev };
+        delete newFilters[type];
+        return newFilters;
+      }
+
+      if (type === 'priceRange') {
+        return { ...prev, [type]: value };
+      }
+
+      const currentValues = prev[type] || [];
+      const updated = currentValues.includes(value)
+        ? currentValues.filter((v) => v !== value)
+        : [...currentValues, value];
+      
+      if (updated.length === 0) {
+        const newFilters = { ...prev };
+        delete newFilters[type];
+        return newFilters;
+      }
+      
+      return { ...prev, [type]: updated };
+    });
+  };
+
+  // Apply filters and close modal
+  const handleApplyFilters = () => {
+    // Update the actual active filters with temp filters
+    Object.keys(tempFilters).forEach(type => {
+      if (type === 'priceRange') {
+        // Price range is handled differently
+        return;
+      }
+      
+      const tempValues = tempFilters[type] || [];
+      const activeValues = activeFilters[type] || [];
+      
+      // Add new filters
+      tempValues.forEach(value => {
+        if (!activeValues.includes(value)) {
+          toggleFilter(type, value);
+        }
+      });
+      
+      // Remove filters that are no longer in temp
+      activeValues.forEach(value => {
+        if (!tempValues.includes(value)) {
+          toggleFilter(type, value);
+        }
+      });
+    });
+
+    // Handle price range
+    if (tempFilters.priceRange && (!activeFilters.priceRange || 
+        tempFilters.priceRange.min !== activeFilters.priceRange.min || 
+        tempFilters.priceRange.max !== activeFilters.priceRange.max)) {
+      toggleFilter('priceRange', tempFilters.priceRange);
+    }
+    
+    onClose();
+  };
+
+  // Clear all advanced filters
+  const clearAdvancedFilters = () => {
+    advancedFiltersData.forEach(section => {
+      toggleFilter(section.id, null, true);
+    });
+    setTempFilters(prev => {
+      const newFilters = { ...prev };
+      advancedFiltersData.forEach(section => {
+        delete newFilters[section.id];
+      });
+      return newFilters;
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -539,8 +752,8 @@ const AdvancedFiltersModal = ({ isOpen, onClose, activeFilters, toggleFilter }) 
             <FilterSection
               key={section.id}
               section={section}
-              activeFilters={activeFilters}
-              toggleFilter={toggleFilter}
+              activeFilters={tempFilters}
+              toggleFilter={handleTempFilterChange}
               searchTerms={searchTerms}
               setSearchTerms={setSearchTerms}
             />
@@ -552,18 +765,13 @@ const AdvancedFiltersModal = ({ isOpen, onClose, activeFilters, toggleFilter }) 
           <div className="flex gap-3">
             <button
               className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-              onClick={() => {
-                // Clear only advanced filters
-                advancedFiltersData.forEach(section => {
-                  toggleFilter(section.id, null, true);
-                });
-              }}
+              onClick={clearAdvancedFilters}
             >
               Clear Advanced
             </button>
             <button
               className="flex-1 px-4 py-3 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
-              onClick={onClose}
+              onClick={handleApplyFilters}
             >
               Apply Filters
             </button>
@@ -740,7 +948,7 @@ const WatchByFilterSidebar = ({
           {/* Filters */}
           <button
             onClick={() => setMobileFiltersOpen(true)}
-            className="flex flex-col items-center justify-center text-indigo-600 p-1 xs:p-2 transition-colors duration-200"
+            className="flex flex-col items-center justify-center text-indigo-600 p-1 xs:p-2 transition-colors duration-200 relative"
             aria-label="Open filters"
           >
             <FiFilter className="h-5 xs:h-6 w-5 xs:w-6" />
