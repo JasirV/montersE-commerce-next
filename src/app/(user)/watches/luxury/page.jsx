@@ -5,7 +5,6 @@ import React, {
   useMemo,
   Suspense,
   useEffect,
-  useRef,
   useCallback,
 } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -22,7 +21,14 @@ import {
   FiList,
 } from "react-icons/fi";
 
-const Page = () => {
+// Create a wrapper component that uses useSearchParams
+const SearchParamsWrapper = ({ children }) => {
+  const searchParams = useSearchParams();
+  return children(searchParams);
+};
+
+// Main content component without useSearchParams
+const PageContent = ({ searchParams }) => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortOption, setSortOption] = useState("newest");
   const [viewMode, setViewMode] = useState("grid");
@@ -36,7 +42,6 @@ const Page = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const searchParams = useSearchParams();
   const { category, subcategory } = useParams();
   const productsPerPage = 16;
 
@@ -125,6 +130,8 @@ const Page = () => {
 
   // ✅ CORRECTED: Update URL with current filters and pagination
   const updateURL = useCallback((filters, page, sort) => {
+    if (typeof window === 'undefined') return;
+    
     const params = new URLSearchParams();
 
     // Add all filters to URL
@@ -301,6 +308,18 @@ const Page = () => {
         max: maxPrice ? parseInt(maxPrice) : 1000000,
       };
       hasURLFilters = true;
+    }
+
+    // Handle sort option
+    const urlSortOption = searchParams.get("sortBy");
+    if (urlSortOption) {
+      setSortOption(urlSortOption);
+    }
+
+    // Handle page
+    const urlPage = searchParams.get("page");
+    if (urlPage) {
+      setCurrentPage(parseInt(urlPage));
     }
 
     if (hasURLFilters) {
@@ -737,42 +756,18 @@ const Page = () => {
                       : "flex flex-col gap-6"
                   }`}
                 >
-                  <Suspense
-                    fallback={
-                      <div
-                        className={`gap-4 sm:gap-6 ${
-                          viewMode === "grid"
-                            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-                            : "flex flex-col gap-6"
-                        }`}
-                      >
-                        {[...Array(productsPerPage)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="bg-white rounded-xl p-4 animate-pulse shadow-sm border border-gray-100"
-                          >
-                            <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-                            <div className="h-4 bg-gray-200 rounded mb-3"></div>
-                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                            <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-                          </div>
-                        ))}
-                      </div>
-                    }
-                  >
-                    {products.products.map((product) => (
-                      <div
-                        key={product._id}
-                        className={
-                          viewMode === "list"
-                            ? "bg-white rounded-xl shadow-sm border border-gray-100"
-                            : ""
-                        }
-                      >
-                        <ProductCard product={product} viewMode={viewMode} />
-                      </div>
-                    ))}
-                  </Suspense>
+                  {products.products.map((product) => (
+                    <div
+                      key={product._id}
+                      className={
+                        viewMode === "list"
+                          ? "bg-white rounded-xl shadow-sm border border-gray-100"
+                          : ""
+                      }
+                    >
+                      <ProductCard product={product} viewMode={viewMode} />
+                    </div>
+                  ))}
                 </div>
 
                 {/* Pagination */}
@@ -991,6 +986,26 @@ const MobileResponsivePagination = ({
         )}
       </div>
     </div>
+  );
+};
+
+// Main page component with Suspense boundary
+const Page = () => {
+  return (
+    <Suspense 
+      fallback={
+        <div className="bg-[#f8f5f2] min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8b6b4a] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading luxury watches...</p>
+          </div>
+        </div>
+      }
+    >
+      <SearchParamsWrapper>
+        {(searchParams) => <PageContent searchParams={searchParams} />}
+      </SearchParamsWrapper>
+    </Suspense>
   );
 };
 

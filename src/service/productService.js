@@ -120,7 +120,7 @@ export async function WatchBycategory(category, { page = 1, limit = 15 } = {}) {
   }
 }
 
-// ... other existing functions
+
 export async function LeatherBycategory(
   category,
   { page = 1, limit = 15 } = {}

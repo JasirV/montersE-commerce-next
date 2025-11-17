@@ -23,7 +23,14 @@ import {
   FiList,
 } from "react-icons/fi";
 
-const Page = () => {
+// Create a component that uses useSearchParams and wrap it in Suspense
+const SearchParamsWrapper = ({ children }) => {
+  const searchParams = useSearchParams();
+  return children(searchParams);
+};
+
+// Main component without useSearchParams
+const PageContent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [products, setProducts] = useState({ 
     products: [], 
@@ -38,8 +45,8 @@ const Page = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [brandSearch, setBrandSearch] = useState("");
   const [shouldApplyFilters, setShouldApplyFilters] = useState(false);
+  const [searchParamsState, setSearchParamsState] = useState(null);
   
-  const searchParams = useSearchParams();
   const { category, subcategory } = useParams();
   const productsSectionRef = useRef(null);
 
@@ -125,6 +132,34 @@ const Page = () => {
       ? [...new Set(colors)]
       : ["Black", "Brown", "Blue", "Tan", "Burgundy"];
   }, [products.products]);
+
+    // ✅ CORRECTED: Update URL with current filters and pagination
+    const updateURL = useCallback((filters, page, sort) => {
+      if (typeof window === 'undefined') return;
+      
+      const params = new URLSearchParams();
+  
+      // Add all filters to URL
+      Object.entries(filters).forEach(([key, value]) => {
+        if (key === "priceRange" && value) {
+          if (value.min) params.set("minPrice", value.min);
+          if (value.max) params.set("maxPrice", value.max);
+        } else if (key === "search") {
+          params.set("search", value);
+        } else if (Array.isArray(value) && value.length > 0) {
+          value.forEach((v) => params.append(key, v));
+        }
+      });
+  
+      // Add pagination and sort
+      params.set("page", page.toString());
+      params.set("sortBy", sort);
+  
+      // Update URL without page reload
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState(null, "", newUrl);
+    }, []);
+  
 
   // Build API parameters from active filters
   const buildApiParams = useCallback(() => {
@@ -243,6 +278,8 @@ const Page = () => {
 
   // Initialize filters from URL on component mount
   useEffect(() => {
+    if (!searchParamsState) return;
+
     const initialFilters = { ...activeFilters };
     let hasURLFilters = false;
 
@@ -270,7 +307,7 @@ const Page = () => {
     ];
 
     filterKeys.forEach((key) => {
-      const values = searchParams.getAll(key);
+      const values = searchParamsState.getAll(key);
       if (values.length > 0) {
         initialFilters[key] = values;
         hasURLFilters = true;
@@ -278,8 +315,8 @@ const Page = () => {
     });
 
     // Handle price range
-    const minPrice = searchParams.get("minPrice");
-    const maxPrice = searchParams.get("maxPrice");
+    const minPrice = searchParamsState.get("minPrice");
+    const maxPrice = searchParamsState.get("maxPrice");
     if (minPrice || maxPrice) {
       initialFilters.priceRange = {
         min: minPrice ? parseInt(minPrice) : 0,
@@ -289,13 +326,13 @@ const Page = () => {
     }
 
     // Handle sort option
-    const urlSortOption = searchParams.get("sortBy");
+    const urlSortOption = searchParamsState.get("sortBy");
     if (urlSortOption) {
       setSortOption(urlSortOption);
     }
 
     // Handle page
-    const urlPage = searchParams.get("page");
+    const urlPage = searchParamsState.get("page");
     if (urlPage) {
       setCurrentPage(parseInt(urlPage));
     }
@@ -303,12 +340,18 @@ const Page = () => {
     if (hasURLFilters) {
       setActiveFilters(initialFilters);
     }
-  }, [searchParams]);
+  }, [searchParamsState]);
 
   // Fetch products when filters, page, or sort change
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+    // Update URL when filters change
+    useEffect(() => {
+      updateURL(activeFilters, currentPage, sortOption);
+    }, [activeFilters, currentPage, sortOption, updateURL]);
+  
 
   // Scroll to top when page changes
   useEffect(() => {
@@ -995,5 +1038,25 @@ const MobileResponsivePagination = memo(({
 });
 
 MobileResponsivePagination.displayName = "MobileResponsivePagination";
+
+// Main page component with Suspense boundary
+const Page = () => {
+  return (
+    <Suspense 
+      fallback={
+        <div className="bg-[#f8f5f2] min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8b6b4a] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading classic watches...</p>
+          </div>
+        </div>
+      }
+    >
+      <SearchParamsWrapper>
+        {(searchParams) => <PageContent searchParams={searchParams} />}
+      </SearchParamsWrapper>
+    </Suspense>
+  );
+};
 
 export default Page;

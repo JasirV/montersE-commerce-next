@@ -1,13 +1,20 @@
 "use client";
 
-import React, { useState, useMemo, Suspense, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useMemo, Suspense, useEffect, useCallback } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import ProductCard from "./ProductCard";
 import ShopeBYFilterSidebar from "./ShopeBYFilterSidebar";
 import { fetchProduct } from "../../service/productService";
 import { FiFilter, FiX, FiChevronLeft, FiChevronRight, FiHome } from "react-icons/fi";
 
-const ProductPage = () => {
+// Create a wrapper component that uses useSearchParams
+const SearchParamsWrapper = ({ children }) => {
+  const searchParams = useSearchParams();
+  return children(searchParams);
+};
+
+// Main content component without useSearchParams
+const ProductPageContent = ({ searchParams }) => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortOption, setSortOption] = useState("featured");
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,7 +35,7 @@ const ProductPage = () => {
     category: [],
     brand: [],
     model: [],
-    referenceNumber: [], // ✅ Added referenceNumber
+    referenceNumber: [],
     gender: [],
     availability: [],
     condition: [],
@@ -48,13 +55,13 @@ const ProductPage = () => {
     return [...new Set(products.products.map(p => p.model).filter(Boolean))];
   }, [products.products]);
 
-  // ✅ Extract reference numbers from products for filter
+  // Extract reference numbers from products for filter
   const referenceNumbers = useMemo(() => {
     return [...new Set(products.products.map(p => p.referenceNumber).filter(Boolean))];
   }, [products.products]);
 
   // CORRECTED: Build API parameters from active filters
-  const buildApiParams = () => {
+  const buildApiParams = useCallback(() => {
     const params = {
       page: currentPage,
       limit: productsPerPage,
@@ -103,70 +110,150 @@ const ProductPage = () => {
 
     console.log('Final API params:', params);
     return params;
-  };
+  }, [activeFilters, currentPage, sortOption, category, productsPerPage]);
 
   // Load products with auto-scroll to top
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const apiParams = buildApiParams();
-        console.log('API Params:', apiParams);
-        
-        const { data, error: fetchError } = await fetchProduct(apiParams);
-        
-        if (fetchError) {
-          throw fetchError;
-        }
-
-        setProducts(
-          data || {
-            products: [],
-            totalPages: 0,
-            currentPage: 1,
-            totalProducts: 0,
-          }
-        );
-
-        // Auto scroll to top when filters change or page changes
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        setError("Failed to load products. Please try again later.");
-      } finally {
-        setLoading(false);
-        setShouldApplyFilters(false);
+  const loadProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const apiParams = buildApiParams();
+      console.log('API Params:', apiParams);
+      
+      const { data, error: fetchError } = await fetchProduct(apiParams);
+      
+      if (fetchError) {
+        throw fetchError;
       }
+
+      setProducts(
+        data || {
+          products: [],
+          totalPages: 0,
+          currentPage: 1,
+          totalProducts: 0,
+        }
+      );
+
+      // Auto scroll to top when filters change or page changes
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setError("Failed to load products. Please try again later.");
+    } finally {
+      setLoading(false);
+      setShouldApplyFilters(false);
+    }
+  }, [buildApiParams]);
+
+  // Initialize filters from URL on component mount
+  useEffect(() => {
+    const initialFilters = { ...activeFilters };
+    let hasURLFilters = false;
+
+    const filterKeys = [
+      "category",
+      "brand",
+      "model",
+      "gender",
+      "condition",
+      "itemCondition",
+      "scopeOfDelivery",
+      "badges",
+      "availability",
+      "referenceNumber"
+    ];
+
+    filterKeys.forEach((key) => {
+      const values = searchParams.getAll(key);
+      if (values.length > 0) {
+        initialFilters[key] = values;
+        hasURLFilters = true;
+      }
+    });
+
+    // Handle price range
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+    if (minPrice || maxPrice) {
+      initialFilters.priceRange = {
+        min: minPrice ? parseInt(minPrice) : 0,
+        max: maxPrice ? parseInt(maxPrice) : 100000,
+      };
+      hasURLFilters = true;
+    }
+
+    // Handle sort option
+    const urlSortOption = searchParams.get("sortBy");
+    if (urlSortOption) {
+      setSortOption(urlSortOption);
+    }
+
+    // Handle page
+    const urlPage = searchParams.get("page");
+    if (urlPage) {
+      setCurrentPage(parseInt(urlPage));
+    }
+
+    if (hasURLFilters) {
+      setActiveFilters(initialFilters);
+    }
+  }, [searchParams]);
+
+  // Fetch products when filters, page, or sort change
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const updateURL = () => {
+      if (typeof window === 'undefined') return;
+      
+      const params = new URLSearchParams();
+
+      // Add all filters to URL
+      Object.entries(activeFilters).forEach(([key, value]) => {
+        if (key === "priceRange" && value) {
+          if (value.min) params.set("minPrice", value.min);
+          if (value.max) params.set("maxPrice", value.max);
+        } else if (Array.isArray(value) && value.length > 0) {
+          value.forEach((v) => params.append(key, v));
+        }
+      });
+
+      // Add pagination and sort
+      params.set("page", currentPage.toString());
+      params.set("sortBy", sortOption);
+
+      // Update URL without page reload
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState(null, "", newUrl);
     };
 
-    loadProducts();
-  }, [currentPage, shouldApplyFilters, sortOption, category]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-    setShouldApplyFilters(true);
-  }, [activeFilters, sortOption]);
+    updateURL();
+  }, [activeFilters, currentPage, sortOption]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
   const toggleFilter = (type, value) => {
-    setActiveFilters((prev) => {
-      if (type === 'priceRange') {
-        return { ...prev, priceRange: value };
-      } else {
+    setCurrentPage(1); // Reset to first page when filters change
+
+    if (type === 'priceRange') {
+      setActiveFilters((prev) => ({ ...prev, priceRange: value }));
+    } else {
+      setActiveFilters((prev) => {
         const currentValues = prev[type] || [];
         const updated = currentValues.includes(value)
           ? currentValues.filter((v) => v !== value)
           : [...currentValues, value];
         
         return { ...prev, [type]: updated };
-      }
-    });
+      });
+    }
   };
 
   const clearAllFilters = () => {
@@ -174,7 +261,7 @@ const ProductPage = () => {
       category: [],
       brand: [],
       model: [],
-      referenceNumber: [], // ✅ Added referenceNumber
+      referenceNumber: [],
       gender: [],
       availability: [],
       condition: [],
@@ -190,6 +277,7 @@ const ProductPage = () => {
   const applyFilters = () => {
     setCurrentPage(1);
     setShouldApplyFilters(true);
+    setMobileFiltersOpen(false);
   };
 
   // Calculate display range for pagination
@@ -276,7 +364,7 @@ const ProductPage = () => {
               setMobileFiltersOpen={setMobileFiltersOpen}
               brands={brands}
               models={models}
-              referenceNumbers={referenceNumbers} // ✅ Pass referenceNumbers
+              referenceNumbers={referenceNumbers}
               clearAllFilters={clearAllFilters}
               applyFilters={applyFilters}
             />
@@ -403,31 +491,34 @@ const ProductPage = () => {
               </div>
             )}
 
+            {/* Error State */}
+            {error && !loading && (
+              <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="max-w-md mx-auto">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                    <FiX className="w-8 h-8 text-red-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Error Loading Products
+                  </h3>
+                  <p className="text-gray-600 mb-6 text-sm">{error}</p>
+                  <button
+                    onClick={loadProducts}
+                    className="px-6 py-3 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Products Grid */}
-            {!loading && products.products?.length > 0 ? (
+            {!loading && !error && products.products?.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                  <Suspense
-                    fallback={
-                      <div className="col-span-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {[...Array(productsPerPage)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="bg-white rounded-xl p-4 animate-pulse shadow-sm border border-gray-100"
-                          >
-                            <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-                            <div className="h-4 bg-gray-200 rounded mb-3"></div>
-                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                            <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-                          </div>
-                        ))}
-                      </div>
-                    }
-                  >
-                    {products.products.map((product) => (
-                      <ProductCard key={product._id} product={product} />
-                    ))}
-                  </Suspense>
+                  {products.products.map((product) => (
+                    <ProductCard key={product._id} product={product} />
+                  ))}
                 </div>
 
                 {/* Pagination */}
@@ -438,7 +529,7 @@ const ProductPage = () => {
                 />
               </>
             ) : (
-              !loading && (
+              !loading && !error && (
                 <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
                   <div className="max-w-md mx-auto">
                     <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
@@ -468,7 +559,7 @@ const ProductPage = () => {
   );
 };
 
-// Mobile Responsive Pagination Component (keep the same as before)
+// Mobile Responsive Pagination Component
 const MobileResponsivePagination = ({
   currentPage,
   totalPages,
@@ -640,6 +731,26 @@ const MobileResponsivePagination = ({
         )}
       </div>
     </div>
+  );
+};
+
+// Main page component with Suspense boundary
+const ProductPage = () => {
+  return (
+    <Suspense 
+      fallback={
+        <div className="bg-[#f8f5f2] min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading products...</p>
+          </div>
+        </div>
+      }
+    >
+      <SearchParamsWrapper>
+        {(searchParams) => <ProductPageContent searchParams={searchParams} />}
+      </SearchParamsWrapper>
+    </Suspense>
   );
 };
 

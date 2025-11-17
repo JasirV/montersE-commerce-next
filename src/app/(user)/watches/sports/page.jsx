@@ -23,7 +23,14 @@ import {
   FiList,
 } from "react-icons/fi";
 
-const Page = () => {
+// Create a wrapper component that uses useSearchParams
+const SearchParamsWrapper = ({ children }) => {
+  const searchParams = useSearchParams();
+  return children(searchParams);
+};
+
+// Main content component without useSearchParams
+const PageContent = ({ searchParams }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [products, setProducts] = useState({ 
     products: [], 
@@ -39,7 +46,6 @@ const Page = () => {
   const [brandSearch, setBrandSearch] = useState("");
   const [shouldApplyFilters, setShouldApplyFilters] = useState(false);
   
-  const searchParams = useSearchParams();
   const { category, subcategory } = useParams();
   const productsSectionRef = useRef(null);
 
@@ -127,6 +133,35 @@ const Page = () => {
       ? [...new Set(colors)]
       : ["Black", "Blue", "Green", "Orange", "Yellow", "Stainless Steel"];
   }, [products.products]);
+
+
+   // ✅ CORRECTED: Update URL with current filters and pagination
+    const updateURL = useCallback((filters, page, sort) => {
+      if (typeof window === 'undefined') return;
+      
+      const params = new URLSearchParams();
+  
+      // Add all filters to URL
+      Object.entries(filters).forEach(([key, value]) => {
+        if (key === "priceRange" && value) {
+          if (value.min) params.set("minPrice", value.min);
+          if (value.max) params.set("maxPrice", value.max);
+        } else if (key === "search") {
+          params.set("search", value);
+        } else if (Array.isArray(value) && value.length > 0) {
+          value.forEach((v) => params.append(key, v));
+        }
+      });
+  
+      // Add pagination and sort
+      params.set("page", page.toString());
+      params.set("sortBy", sort);
+  
+      // Update URL without page reload
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState(null, "", newUrl);
+    }, []);
+  
 
   // Build API parameters from active filters
   const buildApiParams = useCallback(() => {
@@ -316,6 +351,12 @@ const Page = () => {
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+    // Update URL when filters change
+  useEffect(() => {
+    updateURL(activeFilters, currentPage, sortOption);
+  }, [activeFilters, currentPage, sortOption, updateURL]);
+
 
   // Scroll to top when page changes
   useEffect(() => {
@@ -745,46 +786,22 @@ const Page = () => {
                       : "flex flex-col gap-6"
                   }`}
                 >
-                  <Suspense
-                    fallback={
-                      <div
-                        className={`gap-3 xs:gap-4 sm:gap-5 lg:gap-6 ${
-                          viewMode === "grid"
-                            ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
-                            : "flex flex-col gap-6"
-                        }`}
-                      >
-                        {[...Array(8)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="bg-white rounded-xl p-3 xs:p-4 animate-pulse shadow-sm border border-gray-100"
-                          >
-                            <div className="aspect-[3/4] bg-gray-200 rounded-lg mb-3 xs:mb-4"></div>
-                            <div className="h-4 bg-gray-200 rounded mb-2 xs:mb-3"></div>
-                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                            <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-                          </div>
-                        ))}
-                      </div>
-                    }
-                  >
-                    {products.products.map((product) => (
-                      <div
-                        key={product._id}
-                        className={
-                          viewMode === "list"
-                            ? "bg-white rounded-xl shadow-sm border border-gray-100"
-                            : "flex justify-center"
-                        }
-                      >
-                        <ProductCard 
-                          product={product} 
-                          viewMode={viewMode}
-                          className={viewMode === "grid" ? "w-full max-w-[280px] mx-auto" : ""}
-                        />
-                      </div>
-                    ))}
-                  </Suspense>
+                  {products.products.map((product) => (
+                    <div
+                      key={product._id}
+                      className={
+                        viewMode === "list"
+                          ? "bg-white rounded-xl shadow-sm border border-gray-100"
+                          : "flex justify-center"
+                      }
+                    >
+                      <ProductCard 
+                        product={product} 
+                        viewMode={viewMode}
+                        className={viewMode === "grid" ? "w-full max-w-[280px] mx-auto" : ""}
+                      />
+                    </div>
+                  ))}
                 </div>
 
                 {/* Pagination */}
@@ -1004,5 +1021,25 @@ const MobileResponsivePagination = memo(({
 });
 
 MobileResponsivePagination.displayName = "MobileResponsivePagination";
+
+// Main page component with Suspense boundary
+const Page = () => {
+  return (
+    <Suspense 
+      fallback={
+        <div className="bg-[#f8f5f2] min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8b6b4a] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading sports watches...</p>
+          </div>
+        </div>
+      }
+    >
+      <SearchParamsWrapper>
+        {(searchParams) => <PageContent searchParams={searchParams} />}
+      </SearchParamsWrapper>
+    </Suspense>
+  );
+};
 
 export default Page;
