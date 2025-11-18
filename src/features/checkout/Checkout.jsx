@@ -367,6 +367,39 @@ const CheckoutPage = () => {
       if (response.data.success) {
         if (paymentMethod === "stripe" && response.data.checkoutUrl) {
           window.location.href = response.data.checkoutUrl;
+        } else if (paymentMethod === "tabby") {
+          try {
+            const orderId =
+              response.data?.order?._id ||
+              response.data?.orderId ||
+              response.data?.id ||
+              null;
+
+            const tabbyRes = await fetch("/api/orders/tabby", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                shippingAddress,
+                amount: finalTotal,
+                currency: "AED",
+                orderId,
+              }),
+            });
+
+            if (!tabbyRes.ok) {
+              const err = await tabbyRes.json().catch(() => ({}));
+              throw new Error(err?.message || "Failed to start Tabby checkout");
+            }
+
+            const tabbyData = await tabbyRes.json();
+            if (tabbyData?.checkoutUrl) {
+              window.location.href = tabbyData.checkoutUrl;
+            } else {
+              throw new Error("Checkout URL missing from Tabby response");
+            }
+          } catch (e) {
+            alert(e.message || "Tabby integration error");
+          }
         } else {
           setStep("success");
         }
@@ -1004,6 +1037,29 @@ const CheckoutPage = () => {
                         <FaCcMastercard className="text-xl text-red-600" />
                         <FaCcAmex className="text-xl text-indigo-600" />
                       </div>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                      paymentMethod === "tabby"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="tabby"
+                      checked={paymentMethod === "tabby"}
+                      onChange={() => setPaymentMethod("tabby")}
+                      className="mr-3 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium">Tabby — Pay in 4</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Interest-free installments for eligible orders
+                      </p>
                     </div>
                   </label>
                 </div>

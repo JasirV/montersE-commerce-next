@@ -42,7 +42,7 @@ export default function IndexPage() {
       />
 
       <Landing />
-      <div className="flex md:hidden  bg-red-300 justify-center">
+      <div className="flex md:hidden justify-center">
         <CategorySectionWithImages/>
       </div>
       <Home />
