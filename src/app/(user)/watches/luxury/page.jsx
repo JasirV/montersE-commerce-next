@@ -22,7 +22,8 @@ import {
   FiList,
 } from "react-icons/fi";
 
-const Page = () => {
+// Component that uses useSearchParams - wrapped in Suspense
+const PageContent = ({ searchParams }) => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortOption, setSortOption] = useState("newest");
   const [viewMode, setViewMode] = useState("grid");
@@ -36,7 +37,6 @@ const Page = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const searchParams = useSearchParams();
   const { category, subcategory } = useParams();
   const productsPerPage = 16;
 
@@ -828,6 +828,32 @@ const Page = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// Component to wrap useSearchParams in Suspense
+const SearchParamsWrapper = ({ children }) => {
+  const searchParams = useSearchParams();
+  return children(searchParams);
+};
+
+// Main Page component with Suspense boundary
+const Page = () => {
+  return (
+    <Suspense 
+      fallback={
+        <div className="bg-[#f8f5f2] min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8b6b4a] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading Luxury watches...</p>
+          </div>
+        </div>
+      }
+    >
+      <SearchParamsWrapper>
+        {(searchParams) => <PageContent searchParams={searchParams} />}
+      </SearchParamsWrapper>
+    </Suspense>
   );
 };
 
