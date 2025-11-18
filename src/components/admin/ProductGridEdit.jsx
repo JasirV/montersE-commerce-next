@@ -3,20 +3,24 @@ import Link from "next/link";
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import { useCurrency } from "@/app/CurrencyContext";
-import { getHomeProductGrid } from "@/service/productService";
+import {
+  getHomeProductGrid,
+  updateHomeProductGrid,
+} from "@/service/productService";
 import { FiEdit2 } from "react-icons/fi";
 import EditHomeModal from "../modals/editHomeModal";
 
 const ProductGridEdit = () => {
   const [homeProducts, setHomeProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [editingHeading, setEditingHeading] = useState("");
+  const [editingCategory, setEditingCategory] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
   const [selectedModalProduct, setSelectedModalProduct] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const { currency, rate } = useCurrency();
 
+  // ✅ Fetch all products for grid
   useEffect(() => {
     const fetchHomeProducts = async () => {
       try {
@@ -32,18 +36,50 @@ const ProductGridEdit = () => {
     fetchHomeProducts();
   }, []);
 
-  const openEditModal = (product, headingTitle, index) => {
-    setEditingProduct(product);
-    setEditingHeading(headingTitle);
+  // ✅ Open modal to edit one of the 3 slots
+  const openEditModal = (category, index) => {
+    setEditingCategory(category);
     setEditingIndex(index);
-    setSelectedModalProduct(product);
+    setSelectedModalProduct(null);
+    setModalOpen(true);
   };
 
+  // ✅ Save updated product for one slot
   const handleSave = async () => {
-    if (!selectedModalProduct) return;
-    console.log("Saving product:", selectedModalProduct);
+    if (!selectedModalProduct || !editingCategory || editingIndex === null)
+      return;
 
-    // TODO: Backend update logic
+    try {
+      // 1️⃣ Update local state instantly
+      const updatedHomeProducts = homeProducts.map((cat) => {
+        if (cat._id === editingCategory._id) {
+          const updatedProducts = [...cat.products];
+          updatedProducts[editingIndex] = selectedModalProduct;
+          return { ...cat, products: updatedProducts };
+        }
+        return cat;
+      });
+
+      setHomeProducts(updatedHomeProducts);
+      console.log(
+        "🔄 Local state updated for category:",
+        editingCategory.title,
+        updatedHomeProducts
+      );
+      // 2️⃣ Send API call to update backend
+      await updateHomeProductGrid(editingCategory._id, {
+        title: editingCategory.title,
+        productId: selectedModalProduct._id,
+        index: editingIndex,
+      });
+
+      console.log("✅ Updated category:", editingCategory.title);
+    } catch (error) {
+      console.error("❌ Failed to update product slot:", error);
+    } finally {
+      setModalOpen(false);
+      setSelectedModalProduct(null);
+    }
   };
 
   if (loading)
@@ -58,36 +94,32 @@ const ProductGridEdit = () => {
       {/* Outer Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {homeProducts.length > 0 ? (
-          homeProducts.map((categoryItem) => (
+          homeProducts.map((category) => (
             <div
-              key={categoryItem._id}
+              key={category._id}
               className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-5 relative"
             >
               {/* Category Title */}
               <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
-                {categoryItem.title}
+                {category.title}
               </h2>
 
               {/* Product Grid (3 per category) */}
               <div className="grid grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, index) => {
-                  const product = categoryItem.products[index];
+                  const product = category.products[index];
 
                   return product ? (
                     <div
-                      key={product._id || index}
+                      key={product?._id || index}
                       className="flex flex-col items-center text-center group relative"
                     >
-                      {/* Edit Button */}
                       <button
-                        onClick={() =>
-                          openEditModal(product, categoryItem.title, index)
-                        }
+                        onClick={() => openEditModal(category, index)}
                         className="absolute top-1 right-1 bg-[#6B46C1] hover:bg-[#553C9A] text-white p-1 rounded-full shadow-md z-10"
                       >
                         <FiEdit2 size={14} />
                       </button>
-
                       <div className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 relative">
                         <Link href={`/ProductDetailPage/${product._id}`}>
                           {product.images?.[0]?.url && (
@@ -121,9 +153,7 @@ const ProductGridEdit = () => {
                       className="flex flex-col items-center relative"
                     >
                       <button
-                        onClick={() =>
-                          openEditModal(null, categoryItem.title, index)
-                        }
+                        onClick={() => openEditModal(category, index)}
                         className="absolute top-1 right-1 bg-[#6B46C1] hover:bg-[#553C9A] text-white p-1 rounded-full shadow-md z-10"
                       >
                         <FiEdit2 size={14} />
@@ -146,11 +176,11 @@ const ProductGridEdit = () => {
 
       {/* Edit Modal */}
       <EditHomeModal
-        isOpen={!!editingProduct}
-        onClose={() => setEditingProduct(null)}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
         onSelectProduct={setSelectedModalProduct}
-        heading={editingHeading}
-        index={editingIndex}
+        heading={editingCategory?.title || ""}
+        index={editingIndex ?? 0}
         onSave={handleSave}
         selectedProduct={selectedModalProduct}
       />

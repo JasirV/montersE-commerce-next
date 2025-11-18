@@ -190,3 +190,16 @@ export async function getHomeProductGrid() {
     return { data: null, error, isLoading: false };
   }
 }
+
+export const updateHomeProductGrid = async (categoryId, { title, productId }) => {
+  try {
+    const res = await api.put(`/home/updatehomeproduct/${categoryId}`, {
+      title,
+      productId,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error updating home product grid:", error);
+    throw error;
+  }
+};
