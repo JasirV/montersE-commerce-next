@@ -6,7 +6,7 @@ import ProductCard from "./ProductCard";
 import ShopeBYFilterSidebar from "./ShopeBYFilterSidebar";
 import { fetchProduct } from "../../service/productService";
 
-import { FiFilter, FiX, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiFilter, FiX, FiChevronLeft, FiChevronRight, FiHome } from "react-icons/fi";
 import FilterSidebar2 from "./FilterSidebar2";
 import { defaultFiltersDataForWathch } from "@/utils/FilterDummayData";
 
