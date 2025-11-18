@@ -5,6 +5,7 @@ import axios from "axios";
 export const GlobalContext = createContext(null);
 
 export const GlobalProvider = ({ children }) => {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASEURL;
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
 
@@ -23,19 +24,22 @@ export const GlobalProvider = ({ children }) => {
 
       try {
         const [cartRes, wishRes] = await Promise.all([
-          axios.get("http://localhost:9000/api/products/cart", {
+          axios.get(`${BASE_URL}/products/cart`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get("http://localhost:9000/api/products/wishlists/getAll", {
+          axios.get(`${BASE_URL}/products/wishlists/getAll`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
 
-        const cartItems = Array.isArray(cartRes.data) ? cartRes.data : cartRes.data?.cart || [];
+        const cartItems = Array.isArray(cartRes.data)
+          ? cartRes.data
+          : cartRes.data?.cart || [];
         const cartLength = cartItems.length;
 
         const wishlists = wishRes.data?.wishlists || [];
-        const defaultWishlist = wishlists.find((w) => w.isDefault) || wishlists[0];
+        const defaultWishlist =
+          wishlists.find((w) => w.isDefault) || wishlists[0];
         const wishlistLength = defaultWishlist?.items?.length || 0;
 
         setCartCount(cartLength);

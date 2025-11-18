@@ -109,56 +109,58 @@ const ProductGridEdit = () => {
                 {Array.from({ length: 3 }).map((_, index) => {
                   const product = category.products[index];
 
-                  return (
+                  return product ? (
                     <div
                       key={product?._id || index}
                       className="flex flex-col items-center text-center group relative"
                     >
-                      {/* Edit Button */}
                       <button
                         onClick={() => openEditModal(category, index)}
                         className="absolute top-1 right-1 bg-[#6B46C1] hover:bg-[#553C9A] text-white p-1 rounded-full shadow-md z-10"
                       >
                         <FiEdit2 size={14} />
                       </button>
-
-                      {product ? (
-                        <>
-                          <div className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 relative">
-                            <Link href={`/ProductDetailPage/${product._id}`}>
-                              <Image
-                                src={
-                                  product.images?.[0]?.url ||
-                                  "https://via.placeholder.com/300x300?text=No+Image"
-                                }
-                                alt={product.name || "Product"}
-                                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                                width={300}
-                                height={300}
-                                loading="lazy"
-                              />
-                            </Link>
-                          </div>
-                          <p className="mt-2 text-sm font-semibold text-gray-800">
-                            {product.salePrice
-                              ? `${(
-                                  parseFloat(
-                                    product.salePrice
-                                      .toString()
-                                      .replace(/,/g, "")
-                                  ) * rate
-                                ).toFixed(2)} ${currency}`
-                              : "Price not available"}
-                          </p>
-                          <p className="text-xs text-gray-500 line-clamp-2">
-                            {product.name || product.sku}
-                          </p>
-                        </>
-                      ) : (
-                        <div className="w-full aspect-square rounded-lg border border-gray-200 bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
-                          Empty Slot
-                        </div>
-                      )}
+                      <div className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 relative">
+                        <Link href={`/ProductDetailPage/${product._id}`}>
+                          {product.images?.[0]?.url && (
+                            <Image
+                              src={product.images[0].url}
+                              alt={product.name || "Product"}
+                              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                              width={300}
+                              height={300}
+                              loading="lazy"
+                            />
+                          )}
+                        </Link>
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-gray-800">
+                        {product.salePrice
+                          ? `${(
+                              parseFloat(
+                                product.salePrice.toString().replace(/,/g, "")
+                              ) * rate
+                            ).toFixed(2)} ${currency}`
+                          : "Price not available"}
+                      </p>
+                      <p className="text-xs text-gray-500 line-clamp-2">
+                        {product.name || product.sku}
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      key={index}
+                      className="flex flex-col items-center relative"
+                    >
+                      <button
+                        onClick={() => openEditModal(category, index)}
+                        className="absolute top-1 right-1 bg-[#6B46C1] hover:bg-[#553C9A] text-white p-1 rounded-full shadow-md z-10"
+                      >
+                        <FiEdit2 size={14} />
+                      </button>
+                      <div className="w-full aspect-square rounded-lg border border-gray-200 bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                        Empty
+                      </div>
                     </div>
                   );
                 })}

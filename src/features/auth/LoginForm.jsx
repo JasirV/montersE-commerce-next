@@ -5,8 +5,6 @@ import { FaFacebook, FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
-
-
 const LoginForm = ({ setActiveTab, onRequestClose }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -18,66 +16,60 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
     setShowPassword((prev) => !prev);
   }, []);
 
-
   const handleGoogleLogin = () => {
     // Redirect user to backend Google OAuth endpoint
-    window.location.href = "http://localhost:9000/api/Auth/google";
+    window.location.href = "https://api.montres.ae/api/Auth/google";
   };
 
   const handleFacebookLogin = () => {
     // Redirect user to backend Facebook OAuth endpoint
-    window.location.href = "http://localhost:9000/api/Auth/facebook";
+    window.location.href = "https://api.montres.ae/api/Auth/facebook";
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/auth/login`,
+        { email, password },
+        { withCredentials: true }
+      );
 
+      const { accessToken, user } = response.data;
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("accessToken", accessToken);
 
-  try {
-    const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_BASEURL}/auth/login`,
-      { email, password },
-      { withCredentials: true }
-    );
+      Toastify({
+        text: "Login successful!",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        },
+      }).showToast();
 
-    const { accessToken, user } = response.data;
-
-    localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("accessToken", accessToken);
-
-    Toastify({
-      text: "Login successful!",
-      duration: 3000,
-      gravity: "top",
-      position: "right",
-      close: true,
-      style: {
-        background: "linear-gradient(to right, #00b09b, #96c93d)",
-      },
-    }).showToast();
-
-    onRequestClose();
-    window.dispatchEvent(new Event("authChange"));
-  } catch (err) {
-    Toastify({
-      text: err.response?.data?.message || "Login failed!",
-      duration: 3000,
-      gravity: "top",
-      position: "right",
-      close: true,
-      style: {
-        background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-      },
-    }).showToast();
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+      onRequestClose();
+      window.dispatchEvent(new Event("authChange"));
+    } catch (err) {
+      Toastify({
+        text: err.response?.data?.message || "Login failed!",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-4 md:space-y-5">
@@ -184,22 +176,22 @@ const handleSubmit = async (e) => {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-         <button
-        type="button"
-        onClick={handleGoogleLogin}
-        className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 px-4 hover:bg-gray-50 transition-colors text-sm"
-      >
-        <FcGoogle size={18} />
-        <span className="font-medium">Google</span>
-      </button>
-     <button
-        type="button"
-        onClick={handleFacebookLogin}
-        className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 px-4 hover:bg-gray-50 transition-colors text-sm"
-      >
-        <FaFacebook size={18} className="text-blue-600" />
-        <span className="font-medium">Facebook</span>
-      </button>
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 px-4 hover:bg-gray-50 transition-colors text-sm"
+        >
+          <FcGoogle size={18} />
+          <span className="font-medium">Google</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleFacebookLogin}
+          className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2.5 px-4 hover:bg-gray-50 transition-colors text-sm"
+        >
+          <FaFacebook size={18} className="text-blue-600" />
+          <span className="font-medium">Facebook</span>
+        </button>
       </div>
 
       <p className="text-sm text-gray-600 text-center mt-4">

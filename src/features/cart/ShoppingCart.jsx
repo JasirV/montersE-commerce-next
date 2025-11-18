@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useMemo, useRef,useContext } from "react";
+import React, { useEffect, useState, useMemo, useRef, useContext } from "react";
 import { FiTrash2, FiHeart, FiShoppingCart } from "react-icons/fi";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,14 +10,15 @@ import {
   removeFromCart,
   updateCart,
 } from "@/service/productService";
-import { toast } from "react-toastify";
-import api from "@/api/axiosIntespter";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 import { useRouter } from "next/navigation";
 import { GlobalContext } from "@/components/shared/context/GlobalContext";
 import axios from "axios";
 
 const ShoppingCart = () => {
-  const { incrementCart,decrementCart,incrementWishlist,decrementWishlist, } = useContext(GlobalContext);
+  const { incrementCart, decrementCart, incrementWishlist, decrementWishlist } =
+    useContext(GlobalContext);
   const router = useRouter();
   const [cartItems, setCartItems] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
@@ -30,7 +31,6 @@ const ShoppingCart = () => {
   const [wishlistLoading, setWishlistLoading] = useState({});
 
   const syncTimeout = useRef(null);
-
 
   const fetchCartItems = async () => {
     try {
@@ -89,35 +89,37 @@ const ShoppingCart = () => {
     return isWishlisted.includes(productId);
   };
 
-useEffect(() => {
-  const fetchData = async () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      console.log("User not logged in — skipping cart/wishlist/recommendations");
-      setCartItems([]);
-      setRecommendedProducts([]);
-      return; // 🚫 Stop here if not logged in
-    }
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        console.log(
+          "User not logged in — skipping cart/wishlist/recommendations"
+        );
+        setCartItems([]);
+        setRecommendedProducts([]);
+        return; // 🚫 Stop here if not logged in
+      }
 
-    try {
-      setLoadingOne(true);
-      await fetchCartItems();
-      await fetchWishlists();
-      setLoadingOne(false);
+      try {
+        setLoadingOne(true);
+        await fetchCartItems();
+        await fetchWishlists();
+        setLoadingOne(false);
 
-      setLoadingTwo(true);
-      const result = await Recommendations(token);
-      setRecommendedProducts(result?.recommended);
-      setLoadingTwo(false);
-    } catch (err) {
-      console.error("Failed to fetch data:", err);
-      setLoadingOne(false);
-      setLoadingTwo(false);
-    }
-  };
+        setLoadingTwo(true);
+        const result = await Recommendations(token);
+        setRecommendedProducts(result?.recommended);
+        setLoadingTwo(false);
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+        setLoadingOne(false);
+        setLoadingTwo(false);
+      }
+    };
 
-  fetchData();
-}, []);
+    fetchData();
+  }, []);
 
   const handleRemove = async (productId) => {
     setCartItems((prev) =>
@@ -126,7 +128,7 @@ useEffect(() => {
 
     const token = localStorage.getItem("accessToken");
     removeFromCart(token, productId);
-    decrementCart()
+    decrementCart();
 
     if (syncTimeout.current) clearTimeout(syncTimeout.current);
     syncTimeout.current = setTimeout(syncCartWithBackend, 1000);
@@ -148,22 +150,22 @@ useEffect(() => {
   };
 
   const syncCartWithBackend = async () => {
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    console.log("Guest user — skipping cart sync");
-    return; // 🚫 Don’t sync if guest
-  }
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.log("Guest user — skipping cart sync");
+      return; // 🚫 Don’t sync if guest
+    }
 
-  try {
-    const items = cartItems.map((item) => ({
-      productId: item.productId._id,
-      quantity: item.quantity,
-    }));
-    await updateCart(token, items);
-  } catch (err) {
-    console.error("Failed to sync cart:", err.message);
-  }
-};
+    try {
+      const items = cartItems.map((item) => ({
+        productId: item.productId._id,
+        quantity: item.quantity,
+      }));
+      await updateCart(token, items);
+    } catch (err) {
+      console.error("Failed to sync cart:", err.message);
+    }
+  };
 
   const handleCheckout = async () => {
     await syncCartWithBackend();
@@ -193,27 +195,48 @@ useEffect(() => {
     [cartItems]
   );
 
-  // Toggle Wishlist (Add/Remove)
+  // Utility function for clean toast usage
+  const showToast = (message, type = "info") => {
+    const colors = {
+      success: "linear-gradient(to right, #00b09b, #96c93d)", // green
+      error: "linear-gradient(to right, #ff5f6d, #ffc371)", // red/orange
+      info: "linear-gradient(to right, #2193b0, #6dd5ed)", // blue
+      warning: "linear-gradient(to right, #f7971e, #ffd200)", // yellow/orange
+    };
+
+    Toastify({
+      text: message,
+      duration: 3000,
+      gravity: "top",
+      position: "right",
+      close: true,
+      style: {
+        background: colors[type] || colors.info,
+      },
+    }).showToast();
+  };
+
+  // ✅ Toggle Wishlist (Add/Remove)
   const handleToggleWishlist = async (product) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        toast.error("Please login to manage wishlist");
+        showToast("Please login to manage wishlist", "error");
         return;
       }
 
       if (!defaultWishlistId) {
-        toast.error("No wishlist available");
+        showToast("No wishlist available", "error");
         return;
       }
 
       const productId = product._id || product.productId?._id;
       if (!productId) {
-        toast.error("Invalid product data");
+        showToast("Invalid product data", "error");
         return;
       }
 
-      // Set loading state for this specific product
+      // Set loading state
       setWishlistLoading((prev) => ({ ...prev, [productId]: true }));
 
       const isAlreadyWishlisted = isWishlisted.includes(productId);
@@ -223,20 +246,16 @@ useEffect(() => {
         const response = await axios.delete(
           `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
           {
-            data: {
-              wishlistId: defaultWishlistId,
-              productId,
-            },
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            data: { wishlistId: defaultWishlistId, productId },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
-        decrementWishlist()
+
+        decrementWishlist();
 
         if (response.status === 200) {
           setIsWishlisted((prev) => prev.filter((id) => id !== productId));
-          toast.info("Removed from wishlist");
+          showToast("Removed from wishlist", "info");
         }
       } else {
         // ✅ Add to wishlist
@@ -247,28 +266,30 @@ useEffect(() => {
             productId,
           },
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
-        incrementWishlist()
+
+        incrementWishlist();
 
         if (response.status === 200) {
           setIsWishlisted((prev) => [...prev, productId]);
-          toast.success("Added to wishlist!");
+          showToast("Added to wishlist!", "success");
         }
       }
     } catch (error) {
       console.log("Error toggling wishlist:", error);
 
       if (error.response?.status === 400) {
-        toast.warning("Product is already in your wishlist!");
+        showToast("Product is already in your wishlist!", "warning");
       } else {
-        toast.error(error.response?.data?.message || "Something went wrong!");
+        showToast(
+          error.response?.data?.message || "Something went wrong!",
+          "error"
+        );
       }
     } finally {
-      // Clear loading state for this product
+      // Clear loading state
       setWishlistLoading((prev) => ({
         ...prev,
         [product._id || product.productId?._id]: false,
@@ -276,17 +297,18 @@ useEffect(() => {
     }
   };
 
+  // ✅ Add to Cart
   const addToCart = async (product) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        toast.error("Please log in to add items to your cart");
+        showToast("Please log in to add items to your cart", "error");
         return;
       }
 
       const productId = product._id || product.productId?._id;
       if (!productId) {
-        toast.error("Invalid product data");
+        showToast("Invalid product data", "error");
         return;
       }
 
@@ -297,26 +319,26 @@ useEffect(() => {
           quantity: 1,
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-         // ✅ Immediately update the cart count in the navbar
+
       incrementCart();
 
       if (response.status === 200) {
-        toast.success(` added to cart`);
-        await fetchCartItems(); // Refresh the cart items after adding
+        showToast(`${product?.name || "Product"} added to cart`, "success");
+        await fetchCartItems();
       } else {
-        toast.error("Failed to add to cart. Try again!");
+        showToast("Failed to add to cart. Try again!", "error");
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
-      toast.error(error.response?.data?.message || "Failed to add to cart.");
+      showToast(
+        error.response?.data?.message || "Failed to add to cart.",
+        "error"
+      );
     }
   };
-
   // Helper component to display price with currency symbol
   const PriceWithCurrency = ({ amount, className = "" }) => (
     <div className={`flex items-center gap-1 ${className}`}>
@@ -364,7 +386,17 @@ useEffect(() => {
                   if (recommendedProducts?.length > 0) {
                     addToCart(recommendedProducts[0]);
                   } else {
-                    toast.info("No recommended products available right now!");
+                    Toastify({
+                      text: "No recommended products available right now!",
+                      duration: 3000,
+                      gravity: "top",
+                      position: "right",
+                      close: true,
+                      style: {
+                        background:
+                          "linear-gradient(to right, #2193b0, #6dd5ed)", // blue info
+                      },
+                    }).showToast();
                   }
                 }}
                 className="mt-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity"
@@ -607,10 +639,7 @@ useEffect(() => {
                 {subtotal.toFixed(2)}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span>Shipping Fee</span>
-              <span className="text-green-600">FREE</span>
-            </div>
+            <div className="flex justify-between"></div>
           </div>
 
           <div className="flex justify-between font-bold text-gray-800 text-lg mb-4 border-t pt-4">
