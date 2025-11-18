@@ -6,12 +6,13 @@ import Providers from "./Providers";
 import { GlobalProvider } from "@/components/shared/context/GlobalContext";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
+import Head from "next/head";
 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
+}); 
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
