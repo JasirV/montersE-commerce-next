@@ -402,8 +402,39 @@ const CheckoutPage = () => {
       if (response.data.success) {
         if (paymentMethod === "stripe" && response.data.checkoutUrl) {
           window.location.href = response.data.checkoutUrl;
-        } else if (paymentMethod === "tabby" && response.data.paymentUrl) {
-          window.location.href = response.data.paymentUrl;
+        } else if (paymentMethod === "tabby") {
+          try {
+            const orderId =
+              response.data?.order?._id ||
+              response.data?.orderId ||
+              response.data?.id ||
+              null;
+
+            const tabbyRes = await fetch("/api/orders/tabby", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                shippingAddress,
+                amount: finalTotal,
+                currency: "AED",
+                orderId,
+              }),
+            });
+
+            if (!tabbyRes.ok) {
+              const err = await tabbyRes.json().catch(() => ({}));
+              throw new Error(err?.message || "Failed to start Tabby checkout");
+            }
+
+            const tabbyData = await tabbyRes.json();
+            if (tabbyData?.checkoutUrl) {
+              window.location.href = tabbyData.checkoutUrl;
+            } else {
+              throw new Error("Checkout URL missing from Tabby response");
+            }
+          } catch (e) {
+            alert(e.message || "Tabby integration error");
+          }
         } else {
           setStep("success");
         }
@@ -1074,9 +1105,8 @@ const CheckoutPage = () => {
                     </div>
                   </label>
 
-                  {/* Tabby Payment Option */}
                   <label
-                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
                       paymentMethod === "tabby"
                         ? "border-blue-500 bg-blue-50"
                         : "border-gray-200"

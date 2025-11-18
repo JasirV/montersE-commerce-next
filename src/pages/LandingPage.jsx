@@ -14,6 +14,7 @@ import ChatRobot from "@/components/ui/ChatRobot";
 import Watch from "@/layouts/Watch";
 import "../Mobile/responsive.css";
 import NewsletterModal from "@/components/modals/newsletterModal";
+import CategorySectionWithImages from "@/components/CategorySection";
 
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -53,6 +54,9 @@ export default function IndexPage() {
         onClose={() => setIsModalOpen(false)} 
       />
       <Landing />
+      <div className="flex md:hidden justify-center">
+        <CategorySectionWithImages/>
+      </div>
       <Home />
       <WatchBrand />
       <Form />
