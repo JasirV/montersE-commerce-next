@@ -1,13 +1,12 @@
-import ShopByBrand from '../../../pages/ShopByBrand'
-import React from 'react'
+import ProductPage from "../../../features/product/ProductPage";
+import React from "react";
 
 const page = () => {
-  
   return (
     <div>
-        <ShopByBrand/>
+      <ProductPage />
     </div>
-  )
-}
+  );
+};
 
-export default page
+export default page;

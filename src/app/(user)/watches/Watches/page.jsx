@@ -5,7 +5,6 @@ import React, {
   useMemo,
   Suspense,
   useEffect,
-  useRef,
   useCallback,
 } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -22,7 +21,13 @@ import {
   FiList,
 } from "react-icons/fi";
 
-// Component that uses useSearchParams - wrapped in Suspense
+// SearchParamsWrapper component to handle suspense
+const SearchParamsWrapper = ({ children }) => {
+  const searchParams = useSearchParams();
+  return children(searchParams);
+};
+
+// Main content component that uses searchParams
 const PageContent = ({ searchParams }) => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortOption, setSortOption] = useState("newest");
@@ -40,7 +45,7 @@ const PageContent = ({ searchParams }) => {
   const { category, subcategory } = useParams();
   const productsPerPage = 16;
 
-  // ✅ CORRECTED: Initialize active filters with proper structure
+  // Initialize active filters with proper structure
   const [activeFilters, setActiveFilters] = useState({
     category: [],
     brand: [],
@@ -63,19 +68,19 @@ const PageContent = ({ searchParams }) => {
     priceRange: null,
   });
 
-  // ✅ CORRECTED: Extract dynamic filter options from products with fallbacks
+  // Extract dynamic filter options from products with fallbacks
   const brands = useMemo(() => {
     const productBrands = products.products.map((p) => p.brand).filter(Boolean);
     return productBrands.length > 0
       ? [...new Set(productBrands)]
-      : ["Rolex", "Omega", "Patek Philippe", "Audemars Piguet"];
+      : ["Rolex", "Omega", "Patek Philippe", "Audemars Piguet", "Tag Heuer", "Breitling", "Cartier", "IWC", "Hublot", "Panerai"];
   }, [products.products]);
 
   const models = useMemo(() => {
     const productModels = products.products.map((p) => p.model).filter(Boolean);
     return productModels.length > 0
       ? [...new Set(productModels)]
-      : ["Submariner", "Daytona", "Speedmaster", "Nautilus"];
+      : ["Submariner", "Daytona", "Speedmaster", "Nautilus", "Royal Oak", "Carrera", "Chronomat", "Santos", "Portugieser", "Big Bang"];
   }, [products.products]);
 
   const referenceNumbers = useMemo(() => {
@@ -84,7 +89,7 @@ const PageContent = ({ searchParams }) => {
       .filter(Boolean);
     return productRefs.length > 0
       ? [...new Set(productRefs)]
-      : ["116610LN", "126610", "311.30.42.30.01.005"];
+      : ["116610LN", "126610", "311.30.42.30.01.005", "5711/1A", "15500ST", "CBGBA", "AB012", "WSSA"];
   }, [products.products]);
 
   const caseSizes = useMemo(() => {
@@ -120,10 +125,17 @@ const PageContent = ({ searchParams }) => {
     const colors = products.products.map((p) => p.strapColor).filter(Boolean);
     return colors.length > 0
       ? [...new Set(colors)]
-      : ["Black", "Brown", "Blue", "Green", "Red"];
+      : ["Black", "Brown", "Blue", "Green", "Red", "White", "Gray", "Gold", "Silver"];
   }, [products.products]);
 
-  // ✅ CORRECTED: Update URL with current filters and pagination
+  const dialColors = useMemo(() => {
+    const colors = products.products.map((p) => p.dialColor).filter(Boolean);
+    return colors.length > 0
+      ? [...new Set(colors)]
+      : ["Black", "White", "Blue", "Green", "Silver", "Gray", "Champagne", "Mother of Pearl"];
+  }, [products.products]);
+
+  // Update URL with current filters and pagination
   const updateURL = useCallback((filters, page, sort) => {
     const params = new URLSearchParams();
 
@@ -132,8 +144,6 @@ const PageContent = ({ searchParams }) => {
       if (key === "priceRange" && value) {
         if (value.min) params.set("minPrice", value.min);
         if (value.max) params.set("maxPrice", value.max);
-      } else if (key === "search") {
-        params.set("search", value);
       } else if (Array.isArray(value) && value.length > 0) {
         value.forEach((v) => params.append(key, v));
       }
@@ -148,17 +158,12 @@ const PageContent = ({ searchParams }) => {
     window.history.replaceState(null, "", newUrl);
   }, []);
 
-  // ✅ CORRECTED: Build API parameters from active filters
+  // Build API parameters from active filters
   const buildApiParams = useCallback(() => {
     const params = {
       page: currentPage,
       limit: productsPerPage,
     };
-
-    // Add category from URL if available
-    if (category) {
-      params.category = [category];
-    }
 
     // Add active filters
     Object.keys(activeFilters).forEach((key) => {
@@ -226,41 +231,43 @@ const PageContent = ({ searchParams }) => {
 
     console.log("Final API params:", params);
     return params;
-  }, [activeFilters, currentPage, sortOption, category, productsPerPage]);
+  }, [activeFilters, currentPage, sortOption, productsPerPage]);
 
-  // ✅ CORRECTED: Fetch products based on current filters
+  // Fetch all watches based on current filters
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
       const apiParams = buildApiParams();
-      console.log("Fetching luxury watches with params:", apiParams);
+      console.log("Fetching all watches with params:", apiParams);
 
-      const result = await WatchBycategory("luxury watch", apiParams);
-      console.log(result,"new");
-      
+      // Use "all" to get all watches - CORRECTED
+      const result = await WatchBycategory("all", apiParams);
+      console.log("All watches result:", result);
 
       if (result.error) {
-        throw new Error(result.error.message || "Failed to fetch luxury watches");
+        throw new Error(result.error.message || "Failed to fetch watches");
       }
 
       if (result.data) {
         console.log(
-          "Luxury watches fetched successfully:",
-          result.data.products.length
+          "All watches fetched successfully:",
+          result.data.products?.length || 0
         );
         setProducts(result.data);
+      } else {
+        throw new Error("No data received from API");
       }
     } catch (err) {
-      console.error("Error fetching luxury watches:", err);
-      setError("Failed to load luxury watches. Please try again later.");
+      console.error("Error fetching all watches:", err);
+      setError(err.message || "Failed to load watches. Please try again later.");
     } finally {
       setLoading(false);
     }
   }, [buildApiParams]);
 
-  // ✅ CORRECTED: Initialize filters from URL on component mount
+  // Initialize filters from URL on component mount
   useEffect(() => {
     const initialFilters = { ...activeFilters };
     let hasURLFilters = false;
@@ -320,19 +327,22 @@ const PageContent = ({ searchParams }) => {
     if (hasURLFilters) {
       setActiveFilters(initialFilters);
     }
+
+    // Fetch products after initializing from URL
+    fetchProducts();
   }, [searchParams]);
 
-  // ✅ CORRECTED: Fetch products when filters, page, or sort change
+  // Fetch products when filters, page, or sort change
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+  }, [currentPage, sortOption, activeFilters]);
 
   // Update URL when filters change
   useEffect(() => {
     updateURL(activeFilters, currentPage, sortOption);
   }, [activeFilters, currentPage, sortOption, updateURL]);
 
-  // ✅ CORRECTED: Handle filter changes
+  // Handle filter changes
   const toggleFilter = useCallback((type, value, clear = false) => {
     setCurrentPage(1); // Reset to first page when filters change
 
@@ -413,7 +423,7 @@ const PageContent = ({ searchParams }) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // ✅ CORRECTED: Count active filters
+  // Count active filters
   const activeFilterCount = useMemo(() => {
     return Object.keys(activeFilters).filter((key) => {
       if (key === "priceRange") {
@@ -435,12 +445,6 @@ const PageContent = ({ searchParams }) => {
 
   const { startItem, endItem } = getDisplayRange();
 
-  console.log("Active Filters:", activeFilters);
-  console.log("Dynamic Options - Brands:", brands);
-  console.log("Dynamic Options - Models:", models);
-  console.log("Dynamic Options - Reference Numbers:", referenceNumbers);
-  console.log("Dynamic Options - Case Sizes:", caseSizes);
-
   return (
     <div className="bg-[#f8f5f2] min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
@@ -456,18 +460,10 @@ const PageContent = ({ searchParams }) => {
                 Home
               </a>
             </li>
-            {category && (
-              <li className="flex items-center">
-                <span className="mx-2 text-gray-400">/</span>
-                <span className="text-gray-700 capitalize">Luxury Watches</span>
-              </li>
-            )}
-            {subcategory && (
-              <li className="flex items-center">
-                <span className="mx-2 text-gray-400">/</span>
-                <span className="text-gray-700 capitalize">{subcategory}</span>
-              </li>
-            )}
+            <li className="flex items-center">
+              <span className="mx-2 text-gray-400">/</span>
+              <span className="text-gray-700 font-semibold">All Watches</span>
+            </li>
           </ol>
         </nav>
 
@@ -531,6 +527,7 @@ const PageContent = ({ searchParams }) => {
               referenceNumbers={referenceNumbers}
               caseSizes={caseSizes}
               strapColors={strapColors}
+              dialColors={dialColors}
             />
           </aside>
 
@@ -542,16 +539,7 @@ const PageContent = ({ searchParams }) => {
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
                     <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-0">
-                      {category
-                        ? `${
-                            category.charAt(0).toUpperCase() + category.slice(1)
-                          } Luxury Watches`
-                        : "Luxury Watches"}
-                      {subcategory &&
-                        ` / ${
-                          subcategory.charAt(0).toUpperCase() +
-                          subcategory.slice(1)
-                        }`}
+                      All Watches
                     </h1>
                     <p className="text-sm font-semibold text-gray-700 bg-gray-50 px-3 py-1 rounded-lg">
                       {products.totalProducts || 0}{" "}
@@ -601,7 +589,7 @@ const PageContent = ({ searchParams }) => {
                           value={sortOption}
                           onChange={(e) => setSortOption(e.target.value)}
                           className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm focus:border-[#8b6b4a] focus:ring-2 focus:ring-[#8b6b4a] focus:ring-opacity-20 transition-all duration-200 appearance-none cursor-pointer shadow-sm hover:shadow-md"
-                          aria-label="Sort luxury watches"
+                          aria-label="Sort watches"
                         >
                           <option value="newest">Newest Arrivals</option>
                           <option value="price_low_high">
@@ -636,7 +624,7 @@ const PageContent = ({ searchParams }) => {
                           return (
                             <span
                               key="price-range"
-                              className="inline-flex items-center rounded-full  bg-opacity-10 px-3 py-1.5 text-sm font-medium text-[#8b6b4a]"
+                              className="inline-flex items-center rounded-full bg-opacity-10 px-3 py-1.5 text-sm font-medium text-[#8b6b4a]"
                             >
                               AED {values.min} - AED {values.max}
                               <button
@@ -728,7 +716,7 @@ const PageContent = ({ searchParams }) => {
                     <FiX className="w-8 h-8 text-red-500" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    Error Loading Products
+                    Error Loading Watches
                   </h3>
                   <p className="text-gray-600 mb-6 text-sm">{error}</p>
                   <button
@@ -807,11 +795,10 @@ const PageContent = ({ searchParams }) => {
                       <FiX className="w-8 h-8 text-gray-400" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      No luxury watches found
+                      No watches found
                     </h3>
                     <p className="text-gray-600 mb-6 text-sm">
-                      Try adjusting your search or filter criteria to find more
-                      luxury watches.
+                      Try adjusting your search or filter criteria to find more watches.
                     </p>
                     <button
                       onClick={clearAllFilters}
@@ -828,32 +815,6 @@ const PageContent = ({ searchParams }) => {
         </div>
       </div>
     </div>
-  );
-};
-
-// Component to wrap useSearchParams in Suspense
-const SearchParamsWrapper = ({ children }) => {
-  const searchParams = useSearchParams();
-  return children(searchParams);
-};
-
-// Main Page component with Suspense boundary
-const Page = () => {
-  return (
-    <Suspense 
-      fallback={
-        <div className="bg-[#f8f5f2] min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8b6b4a] mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading Luxury watches...</p>
-          </div>
-        </div>
-      }
-    >
-      <SearchParamsWrapper>
-        {(searchParams) => <PageContent searchParams={searchParams} />}
-      </SearchParamsWrapper>
-    </Suspense>
   );
 };
 
@@ -1031,6 +992,26 @@ const MobileResponsivePagination = ({
         )}
       </div>
     </div>
+  );
+};
+
+// Main Page component with Suspense boundary
+const Page = () => {
+  return (
+    <Suspense 
+      fallback={
+        <div className="bg-[#f8f5f2] min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8b6b4a] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading all watches...</p>
+          </div>
+        </div>
+      }
+    >
+      <SearchParamsWrapper>
+        {(searchParams) => <PageContent searchParams={searchParams} />}
+      </SearchParamsWrapper>
+    </Suspense>
   );
 };
 
