@@ -1,14 +1,13 @@
-import React, { useState, useCallback, lazy, Suspense } from "react";
+import React, { useState, useCallback } from "react";
 import Modal from "react-modal";
 import Image from "next/image";
-import Authentication from "../../assets/wathc image.jpg";
+import Authentication from "../../assets/authenticationMy.jpg";
 import { FaTimes } from "react-icons/fa";
 
-// Lazy load form components
-const LoginForm = lazy(() => import("./LoginForm"));
-const RegisterForm = lazy(() => import("./Registerpage"));
-const ForgotPasswordForm = lazy(() => import("./Forgotyourpassword"));
-
+// Import forms normally (no lazy)
+import LoginForm from "./LoginForm";
+import RegisterForm from "./Registerpage";
+import ForgotPasswordForm from "./Forgotyourpassword";
 
 // Modal Styles
 const customStyles = {
@@ -18,14 +17,13 @@ const customStyles = {
     right: "auto",
     bottom: "auto",
     transform: "translate(-50%, -50%)",
-    padding: "0",
+    padding: 0,
     border: "none",
     borderRadius: "12px",
     overflow: "hidden",
-    width: "90%", // mobile width
-    maxWidth: "700px", // desktop max width
-    height: "auto",
-    maxHeight: "90vh", // scrollable if content too tall
+    width: "90%",
+    maxWidth: "700px",
+    maxHeight: "90vh",
   },
   overlay: {
     backgroundColor: "rgba(0,0,0,0.55)",
@@ -42,7 +40,7 @@ if (typeof window !== "undefined") {
   Modal.setAppElement("body");
 }
 
-// Left Banner
+// Left Banner Component
 const ImageBanner = () => (
   <div className="hidden md:flex md:w-2/5 relative">
     <Image
@@ -52,7 +50,7 @@ const ImageBanner = () => (
       className="object-cover"
       loading="lazy"
     />
-    <div className="absolute inset-0 bg-gradient-to-r flex items-end p-6">
+    <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-end p-6">
       <div className="text-white">
         <h2 className="text-2xl font-bold mb-2">Welcome Back</h2>
         <p className="text-sm opacity-90">Discover our exclusive collection</p>
@@ -61,11 +59,11 @@ const ImageBanner = () => (
   </div>
 );
 
-// Tabs
+// Tabs Component
 const TabNavigation = ({ activeTab, setActiveTab }) => {
   const tabs = [
-    { id: "login", label: "LOGIN" },
-    { id: "register", label: "REGISTER" },
+    { id: "login", label: "Login" },
+    { id: "register", label: "Register" },
   ];
 
   return (
@@ -74,7 +72,7 @@ const TabNavigation = ({ activeTab, setActiveTab }) => {
         <button
           key={tab.id}
           onClick={() => setActiveTab(tab.id)}
-          className={`py-2 px-4 font-medium transition-colors flex-1 text-sm md:text-base ${
+          className={`py-2 px-4 font-medium flex-1 text-sm md:text-base transition-colors ${
             activeTab === tab.id
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-500 hover:text-gray-700"
@@ -87,7 +85,7 @@ const TabNavigation = ({ activeTab, setActiveTab }) => {
   );
 };
 
-// Unified Close Button Component
+// Close Button
 const CloseButton = ({ onClose, className = "" }) => (
   <button
     onClick={onClose}
@@ -98,7 +96,7 @@ const CloseButton = ({ onClose, className = "" }) => (
   </button>
 );
 
-// Main Auth Modal
+// Auth Modal
 const AuthModal = ({ isOpen, onRequestClose }) => {
   const [activeTab, setActiveTab] = useState("login");
 
@@ -121,41 +119,32 @@ const AuthModal = ({ isOpen, onRequestClose }) => {
       ariaHideApp={false}
     >
       <div className="flex flex-col md:flex-row h-full min-h-[450px] max-h-[90vh] relative">
-        {/* Close Button - Positioned absolutely for both desktop and mobile */}
-        <CloseButton 
-          onClose={handleClose} 
-          className="absolute top-3 right-3 md:top-4 md:right-4" 
+        {/* Close Button */}
+        <CloseButton
+          onClose={handleClose}
+          className="absolute top-3 right-3 md:top-4 md:right-4"
         />
 
         {/* Left Banner */}
         <ImageBanner />
 
         {/* Right Content */}
-        <div className="w-full md:w-3/5 bg-white p-5 md:p-8 rounded-r-lg">
+        <div className="w-full md:w-3/5 bg-white p-5 md:p-8 rounded-r-lg overflow-y-auto">
           {/* Tabs */}
           <TabNavigation activeTab={activeTab} setActiveTab={handleTabChange} />
 
-          {/* Lazy Loaded Forms */}
-          <Suspense >
+          {/* Form Rendering */}
+          <div className="transition-all duration-300 ease-in-out">
             {activeTab === "login" && (
-              <LoginForm
-                setActiveTab={handleTabChange}
-                onRequestClose={handleClose}
-              />
+              <LoginForm setActiveTab={handleTabChange} onRequestClose={handleClose} />
             )}
             {activeTab === "register" && (
-              <RegisterForm
-                setActiveTab={handleTabChange}
-                onRequestClose={handleClose}
-              />
+              <RegisterForm setActiveTab={handleTabChange} onRequestClose={handleClose} />
             )}
             {activeTab === "forgot" && (
-              <ForgotPasswordForm
-                setActiveTab={handleTabChange}
-                onRequestClose={handleClose}
-              />
+              <ForgotPasswordForm setActiveTab={handleTabChange} onRequestClose={handleClose} />
             )}
-          </Suspense>
+          </div>
         </div>
       </div>
     </Modal>

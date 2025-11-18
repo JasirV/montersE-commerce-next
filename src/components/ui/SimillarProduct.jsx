@@ -1,17 +1,20 @@
+"use client";
+
 import Image from "next/image";
-import React, { useContext, useEffect, useState } from "react";
-import { FaHeart, FaShoppingCart } from "react-icons/fa";
-import Dummy1 from "../../assets/Omega Seamaster.jpg";
-import newCurrency from "../../assets/newSymbole.png";
+import React, { useContext, useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { FaHeart, FaShoppingCart, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
-import { GlobalContext } from "../shared/context/GlobalContext";
 import axios from "axios";
+import { GlobalContext } from "../shared/context/GlobalContext";
+import Dummy1 from "../../assets/Accessory Deals.jpg";
+import newCurrency from "../../assets/newSymbole.png";
 
 // Single product card component
 const ProductCard = ({ product }) => {
-  const { decrementWishlist, incrementWishlist, incrementCart } =
-    useContext(GlobalContext);
+  const router = useRouter();
+  const { decrementWishlist, incrementWishlist, incrementCart } = useContext(GlobalContext);
   const [isWishlisted, setIsWishlisted] = useState([]);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +46,6 @@ const ProductCard = ({ product }) => {
           res.data.wishlists.find((w) => w.isDefault) || res.data.wishlists[0];
         setDefaultWishlistId(defaultWishlist._id || defaultWishlist.id);
 
-        // Extract all product IDs from all wishlists
         const allWishlistProductIds = res.data.wishlists.flatMap(
           (wishlist) =>
             wishlist.products?.map((product) => product._id || product) || []
@@ -67,41 +69,34 @@ const ProductCard = ({ product }) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-         Toastify({
-        text:
-         "Please log in first to add to wishlist",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+        Toastify({
+          text: "Please log in first to add to wishlist",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
       const productId = product._id || product.productId?._id;
       if (!productId) {
-        // console.error("Product ID not found");
         return;
       }
 
-      // Check if product is already in wishlist
       const alreadyWishlisted = checkIsWishlisted(productId);
 
       if (alreadyWishlisted) {
-        // Remove from wishlist
         await removeFromWishlist(productId);
       } else {
-        // Add to wishlist
         await addToWishlist(product);
       }
     } catch (error) {
-   
-          Toastify({
-        text:
-          "Failed to update wishlist. Please try again.",
+      Toastify({
+        text: "Failed to update wishlist. Please try again.",
         duration: 4000,
         gravity: "top",
         position: "right",
@@ -117,33 +112,30 @@ const ProductCard = ({ product }) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-         Toastify({
-        text:
-         "Please log in first to add to wishlist",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+        Toastify({
+          text: "Please log in first to add to wishlist",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
-      // Make sure a default wishlist exists
       if (!defaultWishlistId) {
         Toastify({
-        text:
-         "No wishlist found. Please create a wishlist first.",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+          text: "No wishlist found. Please create a wishlist first.",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
@@ -154,19 +146,17 @@ const ProductCard = ({ product }) => {
         return;
       }
 
-      // Check if already in wishlist
       if (checkIsWishlisted(productId)) {
-    Toastify({
-  text: "Product is already in your wishlist.",
-  duration: 3000,
-  gravity: "top",
-  position: "right",
-  close: true,
-  style: {
-    background: "linear-gradient(to right, #2193b0, #6dd5ed)", // blue gradient
-  },
-}).showToast();
-
+        Toastify({
+          text: "Product is already in your wishlist.",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #2193b0, #6dd5ed)",
+          },
+        }).showToast();
         return;
       }
 
@@ -185,25 +175,21 @@ const ProductCard = ({ product }) => {
 
       incrementWishlist();
       if (response.status === 200) {
-        // Add to local wishlist state
         setIsWishlisted((prev) => [...prev, productId]);
-             Toastify({
-        text:
-         "added to wishlist",
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #00b09b, #96c93d)",
-        },
-      }).showToast();
+        Toastify({
+          text: "added to wishlist",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #00b09b, #96c93d)",
+          },
+        }).showToast();
       }
     } catch (error) {
-     
-          Toastify({
-        text:
-         "Failed to add to wishlist. Please try again.",
+      Toastify({
+        text: "Failed to add to wishlist. Please try again.",
         duration: 4000,
         gravity: "top",
         position: "right",
@@ -235,15 +221,21 @@ const ProductCard = ({ product }) => {
 
       decrementWishlist();
       if (response.status === 200) {
-        // Remove from local wishlist state
         setIsWishlisted((prev) => prev.filter((id) => id !== productId));
-       
+        Toastify({
+          text: "Removed from wishlist",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #00b09b, #96c93d)",
+          },
+        }).showToast();
       }
     } catch (error) {
-      // console.error("Error removing from wishlist:", error);
-          Toastify({
-        text:
-          "Failed to remove from wishlist. Please try again.",
+      Toastify({
+        text: "Failed to remove from wishlist. Please try again.",
         duration: 4000,
         gravity: "top",
         position: "right",
@@ -260,32 +252,30 @@ const ProductCard = ({ product }) => {
       const token = localStorage.getItem("accessToken");
       if (!token) {
         Toastify({
-        text:
-         "Please log in to add items to your cart",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+          text: "Please log in to add items to your cart",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
       const productId = product._id || product.productId?._id;
       if (!productId) {
         Toastify({
-        text:
-         "Invalid product data",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+          text: "Invalid product data",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
         return;
       }
 
@@ -306,36 +296,39 @@ const ProductCard = ({ product }) => {
 
       if (response.status === 200) {
         Toastify({
-        text:
-         " added to cart",
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #00b09b, #96c93d)",
-        },
-      }).showToast();
+          text: " added to cart",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #00b09b, #96c93d)",
+          },
+        }).showToast();
       } else {
         Toastify({
-        text:
-         "Failed to add to cart. Try again!",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+          text: "Failed to add to cart. Try again!",
+          duration: 4000,
+          gravity: "top",
+          position: "right",
+          close: true,
+          style: {
+            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+          },
+        }).showToast();
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
-     
     }
   };
 
-  // Fetch wishlists when component mounts
+  const handleProductClick = (product) => {
+    const productId = product._id || product.productId?._id;
+    if (productId) {
+      router.push(`/ProductDetailPage/${productId}`);
+    }
+  };
+
   useEffect(() => {
     fetchWishlists();
   }, []);
@@ -343,21 +336,38 @@ const ProductCard = ({ product }) => {
   const productId = product._id || product.productId?._id;
   const isProductWishlisted = checkIsWishlisted(productId);
 
-  return (
-    <div className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 mx-2 my-2">
-      {/* Product Image Container */}
-      <div className="relative h-52 bg-gray-50">
+  const formatPrice = (price) => {
+    return (
+      <div className="flex items-center">
         <Image
-          src={product.images?.[0]?.url || Dummy1}
-          alt={product.name}
-          unoptimized   // <--- bypasses Vercel
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-          loading="lazy"
-          onError={(e) => {
-            e.target.src = Dummy1;
-          }}
+          src={newCurrency}
+          alt="Currency"
+          className="w-4 h-4 mr-1.5"
         />
+        <span className="text-xl font-bold text-gray-900">
+          {price?.toLocaleString() || "0"}
+        </span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 mx-2 my-2 flex-shrink-0 w-full max-w-[280px] sm:w-[280px]">
+      {/* Product Image Container */}
+      <div className="relative h-52 bg-gray-50 cursor-pointer">
+        <div onClick={() => handleProductClick(product)} className="w-full h-full">
+          <Image
+            src={product.images?.[0]?.url || Dummy1}
+            alt={product.name}
+            unoptimized
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            onError={(e) => {
+              e.target.src = Dummy1;
+            }}
+          />
+        </div>
 
         {/* Wishlist Button */}
         <button
@@ -381,27 +391,20 @@ const ProductCard = ({ product }) => {
       </div>
 
       {/* Product Details */}
-      <div className="p-5">
-        {/* Product Name */}
-        <h3 className="text-gray-800 font-semibold text-[15px] mb-3 line-clamp-2 leading-tight min-h-[2.8rem]">
+      <div className="p-4 sm:p-5">
+        <h3 
+          onClick={() => handleProductClick(product)}
+          className="text-gray-800 font-semibold text-[15px] mb-3 line-clamp-2 leading-tight min-h-[2.8rem] cursor-pointer hover:text-blue-600 transition-colors"
+        >
           {product.name}
         </h3>
 
         {/* Price Section */}
-        <div className="flex items-baseline gap-2 mb-3">
-          <div className="flex items-center">
-            <Image
-              src={newCurrency}
-              alt="Currency"
-              className="w-4 h-4 mr-1.5"
-            />
-            <span className="text-xl font-bold text-gray-900">
-              {product.salePrice?.toLocaleString() || "0"}
-            </span>
-          </div>
+        <div className="flex items-baseline gap-2 mb-4">
+          {formatPrice(product.salePrice)}
           {product.regularPrice && product.regularPrice > product.salePrice && (
             <span className="text-sm text-gray-500 line-through ml-1">
-              {product.regularPrice?.toLocaleString()}
+              {formatPrice(product.regularPrice)}
             </span>
           )}
         </div>
@@ -419,79 +422,65 @@ const ProductCard = ({ product }) => {
   );
 };
 
-const SimilarProduct = ({ productId }) => {
-  const [similarProducts, setSimilarProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+// Scrollable Products Container Component
+const ScrollableProductsContainer = ({ 
+  title, 
+  description, 
+  products, 
+  loading, 
+  error
+}) => {
+  const scrollContainerRef = useRef(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
 
-   useEffect(() => {
-  const fetchSimilarProducts = async () => {
-    if (!productId) {
-      console.log("No product ID provided");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Get token from localStorage (or wherever you store it)
-      const token = localStorage.getItem("accessToken");
-
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`,
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.success) {
-        const products =
-          response.data.products || response.data.similarProducts || [];
-        console.log("Products found:", products.length);
-        setSimilarProducts(products);
-      } else {
-        console.log("API returned success: false");
-        setSimilarProducts([]);
-      }
-    } catch (err) {
-      console.error("Error fetching similar products:", err);
-      console.error("Error details:", err.response?.data);
-      setError("Failed to load similar products");
-      setSimilarProducts([]);
-    } finally {
-      setLoading(false);
+  const checkScrollButtons = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setShowLeftArrow(scrollLeft > 0);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
     }
   };
 
-  fetchSimilarProducts();
-}, [productId]);
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
 
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    checkScrollButtons();
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScrollButtons);
+      return () => container.removeEventListener('scroll', checkScrollButtons);
+    }
+  }, [products]);
 
   // Show loading state
   if (loading) {
     return (
-      <div className="bg-gray-50/80 py-12 px-4">
+      <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">
-              Similar Products
-            </h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
-              Loading similar products...
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
+            <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+              Loading {title.toLowerCase()}...
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="flex gap-4 sm:gap-6 overflow-hidden justify-center sm:justify-start">
             {[...Array(4)].map((_, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl shadow-sm p-5 animate-pulse"
+                className="bg-white rounded-xl shadow-sm p-4 sm:p-5 animate-pulse flex-shrink-0 w-[45%] sm:w-[280px]"
               >
-                <div className="h-52 bg-gray-200 rounded-lg mb-4"></div>
+                <div className="h-40 sm:h-52 bg-gray-200 rounded-lg mb-4"></div>
                 <div className="h-4 bg-gray-200 rounded mb-2"></div>
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
                 <div className="h-8 bg-gray-200 rounded"></div>
@@ -506,12 +495,10 @@ const SimilarProduct = ({ productId }) => {
   // Show error state
   if (error) {
     return (
-      <div className="bg-gray-50/80 py-12 px-4">
+      <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">
-            Similar Products
-          </h2>
-          <p className="text-gray-600 text-lg mb-6">{error}</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
+          <p className="text-gray-600 text-base sm:text-lg mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -523,16 +510,14 @@ const SimilarProduct = ({ productId }) => {
     );
   }
 
-  // Show empty state if no similar products
-  if (!similarProducts || similarProducts.length === 0) {
+  // Show empty state if no products
+  if (!products || products.length === 0) {
     return (
-      <div className="bg-gray-50/80 py-12 px-4">
+      <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">
-            Similar Products
-          </h2>
-          <p className="text-gray-600 text-lg">
-            No similar products found at the moment.
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
+          <p className="text-gray-600 text-base sm:text-lg">
+            No {title.toLowerCase()} found at the moment.
           </p>
         </div>
       </div>
@@ -540,47 +525,175 @@ const SimilarProduct = ({ productId }) => {
   }
 
   return (
-    <div className="bg-gray-50/80 py-12 px-4">
+    <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">
-            Similar Products
-          </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
-            Discover more premium products that match your exquisite style and
-            preferences
+        <div className="text-center mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
+          <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-4">
+            {description}
           </p>
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {similarProducts.map((product) => (
-            <ProductCard key={product._id} product={product} />
-          ))}
-        </div>
-
-        {/* View More Button */}
-        <div className="mt-12 text-center">
-          <button className="inline-flex items-center px-8 py-4 border-2 border-gray-300 rounded-xl text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-300 group">
-            View More Products
-            <svg
-              className="ml-3 w-5 h-5 transition-transform group-hover:translate-y-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        {/* Products Container with Scroll Arrows */}
+        <div className="relative">
+          {/* Left Arrow */}
+          {showLeftArrow && (
+            <button
+              onClick={scrollLeft}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white border border-gray-200 rounded-full p-2 sm:p-3 shadow-lg hover:shadow-xl transition-all duration-200 -translate-x-1/2 hover:scale-110 hidden sm:block"
+              aria-label="Scroll left"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
+              <FaChevronLeft className="text-gray-700 text-base sm:text-lg" />
+            </button>
+          )}
+
+          {/* Scrollable Products */}
+          <div
+            ref={scrollContainerRef}
+            className="flex overflow-x-auto gap-4 sm:gap-6 pb-4 sm:pb-6 scrollbar-hide scroll-smooth px-2 sm:px-0"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {products.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
+          </div>
+
+          {/* Right Arrow */}
+          {showRightArrow && (
+            <button
+              onClick={scrollRight}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white border border-gray-200 rounded-full p-2 sm:p-3 shadow-lg hover:shadow-xl transition-all duration-200 translate-x-1/2 hover:scale-110 hidden sm:block"
+              aria-label="Scroll right"
+            >
+              <FaChevronRight className="text-gray-700 text-base sm:text-lg" />
+            </button>
+          )}
         </div>
       </div>
     </div>
+  );
+};
+
+// Main Similar Products Component
+const SimilarProduct = ({ productId }) => {
+  const [similarProducts, setSimilarProducts] = useState([]);
+  const [youMayAlsoLikeProducts, setYouMayAlsoLikeProducts] = useState([]);
+  const [similarLoading, setSimilarLoading] = useState(true);
+  const [youMayAlsoLikeLoading, setYouMayAlsoLikeLoading] = useState(true);
+  const [similarError, setSimilarError] = useState(null);
+  const [youMayAlsoLikeError, setYouMayAlsoLikeError] = useState(null);
+
+  // Fetch similar products
+  useEffect(() => {
+    const fetchSimilarProducts = async () => {
+      if (!productId) {
+        console.log("No product ID provided for similar products");
+        setSimilarLoading(false);
+        return;
+      }
+
+      try {
+        setSimilarLoading(true);
+        setSimilarError(null);
+
+        const token = localStorage.getItem("accessToken");
+
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/similar`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.data.success) {
+          const products = response.data.products || response.data.similarProducts || [];
+          console.log("Similar products found:", products.length);
+          setSimilarProducts(products);
+        } else {
+          console.log("Similar products API returned success: false");
+          setSimilarProducts([]);
+        }
+      } catch (err) {
+        console.error("Error fetching similar products:", err);
+        setSimilarError("Failed to load similar products");
+        setSimilarProducts([]);
+      } finally {
+        setSimilarLoading(false);
+      }
+    };
+
+    fetchSimilarProducts();
+  }, [productId]);
+
+  // Fetch "You May Also Like" products
+  useEffect(() => {
+    const fetchYouMayAlsoLikeProducts = async () => {
+      if (!productId) {
+        console.log("No product ID provided for you may also like products");
+        setYouMayAlsoLikeLoading(false);
+        return;
+      }
+
+      try {
+        setYouMayAlsoLikeLoading(true);
+        setYouMayAlsoLikeError(null);
+
+        const token = localStorage.getItem("accessToken");
+
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/products/${productId}/you-may-also-like`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.data.success) {
+          const products = response.data.products || response.data.youMayAlsoLike || [];
+          console.log("You May Also Like products found:", products.length);
+          setYouMayAlsoLikeProducts(products);
+        } else {
+          console.log("You May Also Like API returned success: false");
+          setYouMayAlsoLikeProducts([]);
+        }
+      } catch (err) {
+        console.error("Error fetching you may also like products:", err);
+        setYouMayAlsoLikeError("Failed to load recommended products");
+        setYouMayAlsoLikeProducts([]);
+      } finally {
+        setYouMayAlsoLikeLoading(false);
+      }
+    };
+
+    fetchYouMayAlsoLikeProducts();
+  }, [productId]);
+
+  return (
+    <>
+      {/* Similar Products Section */}
+      <ScrollableProductsContainer
+        title="Similar Products"
+        description="Discover more premium products that match your exquisite style and preferences"
+        products={similarProducts}
+        loading={similarLoading}
+        error={similarError}
+      />
+
+      {/* You May Also Like Section */}
+      <ScrollableProductsContainer
+        title="You May Also Like"
+        description="Explore these carefully selected products that complement your taste"
+        products={youMayAlsoLikeProducts}
+        loading={youMayAlsoLikeLoading}
+        error={youMayAlsoLikeError}
+      />
+    </>
   );
 };
 

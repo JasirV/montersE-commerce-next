@@ -2,162 +2,40 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import watchImage from "../../assets/classic.jpg";
+import jewelryImage from "../../assets/Jewelry/side-view-pair-silver-diamond-earrings-with-emerald-black-wall-black.jpg";
 
-const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
+const JewelryMegaMenu = ({ data, isMobile = false }) => {
   const categories = [
-    "Luxury",
-    "Sports", 
-    "Classic",
-    "Dress",
-    "Chronograph",
-    "Automatic",
-    "Smart",
-    "Vintage",
+    "Rings",
+    "Earrings",
+    "Necklaces",
+    "Bracelets",
+    "Pendants",
+    "Brooches",
+    "Anklets",
+    "Charms",
   ];
 
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
   const allBrands = [
-   "Aigner",
-    "Akribos Xxiv",
-    "Apogsum",
-    "AquaMarin",
-    "Aquaswiss",
-    "Armin Strom",
-    "Audemars Piguet",
-    "Balenciaga",
-    "Ball",
-    "Bernhard H. Mayer",
-    "Bertolucci",
-    "Blancpain",
-    "Borja",
-    "Boss By Hugo Boss",
-    "Boucheron",
-    "Breguet",
-    "Carl F. Bucherer",
-    "Cartier",
-    "Celine",
-    "Chanel",
-    "Charriol",
-    "Chaumet",
-    "Chopard",
-    "Chronoswiss",
-    "Citizen",
-    "Concord",
-    "Corum",
-    "CT Scuderia",
-    "De Grisogno",
-    "Dior",
-    "Dolce & Gabbana",
-    "Dubey & Schaldenbrand",
-    "Ebel",
-    "Edox",
-    "Elini",
-    "Emporio Armani",
-    "Erhard Junghans",
-    "Favre Leuba",
-    "Fendi",
-    "Ferre Milano",
-    "Franck Muller",
-    "Frederique Constant",
-    "Gerald Genta",
-    "Gianfranco Ferre",
-    "Giorgio Armani",
-    "Girard Perregaux",
-    "Giuseppe Zanotti",
-    "Givenchy",
-    "Glam Rock",
-    "Goyard",
-    "Graham",
-    "Grimoldi Milano",
-    "Gucci",
-    "Harry Winston",
-    "Hermes",
-    "Hublot",
-    "Hysek",
-    "Jacob & Co.",
-    "Jacques Lemans",
-    "Jaeger LeCoultre",
-    "Jean Marcel",
-    "JeanRichard",
-    "Jorg Hysek",
-    "Joseph",
-    "Junghans",
-    "Just Cavalli",
-    "Karl Lagerfeld",
-    "KC",
-    "Korloff",
-    "Lancaster",
-    "Locman",
-    "Longines",
-    "Louis Frard",
-    "Louis Moine",
-    "Louis Vuitton",
-    "Marc by Marc Jacobs",
-    "Marc Jacobs",
-    "Martin Braun",
-    "Mauboussin",
-    "Maurice Lacroix",
-    "Meyers",
-    "Michael Kors",
-    "MICHAEL Michael Kors",
-    "Mido",
-    "Montblanc",
-    "Montega",
-    "Montegrappa",
-    "Movado",
-    "Navitec",
-    "NB Yaeger",
-    "Nina Ricci",
-    "Nubeo",
-    "Officina Del Tempo",
-    "Omega",
-    "Omega X Swatch",
-    "Oris",
-    "Panerai",
-    "Parmigiani",
-    "Patek Philippe",
-    "Paul Picot",
-    "Perrelet",
-    "Philip Stein",
-    "Piaget",
-    "Pierre Balmain",
-    "Porsche Design",
-    "Prada",
-    "Quinting",
-    "Rado",
-    "Rama Swiss Watch",
-    "Raymond Weil",
-    "Richard Mille",
-    "Robergé",
-    "Roberto Cavalli",
-    "Rochas",
-    "Roger Dubuis",
-    "S.T. Dupont",
-    "Saint Laurent Paris",
-    "Salvatore Ferragamo",
-    "Seiko",
-    "Swarovski",
-    "Swatch",
-    "Tag Heuer",
-    "Techno Com",
-    "Technomarine",
     "Tiffany & Co.",
-    "Tissot",
-    "Tonino Lamborghini",
-    "Trussardi",
-    "Tudor",
-    "Vacheron Constantin",
-    "Valentino",
+    "Cartier",
+    "Bulgari",
     "Van Cleef & Arpels",
-    "Versace",
-    "Yves Saint Laurent",
-    "Zenith",
-    "Ingersoll",
-    "IWC",
-    "U-Boat",
-    "Ulysse Nardin"
+    "Harry Winston",
+    "Graff",
+    "Chopard",
+    "Mikimoto",
+    "David Yurman",
+    "Pandora",
+    "Swarovski",
+    "Piaget",
+    "Boucheron",
+    "Messika",
+    "De Beers",
+    "Rolex Jewelry",
+    "Omega Jewelry",
   ];
 
   const [selectedLetter, setSelectedLetter] = useState(null);
@@ -187,26 +65,23 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
     }
   };
 
-  // Helper function to generate category URLs
-  const getCategoryUrl = (category) => {
-    return `/watches/${category.toLowerCase()}`;
-  };
-
   // ---------- MOBILE VIEW ----------
   if (isMobile) {
     return (
       <div className="pl-4 pb-4 space-y-4">
         {/* Categories */}
         <div>
-          <h4 className="font-semibold text-gray-900 mb-1">Watches By Style</h4>
+          <h4 className="font-semibold text-gray-900 mb-1">Jewelry By Type</h4>
           <ul className="space-y-2">
             {categories.map((category, index) => (
               <li key={index}>
                 <Link
-                  href={getCategoryUrl(category)}
+                  href={`/jewelry/${category
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`}
                   className="text-gray-600 hover:text-amber-600 block py-1 text-sm"
                 >
-                  {category} Watches
+                  {category}
                 </Link>
               </li>
             ))}
@@ -248,21 +123,56 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
           </div>
         </div>
 
-        {/* Shop All Watches Button - Mobile */}
+        {/* Shop All Jewelry Button - Mobile */}
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="text-center">
             <h4 className="font-bold text-amber-800 text-lg mb-2">
-              Explore Our Watch Collection
+              Explore Our Jewelry Collection
             </h4>
             <p className="text-amber-700 text-sm mb-3">
-              Discover premium timepieces for every occasion
+              Discover exquisite jewelry pieces for every occasion
             </p>
             <Link
-              href="/watches/Watches"
+              href="/jewelry"
               className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold text-sm transition-colors inline-block w-full"
             >
-              Shop All Watches
+              Shop All Jewelry
             </Link>
+          </div>
+        </div>
+
+        {/* Featured Products */}
+        <div>
+          <h4 className="font-semibold text-gray-900 mb-2">Featured</h4>
+          <div className="space-y-3">
+            {data?.featuredProducts?.map((product) => (
+              <Link
+                key={product.id}
+                href={`/product/${product.id}`}
+                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50"
+              >
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 object-cover rounded"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{product.name}</p>
+                  <p className="text-amber-600 text-sm font-semibold flex items-center">
+                    <Image
+                      src={newCurrency}
+                      alt="AED"
+                      width={14}
+                      height={14}
+                      className="inline-block mr-1"
+                    />
+                    {product.price}
+                  </p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
@@ -271,33 +181,35 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
 
   // ---------- DESKTOP VIEW ----------
   return (
-    <div className="absolute left-0 lg:left-[350%] transform lg:-translate-x-[50%] top-full mt-2 w-screen lg:w-[90vw] md:w-[80vw] max-w-6xl bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+    <div className="absolute left-0 lg:right-[350%] transform lg:-translate-x-[50%] top-full mt-2 w-screen lg:w-[90vw] md:w-[80vw] max-w-6xl bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
       <div className="flex flex-col lg:flex-row h-auto max-h-[80vh] lg:max-h-none overflow-auto">
         {/* LEFT SIDEBAR - Categories */}
         <div className="lg:w-[20%] bg-gray-50 p-5 border-b lg:border-b-0 lg:border-r border-gray-200">
           <h3 className="font-semibold text-gray-900 mb-3 text-base lg:text-lg">
-            Watches By Style
+            Jewelry By Type
           </h3>
           <ul className="space-y-2 text-gray-700 text-sm lg:text-base leading-relaxed">
             {categories.map((category, index) => (
               <li key={index}>
                 <Link
-                  href={getCategoryUrl(category)}
+                  href={`/jewelry/${category
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`}
                   className="hover:text-amber-600 transition-colors cursor-pointer py-1 lg:py-0 block"
                 >
-                  {category} Watches
+                  {category}
                 </Link>
               </li>
             ))}
           </ul>
 
-          {/* Shop All Watches Button - Desktop Sidebar */}
+          {/* Shop All Jewelry Button - Desktop Sidebar */}
           <div className="mt-6 pt-4 border-t border-gray-200">
             <Link
-              href="/watches/Watches"
+              href="/jewelry"
               className="bg-amber-500 hover:bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold text-sm transition-colors w-full block"
             >
-              Shop All Watches
+              Shop All Jewelry
             </Link>
           </div>
         </div>
@@ -365,22 +277,24 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
           </div>
         </div>
 
-        {/* RIGHT SIDEBAR - Big Watch Image & Promotion */}
+        {/* RIGHT SIDEBAR - Big Jewelry Image & Promotion */}
         <div className="lg:w-[25%] bg-gradient-to-b from-gray-50 to-white p-5 border-t lg:border-t-0 lg:border-l border-gray-200">
-          {/* Big Watch Image */}
+          {/* Big Jewelry Image */}
           <div className="mb-6">
             <div className="relative group overflow-hidden rounded-lg">
               <Image
-                src={watchImage || "/api/placeholder/300/400"}
-                alt="Luxury Watch Collection"
+                src={jewelryImage || "/api/placeholder/300/400"}
+                alt="Luxury Jewelry Collection"
                 width={300}
                 height={400}
                 className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                 <div className="text-white">
-                  <h4 className="font-bold text-lg mb-1">Luxury Collection</h4>
-                  <p className="text-sm opacity-90">Premium Timepieces</p>
+                  <h4 className="font-bold text-lg mb-1">
+                    Exquisite Collection
+                  </h4>
+                  <p className="text-sm opacity-90">Fine Jewelry Pieces</p>
                 </div>
               </div>
             </div>
@@ -391,4 +305,4 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
   );
 };
 
-export default WatchMegaMenu;
+export default JewelryMegaMenu;
