@@ -259,7 +259,7 @@ const PageContent = ({ searchParams }) => {
       const apiParams = buildApiParams();
       console.log("Fetching sports watches with params:", apiParams);
 
-      const result = await WatchBycategory("sports", apiParams);
+      const result = await WatchBycategory("Sports watch", apiParams);
 
       if (result.error) {
         throw new Error(result.error.message || "Failed to fetch sports watches");

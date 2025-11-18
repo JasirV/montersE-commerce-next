@@ -110,13 +110,58 @@ export async function LandingPageProduct() {
   }
 }
 
-export async function WatchBycategory(category, { page = 1, limit = 15 } = {}) {
+// service/productService.js
+export async function WatchBycategory(style, params = {}) {
   try {
-    const endpoint = `/watches/category/${category}?page=${page}&limit=${limit}`;
+    const { 
+      page = 1, 
+      limit = 16,
+      sortBy = "newest",
+      ...filters 
+    } = params;
+
+    // Build query string from filters
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy: sortBy,
+    });
+
+    // Add all filter parameters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach(v => queryParams.append(key, v));
+      } else if (value !== undefined && value !== null) {
+        queryParams.append(key, value);
+      }
+    });
+
+    let endpoint;
+    
+    if (style === "all" || !style) {
+      // Use the all watches endpoint
+      endpoint = `/watches/all?${queryParams.toString()}`;
+    } else {
+      // Use the style-specific endpoint
+      const safeStyle = encodeURIComponent(style);
+      endpoint = `/watches/style/${safeStyle}?${queryParams.toString()}`;
+    }
+
+    console.log("API Call:", endpoint);
     const response = await api.get(endpoint);
-    return { data: response.data, error: null, isLoading: false };
+    
+    return { 
+      data: response.data, 
+      error: null, 
+      isLoading: false 
+    };
   } catch (error) {
-    return { data: null, error, isLoading: false };
+    console.error("API Error:", error);
+    return { 
+      data: null, 
+      error, 
+      isLoading: false 
+    };
   }
 }
 

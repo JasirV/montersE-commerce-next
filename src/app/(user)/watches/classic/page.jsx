@@ -254,7 +254,7 @@ const PageContent = () => {
       const apiParams = buildApiParams();
       console.log("Fetching classic watches with params:", apiParams);
 
-      const result = await WatchBycategory("classic", apiParams);
+      const result = await WatchBycategory("Classic watch", apiParams);
 
       if (result.error) {
         throw new Error(result.error.message || "Failed to fetch classic watches");

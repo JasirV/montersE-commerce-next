@@ -3,7 +3,14 @@ import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
-import { FiHeart, FiClock, FiBell, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import {
+  FiHeart,
+  FiClock,
+  FiBell,
+  FiStar,
+  FiChevronLeft,
+  FiChevronRight,
+} from "react-icons/fi";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
 import { useCurrency } from "@/app/CurrencyContext";
@@ -19,7 +26,7 @@ const WishlistIcon = ({
   return (
     <button
       onClick={onClick}
-      className={`absolute top-2 left-2 rounded-full p-2 shadow-md hover:shadow-lg transition-all duration-200 z-30 md:p-1.5 ${
+      className={`absolute top-2 left-2 rounded-full p-2 shadow-md hover:shadow-lg transition-all duration-200 z-30 ${
         isSoldOut
           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
           : isWishlisted
@@ -30,7 +37,9 @@ const WishlistIcon = ({
       disabled={isSoldOut && !isWishlisted}
     >
       <FiHeart
-        className={`w-4 h-4 md:w-3 md:h-3 ${isWishlisted ? "fill-current" : ""}`}
+        className={`w-4 h-4 ${
+          isWishlisted ? "fill-current" : ""
+        }`}
       />
     </button>
   );
@@ -42,7 +51,7 @@ const ProductBadge = ({ badge }) => {
 
   return (
     <div className="absolute top-2 right-2 z-30">
-      <span className="inline-block bg-red-600 text-white text-xs font-medium px-2 py-1 rounded-full md:text-xs">
+      <span className="inline-block bg-red-600 text-white text-xs font-medium px-2 py-1 rounded-full">
         {badge}
       </span>
     </div>
@@ -50,7 +59,7 @@ const ProductBadge = ({ badge }) => {
 };
 
 // Mobile Optimized Rating
-const RatingDisplay = ({ rating }) => {
+const RatingDisplay = ({ rating, isSoldOut = false }) => {
   if (!rating) return null;
 
   return (
@@ -59,15 +68,23 @@ const RatingDisplay = ({ rating }) => {
         {[...Array(5)].map((_, i) => (
           <FiStar
             key={i}
-            className={`w-3 h-3 md:w-3 md:h-3 ${
+            className={`w-3 h-3 ${
               i < Math.floor(rating)
-                ? "text-yellow-400 fill-current"
+                ? isSoldOut
+                  ? "text-gray-300"
+                  : "text-yellow-400 fill-current"
                 : "text-gray-300"
             }`}
           />
         ))}
       </div>
-      <span className="text-xs text-gray-600 md:text-xs">({rating})</span>
+      <span
+        className={`text-xs ${
+          isSoldOut ? "text-gray-400" : "text-gray-600"
+        }`}
+      >
+        ({rating})
+      </span>
     </div>
   );
 };
@@ -88,29 +105,43 @@ const PriceDisplay = ({ price, mrp, discount, isSoldOut = false }) => {
     <div className="mt-2">
       <div className="flex items-center gap-2 flex-wrap">
         {price ? (
-          <span className="text-lg font-bold text-[#1a1a1a] md:text-lg">
+          <span
+            className={`text-lg font-bold ${
+              isSoldOut ? "text-gray-500" : "text-[#1a1a1a]"
+            }`}
+          >
             {currency}
             {formatPrice(price)}
           </span>
         ) : (
-          <span className="text-sm text-gray-500 md:text-sm">Price not available</span>
+          <span
+            className={`text-sm ${
+              isSoldOut ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            Price not available
+          </span>
         )}
 
         {mrp && (
-          <span className="text-sm text-gray-500 line-through md:text-sm">
+          <span
+            className={`text-sm line-through ${
+              isSoldOut ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
             {currency}
             {formatPrice(mrp)}
           </span>
         )}
       </div>
-      
-      {discount && (
+
+      {discount && !isSoldOut && (
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded md:text-xs">
+          <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded">
             {discount}% off
           </span>
           {mrp && price && (
-            <span className="text-xs text-gray-500 md:text-xs">
+            <span className="text-xs text-gray-500">
               You save {currency}
               {formatPrice(parseFloat(mrp) - parseFloat(price))}
             </span>
@@ -121,42 +152,12 @@ const PriceDisplay = ({ price, mrp, discount, isSoldOut = false }) => {
   );
 };
 
-// Mobile Optimized Stock Status
-const StockStatus = ({ isSoldOut, stockQuantity }) => {
-  if (isSoldOut) {
-    return (
-      <div className="flex items-center justify-center gap-1 mt-2 px-3 py-2 bg-red-50 rounded-lg border border-red-200 md:py-1.5">
-        <FiClock className="w-3 h-3 text-red-500 md:w-3 md:h-3" />
-        <span className="text-xs text-red-600 font-medium md:text-xs">Out of Stock</span>
-      </div>
-    );
-  }
-
-  if (stockQuantity && stockQuantity < 10) {
-    return (
-      <div className="flex items-center justify-center gap-1 mt-2 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200 md:py-1.5">
-        <span className="text-xs text-orange-600 font-medium md:text-xs">
-          Only {stockQuantity} left!
-        </span>
-      </div>
-    );
-  }
-
-  return null;
-};
-
-// Mobile Optimized Image Slider
-const ImageSlider = ({ 
-  images, 
-  productName, 
-  isSoldOut, 
-  onImageClick,
-  autoSlideInterval = 5000 
-}) => {
+// Mobile Optimized Image Slider - No Auto Play
+const ImageSlider = ({ images, productName, isSoldOut, onImageClick }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(false); // Disable auto-play on mobile by default
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   // Minimum swipe distance for mobile
   const minSwipeDistance = 30;
@@ -172,7 +173,7 @@ const ImageSlider = ({
 
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
@@ -184,58 +185,67 @@ const ImageSlider = ({
     }
   };
 
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+
   const handlePrev = useCallback(() => {
-    setIsAutoPlaying(false);
     setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? images.length - 1 : prevIndex - 1
     );
   }, [images.length]);
 
   const handleNext = useCallback(() => {
-    setIsAutoPlaying(false);
     setCurrentIndex((prevIndex) =>
       prevIndex === images.length - 1 ? 0 : prevIndex + 1
     );
   }, [images.length]);
 
-  // Auto slide only on desktop
-  useEffect(() => {
-    if (!isAutoPlaying || images.length <= 1) return;
-    
-    // Disable auto-slide on mobile
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) return;
-
-    const slideInterval = setInterval(handleNext, autoSlideInterval);
-    return () => clearInterval(slideInterval);
-  }, [isAutoPlaying, images.length, autoSlideInterval, handleNext]);
-
-  // Enable auto-play only on desktop
-  useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-    setIsAutoPlaying(!isMobile);
-  }, []);
-
   if (!images || images.length === 0) {
     return (
-      <div 
-        className="relative w-full pb-[100%] bg-gray-100 flex items-center justify-center cursor-pointer"
+      <div
+        className={`relative w-full pb-[100%] flex items-center justify-center cursor-pointer ${
+          isSoldOut ? "bg-gray-50" : "bg-gray-100"
+        }`}
         onClick={onImageClick}
       >
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-gray-400 text-sm">No Image</span>
+          <span
+            className={`text-sm ${
+              isSoldOut ? "text-gray-400" : "text-gray-400"
+            }`}
+          >
+            No Image
+          </span>
         </div>
+        {isSoldOut && (
+          <div className="absolute inset-0 bg-white bg-opacity-20 flex items-center justify-center z-20">
+            <div className="text-center">
+              <div className="text-lg font-semibold text-gray-500 tracking-wide">
+                SOLD OUT
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div 
-      className="relative w-full pb-[100%] overflow-hidden cursor-pointer bg-gray-50 group"
+    <div
+      className={`relative w-full pb-[100%] overflow-hidden cursor-pointer group ${
+        isSoldOut ? "bg-gray-50" : "bg-gray-50"
+      }`}
       onClick={onImageClick}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Image Slider Container */}
       <div
@@ -245,16 +255,13 @@ const ImageSlider = ({
         }}
       >
         {images.map((img, index) => (
-          <div 
-            key={index} 
-            className="relative w-full h-full flex-shrink-0"
-          >
+          <div key={index} className="relative w-full h-full flex-shrink-0">
             <Image
               src={img}
               alt={`${productName} - Image ${index + 1}`}
               fill
-              className={`object-cover object-center transition-transform duration-300 ${
-                isSoldOut 
+              className={`object-cover object-center transition-all duration-300 ${
+                isSoldOut ? "filter brightness-105 opacity-90" : ""
               }`}
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
               priority={index === 0}
@@ -262,19 +269,28 @@ const ImageSlider = ({
           </div>
         ))}
       </div>
+      {isSoldOut && (
+        <div className="absolute inset-0 bg-white/35 flex items-center justify-center z-20">
+          <span className="text-black text-[16px] font-medium tracking-wide">
+            SOLD OUT
+          </span>
+        </div>
+      )}
 
-      {/* Navigation Arrows - Hidden on mobile, show on hover for desktop */}
-      {images.length > 1 && (
+      {/* Navigation Arrows - Show only on hover for both desktop and mobile */}
+      {images.length > 1 && !isSoldOut && (
         <>
           <button
             onClick={(e) => {
               e.stopPropagation();
               handlePrev();
             }}
-            className="absolute left-1 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 transition-all duration-200 md:opacity-0 md:group-hover:opacity-100 z-20 md:left-2 md:p-1.5"
+            className={`absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 transition-all duration-200 z-20 ${
+              isHovered ? 'opacity-100' : 'opacity-0'
+            }`}
             aria-label="Previous image"
           >
-            <FiChevronLeft className="w-4 h-4 md:w-4 md:h-4" />
+            <FiChevronLeft className="w-4 h-4" />
           </button>
 
           <button
@@ -282,23 +298,24 @@ const ImageSlider = ({
               e.stopPropagation();
               handleNext();
             }}
-            className="absolute right-1 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 transition-all duration-200 md:opacity-0 md:group-hover:opacity-100 z-20 md:right-2 md:p-1.5"
+            className={`absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 transition-all duration-200 z-20 ${
+              isHovered ? 'opacity-100' : 'opacity-0'
+            }`}
             aria-label="Next image"
           >
-            <FiChevronRight className="w-4 h-4 md:w-4 md:h-4" />
+            <FiChevronRight className="w-4 h-4" />
           </button>
         </>
       )}
 
-      {/* Dot Indicators - Always visible on mobile */}
-      {images.length > 1 && (
+      {/* Dot Indicators - Always visible */}
+      {images.length > 1 && !isSoldOut && (
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
           {images.map((_, index) => (
             <button
               key={index}
               onClick={(e) => {
                 e.stopPropagation();
-                setIsAutoPlaying(false);
                 setCurrentIndex(index);
               }}
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
@@ -332,18 +349,22 @@ const ProductCard = ({ product }) => {
   // Prepare images array
   const images = useCallback(() => {
     if (product?.images?.length > 0) {
-      return product.images.map(img => img.url || img);
+      return product.images.map((img) => img.url || img);
     }
-    return ['/placeholder-image.jpg'];
+    return ["/placeholder-image.jpg"];
   }, [product?.images]);
 
   // Check if product is sold out
   const isSoldOut = product.stockQuantity === 0;
 
   // Calculate discount percentage
-  const discountPercentage = product.regularPrice && product.salePrice 
-    ? Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100)
-    : null;
+  const discountPercentage =
+    product.regularPrice && product.salePrice
+      ? Math.round(
+          ((product.regularPrice - product.salePrice) / product.regularPrice) *
+            100
+        )
+      : null;
 
   // Fetch user's wishlists
   useEffect(() => {
@@ -410,7 +431,7 @@ const ProductCard = ({ product }) => {
         Toastify({
           text: "Please login to get restock notifications",
           duration: 4000,
-          gravity: "bottom", // Better for mobile
+          gravity: "bottom",
           position: "center",
           close: true,
           style: {
@@ -453,7 +474,9 @@ const ProductCard = ({ product }) => {
       if (response.data.success) {
         setShowRestockModal(false);
         Toastify({
-          text: response.data.message || "Successfully subscribed for restock notifications!",
+          text:
+            response.data.message ||
+            "Successfully subscribed for restock notifications!",
           duration: 4000,
           gravity: "bottom",
           position: "center",
@@ -590,21 +613,25 @@ const ProductCard = ({ product }) => {
     }
   };
 
- return (
+  return (
     <>
       <div
         className={`group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative border border-gray-100 w-full h-full flex flex-col ${
-          isSoldOut ? "opacity-80" : ""
+          isSoldOut ? "opacity-90 bg-gray-50" : ""
         }`}
       >
         {/* Sponsored Badge */}
         {product.sponsored && (
-          <div className="absolute top-0 left-0 z-30 bg-blue-600 text-white text-xs px-2 py-1 rounded-br-xl">
+          <div
+            className={`absolute top-0 left-0 z-30 text-white text-xs px-2 py-1 rounded-br-xl ${
+              isSoldOut ? "bg-gray-400" : "bg-blue-600"
+            }`}
+          >
             Sponsored
           </div>
         )}
 
-        {/* Image Container - Fixed Aspect Ratio */}
+        {/* Image Container - Fixed 1:1 Aspect Ratio */}
         <div className="relative flex-shrink-0">
           <ImageSlider
             images={images()}
@@ -621,32 +648,40 @@ const ProductCard = ({ product }) => {
             className={isLoading ? "opacity-50 cursor-not-allowed" : ""}
           />
 
-          {/* Product Badge */}
+          {/* Product Badge - Hidden for sold out items */}
           {!isSoldOut && product.badge && (
             <ProductBadge badge={product.badge} />
           )}
         </div>
 
         {/* Content Area - Flexible */}
-        <div 
-          className="flex-1 p-3 cursor-pointer flex flex-col justify-between md:p-4"
+        <div
+          className="flex-1 p-4 cursor-pointer flex flex-col justify-between"
           onClick={handleProductClick}
         >
           <div className="flex-1">
             {/* Brand */}
             {product.brand && (
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1 line-clamp-1">
+              <div
+                className={`text-xs font-medium uppercase tracking-wide mb-1 line-clamp-1 ${
+                  isSoldOut ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
                 {product.brand}
               </div>
             )}
 
             {/* Product Name */}
-            <h3 className="text-sm font-semibold text-[#1a1a1a] line-clamp-2 min-h-[2.5rem] mb-2 leading-tight">
+            <h3
+              className={`text-sm font-semibold line-clamp-2 min-h-[2.5rem] mb-2 leading-tight ${
+                isSoldOut ? "text-gray-500" : "text-[#1a1a1a]"
+              }`}
+            >
               {product.name}
             </h3>
 
             {/* Rating */}
-            <RatingDisplay rating={product.rating} />
+            <RatingDisplay rating={product.rating} isSoldOut={isSoldOut} />
 
             {/* Price */}
             <PriceDisplay
@@ -657,7 +692,7 @@ const ProductCard = ({ product }) => {
             />
 
             {/* Assured Badge */}
-            {product.assured && (
+            {!isSoldOut && product.assured && (
               <div className="flex items-center gap-1 mt-2">
                 <span className="text-blue-600 text-xs font-medium bg-blue-50 px-2 py-1 rounded">
                   💬 Assured
@@ -665,14 +700,8 @@ const ProductCard = ({ product }) => {
               </div>
             )}
 
-            {/* Stock Status */}
-            <StockStatus
-              isSoldOut={isSoldOut}
-              stockQuantity={product.stockQuantity}
-            />
-
             {/* Bank Offer */}
-            {product.bankOffer && (
+            {!isSoldOut && product.bankOffer && (
               <div className="mt-2 text-xs text-green-600 font-medium line-clamp-1">
                 {product.bankOffer}
               </div>
@@ -681,7 +710,7 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Bottom Buttons - Fixed Height */}
-        <div className="flex-shrink-0 px-3 pb-3 md:px-4 md:pb-4">
+        <div className="flex-shrink-0 px-4 pb-4">
           <div className="flex gap-2">
             {isSoldOut ? (
               <button
@@ -694,7 +723,7 @@ const ProductCard = ({ product }) => {
             ) : (
               <button
                 onClick={handleViewDetails}
-                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200  active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                 disabled={isLoading}
               >
                 View Details
@@ -706,14 +735,16 @@ const ProductCard = ({ product }) => {
 
       {/* Mobile Optimized Restock Modal */}
       {showRestockModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 p-4 md:items-center md:p-4">
-          <div className="bg-white rounded-t-2xl rounded-b-none w-full max-w-md mx-auto shadow-2xl md:rounded-2xl md:max-w-sm">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 p-4 md:items-center">
+          <div className="bg-white rounded-t-2xl rounded-b-none w-full max-w-md mx-auto shadow-2xl md:rounded-2xl">
             <div className="p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">
                 Get Restock Notification
               </h3>
               <p className="text-gray-600 mb-4 text-sm text-center">
-                We'll notify you when <strong className="text-blue-600">{product.name}</strong> is back in stock.
+                We'll notify you when{" "}
+                <strong className="text-blue-600">{product.name}</strong> is
+                back in stock.
               </p>
 
               <input
@@ -743,7 +774,7 @@ const ProductCard = ({ product }) => {
                 </button>
               </div>
             </div>
-            
+
             {/* Safe area for mobile */}
             <div className="h-2 bg-transparent md:hidden"></div>
           </div>

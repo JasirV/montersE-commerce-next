@@ -18,11 +18,7 @@ import {
   FaExchangeAlt,
   FaBoxOpen,
   FaThumbsDown,
-  FaLink,
-  FaListAlt,
   FaBell,
-  FaClock,
-  FaEye,
 } from "react-icons/fa";
 import {
   FaFacebookF,
@@ -30,7 +26,7 @@ import {
   FaPinterest,
   FaWhatsapp,
 } from "react-icons/fa6";
-import { Watch, Settings, Link2, Package, BarChart3 } from "lucide-react";
+import { Package } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
@@ -60,7 +56,7 @@ const ProductDetailPage = () => {
   const [wishlistLoading, setWishlistLoading] = useState(false);
 
   // Restock notification states
-  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [showRestockInput, setShowRestockInput] = useState(false);
   const [email, setEmail] = useState("");
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -345,7 +341,7 @@ const ProductDetailPage = () => {
     setSelectedImage(image.url || image);
   };
 
-  // Subscribe to restock notifications - FIXED API CALL
+  // Subscribe to restock notifications
   const handleRestockSubscribe = async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -367,11 +363,9 @@ const ProductDetailPage = () => {
 
       setIsSubscribing(true);
 
-      // Use the localhost API endpoint you specified
-      const API_BASE = "http://localhost:9000/api/products";
-
+     
       const response = await axios.post(
-        `${API_BASE}/restock-notifications/subscribe`,
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/restock-notifications/subscribe`,
         {
           productId: product._id,
           email: email,
@@ -391,7 +385,7 @@ const ProductDetailPage = () => {
         response.status === 201
       ) {
         setIsSubscribed(true);
-        setShowRestockModal(false);
+        setShowRestockInput(false);
         toast.success("You'll be notified when this product is back in stock!");
         console.log(
           "Restock notification subscription successful:",
@@ -441,10 +435,10 @@ const ProductDetailPage = () => {
       const token = localStorage.getItem("accessToken");
       if (!token || !product?._id) return;
 
-      const API_BASE = "http://localhost:9000/api/products";
+   
 
       const response = await axios.delete(
-        `${API_BASE}/restock-notifications/unsubscribe`,
+        `${process.env.NEXT_PUBLIC_BASEURL}/products/restock-notifications/unsubscribe`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -524,31 +518,104 @@ const ProductDetailPage = () => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
-  // Updated Out of Stock Banner Component - Less intrusive
-  const OutOfStockBanner = () => (
-    <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-4 mb-4">
+  // Enhanced Restock Notification Input Component
+  // Premium Card Style Restock Notification Input Component
+const RestockNotificationInput = () => (
+  <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 mt-4 overflow-hidden transition-all duration-300 transform hover:shadow-2xl">
+    {/* Header with Gradient */}
+    <div className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] p-4">
       <div className="flex items-center gap-3">
-        <div className="bg-red-100 p-2 rounded-full">
-          <FaClock className="text-red-600 text-lg" />
+        <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+          <FaBell className="text-white text-lg" />
         </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-red-800 text-sm">Out of Stock</h3>
-          <p className="text-red-700 text-xs mt-1">
-            This product is currently unavailable. Get notified when it's back in stock.
-          </p>
+        <div>
+          <h3 className="font-bold text-white text-lg">Restock Alert</h3>
+          <p className="text-blue-100 text-sm">Don't miss out when it's back!</p>
         </div>
-        {isSubscribed && (
-          <button
-            onClick={handleRestockUnsubscribe}
-            className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors"
-          >
-            Unsubscribe
-          </button>
-        )}
       </div>
     </div>
-  );
-
+    
+    {/* Content */}
+    <div className="p-6">
+      <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+        We'll instantly notify you at <strong className="text-gray-900">{email || 'your email'}</strong> when 
+        <strong className="text-gray-900"> {product?.name}</strong> is available again.
+      </p>
+      
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <input
+              type="email"
+              placeholder="Enter your best email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base transition-all duration-200 bg-gray-50"
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowRestockInput(false)}
+              className="px-4 py-3 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleRestockSubscribe}
+              disabled={isSubscribing || !email || !/\S+@\S+\.\S+/.test(email)}
+              className="px-6 py-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSubscribing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Subscribing
+                </>
+              ) : (
+                <>
+                  <FaBell className="text-white" />
+                  Notify Me
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+        
+        {email && !/\S+@\S+\.\S+/.test(email) && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-red-700 text-sm">
+              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              Please enter a valid email address to get notifications
+            </div>
+          </div>
+        )}
+        
+        <div className="flex items-center justify-center gap-4 text-xs text-gray-500 pt-2">
+          <span className="flex items-center gap-1">
+            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            No spam
+          </span>
+          <span className="flex items-center gap-1">
+            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            Instant alert
+          </span>
+          <span className="flex items-center gap-1">
+            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            1-click stop
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+);
   // Loading State
   if (isLoading) {
     return (
@@ -630,7 +697,6 @@ const ProductDetailPage = () => {
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-sm text-gray-500">{product.brand}</span>
-                
                 </div>
               </div>
 
@@ -835,7 +901,6 @@ const ProductDetailPage = () => {
                     className="object-contain w-full h-full"
                     priority
                   />
-                 
                 </div>
 
                 {/* Image Counter for Mobile */}
@@ -854,9 +919,6 @@ const ProductDetailPage = () => {
 
             {/* Right Column - Details */}
             <div className="space-y-6">
-              {/* Out of Stock Banner - Less prominent */}
-              {isSoldOut && <OutOfStockBanner />}
-
               {/* Price Section */}
               <div className={`rounded-2xl p-6 border ${
                 isSoldOut 
@@ -955,7 +1017,7 @@ const ProductDetailPage = () => {
                       </button>
                     ) : (
                       <button
-                        onClick={() => setShowRestockModal(true)}
+                        onClick={() => setShowRestockInput(true)}
                         className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-4 rounded-xl font-semibold hover:opacity-90 transition-opacity text-lg shadow-lg flex items-center justify-center gap-3"
                       >
                         <FaBell className="text-white" />
@@ -966,7 +1028,10 @@ const ProductDetailPage = () => {
                 )}
               </div>
 
-              {/* Premium Features - Always visible */}
+              {/* Restock Notification Input - Shows when button is clicked */}
+              {showRestockInput && !isSubscribed && <RestockNotificationInput />}
+
+              {/* Premium Features */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-4">
                 <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <FaHeadset className="text-blue-600 text-2xl mx-auto mb-2" />
@@ -1064,69 +1129,6 @@ const ProductDetailPage = () => {
         </div>
       </div>
 
-      {/* Restock Notification Modal */}
-      {showRestockModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-blue-100 p-3 rounded-full">
-                <FaBell className="text-blue-600 text-xl" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">
-                Get Restock Notification
-              </h3>
-            </div>
-
-            <p className="text-gray-600 mb-4">
-              We'll send you an email when <strong>{product.name}</strong> is
-              back in stock.
-            </p>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowRestockModal(false)}
-                  className="flex-1 px-4 py-3 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                  disabled={isSubscribing}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRestockSubscribe}
-                  disabled={isSubscribing || !email}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-xl hover:from-[#1a447a] hover:to-[#005099] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
-                >
-                  {isSubscribing ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Subscribing...
-                    </>
-                  ) : (
-                    <>
-                      <FaBell className="text-white" />
-                      Notify Me
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Similar Products */}
       <Suspense
         fallback={
@@ -1136,7 +1138,7 @@ const ProductDetailPage = () => {
         <SimilarProduct productId={id} />
       </Suspense>
 
-          <Suspense
+      <Suspense
         fallback={
           <div className="h-48 xs:h-56 sm:h-64 bg-gray-100 mt-6 animate-pulse rounded-lg"></div>
         }

@@ -470,7 +470,7 @@ const AdvancedFiltersModal = ({
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center">
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-opacity-50 transition-opacity"
         onClick={onClose}
       />
       
@@ -736,7 +736,7 @@ const WatchByFilterSidebar = ({
       >
         {/* Overlay */}
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 transition-opacity duration-300"
+          className="fixed inset-0 bg-opacity-40 transition-opacity duration-300"
           onClick={() => setMobileFiltersOpen(false)}
           aria-hidden="true"
         />
