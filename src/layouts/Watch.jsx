@@ -1,229 +1,381 @@
-import React, { useMemo, memo, useState } from "react";
-    import { useRouter } from 'next/navigation'; 
-import Watch1 from '../assets/Watche/stylish-golden-watch-white-surface.jpg';
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { FaShoppingCart, FaHeart, FaRegHeart, FaStar, FaStarHalfAlt } from "react-icons/fa";
+import { 
+  FaShoppingCart, 
+  FaHeart, 
+  FaRegHeart, 
+  FaStar, 
+  FaStarHalfAlt,
+  FaChevronLeft,
+  FaChevronRight,
+  FaTag
+} from "react-icons/fa";
 
-// Memoized product data to prevent unnecessary re-renders
-const productsData = [
-  { id: 1, name: "Hermès Kelly Red Watch 20mm", price: "4000.0 AED", info: "MOQ: 100 Pieces", image: Watch1, rating: 4.5, reviews: 24, description: "Elegant red watch with premium finish." },
-  { id: 2, name: "Hermès Kelly Gold Watch 22mm", price: "4500.0 AED", info: "MOQ: 35 Pieces", image: Watch1, rating: 4.2, reviews: 18, description: "Luxurious gold watch with exquisite craftsmanship." },
-  { id: 3, name: "Hermès Silver Classic Watch", price: "3800.0 AED", info: "MOQ: 80 Pieces", image: Watch1, rating: 4.8, reviews: 32, description: "Classic silver watch for timeless elegance." },
-  { id: 4, name: "Hermès Black Leather Watch", price: "4200.0 AED", info: "MOQ: 50 Pieces", image: Watch1, rating: 4.3, reviews: 15, description: "Sophisticated black leather watch." },
-  { id: 5, name: "Hermès Blue Sapphire Watch", price: "4800.0 AED", info: "Sell: 120 Pieces", image: Watch1, rating: 4.7, reviews: 28, description: "Stunning blue sapphire watch." },
-  { id: 6, name: "Hermès Rose Gold Elegant", price: "4600.0 AED", info: "Sell: 95 Pieces", image: Watch1, rating: 4.1, reviews: 22, description: "Elegant rose gold timepiece." },
-  { id: 7, name: "Hermès Chronograph Sports", price: "3900.0 AED", info: "Sell: 75 Pieces", image: Watch1, rating: 4.6, reviews: 19, description: "Sporty chronograph with advanced features." },
-  { id: 8, name: "Hermès Limited Edition", price: "5200.0 AED", info: "Sell: 60 Pieces", image: Watch1, rating: 4.9, reviews: 35, description: "Exclusive limited edition masterpiece." },
-  { id: 9, name: "Hermès Classic Brown Watch", price: "4100.0 AED", info: "Sell: 110 Pieces", image: Watch1, rating: 4.4, reviews: 26, description: "Classic brown leather strap watch." },
-  { id: 10, name: "Hermès White Ceramic Watch", price: "4400.0 AED", info: "Sell: 85 Pieces", image: Watch1, rating: 4.0, reviews: 14, description: "Modern white ceramic design." },
-  { id: 11, name: "Hermès Diamond Bezel Watch", price: "5800.0 AED", info: "Sell: 45 Pieces", image: Watch1, rating: 4.8, reviews: 30, description: "Luxurious diamond bezel watch." },
-  { id: 12, name: "Hermès Vintage Collection", price: "4700.0 AED", info: "Sell: 70 Pieces", image: Watch1, rating: 4.2, reviews: 17, description: "Vintage inspired timepiece." },
-];
+// ⭐ Product Card Component
+const ProductCard = ({ product, onAddToCart, onToggleWishlist, isInWishlist, onProductClick }) => {
+  const [loaded, setLoaded] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
 
-// Star rating component
-const StarRating = memo(({ rating }) => {
-  const stars = [];
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
+  // Minimum swipe distance
+  const minSwipeDistance = 50;
 
-  for (let i = 1; i <= 5; i++) {
-    if (i <= fullStars) {
-      stars.push(<FaStar key={i} className="text-yellow-400 text-xs xs:text-sm" />);
-    } else if (i === fullStars + 1 && hasHalfStar) {
-      stars.push(<FaStarHalfAlt key={i} className="text-yellow-400 text-xs xs:text-sm" />);
-    } else {
-      stars.push(<FaStar key={i} className="text-gray-300 text-xs xs:text-sm" />);
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe && product.images?.length > 1) {
+      handleNextImage();
+    } else if (isRightSwipe && product.images?.length > 1) {
+      handlePrevImage();
     }
-  }
-
-  return <div className="flex space-x-0.5">{stars}</div>;
-});
-
-StarRating.displayName = 'StarRating';
-
-// Single product card component to prevent re-renders
-const ProductCard = memo(({ product, onAddToCart, onToggleWishlist, isInWishlist, onProductClick }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  const handleAddToCart = (e) => {
-    e.stopPropagation();
-    onAddToCart(product);
   };
 
-  const handleToggleWishlist = (e) => {
-    e.stopPropagation();
-    onToggleWishlist(product.id);
+  const handlePrevImage = () => {
+    setCurrentImageIndex(prev => 
+      prev === 0 ? product.images.length - 1 : prev - 1
+    );
   };
 
-  const handleCardClick = () => {
-    onProductClick(product.id);
+  const handleNextImage = () => {
+    setCurrentImageIndex(prev => 
+      prev === product.images.length - 1 ? 0 : prev + 1
+    );
   };
+
+  // Calculate discount percentage
+  const discountPercentage = product.salePrice && product.regularPrice
+    ? Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100)
+    : 0;
 
   return (
-    <div 
-      onClick={handleCardClick}
-      className="bg-white rounded-2xl shadow hover:shadow-xl p-3 xs:p-4 flex flex-col relative transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 cursor-pointer"
+    <div
+      onClick={() => onProductClick(product.productId)}
+      className="bg-white rounded-2xl shadow-lg hover:shadow-xl p-3 sm:p-4 transition-all duration-300 hover:-translate-y-1 border cursor-pointer relative flex flex-col h-full w-full"
     >
-      {/* Wishlist Button (Top-right corner) */}
+      {/* Discount Badge */}
+      {discountPercentage > 0 && (
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md z-10 flex items-center">
+          <FaTag className="mr-1" />
+          {discountPercentage}% OFF
+        </div>
+      )}
+
+      {/* Wishlist Button */}
       <button
-        onClick={handleToggleWishlist}
-        className="absolute top-2 xs:top-3 right-2 xs:right-3 z-10 bg-white/80 hover:bg-white rounded-full p-1.5 xs:p-2 shadow-md transition-all duration-200 hover:scale-110"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleWishlist(product._id);
+        }}
+        className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-white rounded-full shadow p-2 z-10 hover:scale-110 transition-transform"
         aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
       >
         {isInWishlist ? (
-          <FaHeart className="text-red-500 text-xs xs:text-sm" />
+          <FaHeart className="text-red-500 text-sm" />
         ) : (
-          <FaRegHeart className="text-gray-600 hover:text-red-500 text-xs xs:text-sm" />
+          <FaRegHeart className="text-gray-700 text-sm" />
         )}
       </button>
 
-      {/* Product Image */}
-      <div className="relative mb-3 xs:mb-4 rounded-lg overflow-hidden">
-        {!imageLoaded && (
-          <div className="w-full h-32 xs:h-36 sm:h-40 md:h-44 bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse"></div>
+      {/* Product Image with Carousel */}
+      <div 
+        className="relative mb-3 sm:mb-4 rounded-xl overflow-hidden w-full"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {!loaded && (
+          <div className="w-full aspect-square bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse rounded-xl"></div>
         )}
-        <Image
-          src={product.image}
-          alt={product.name}
-          className={`w-full h-32 xs:h-36 sm:h-40 md:h-44 object-contain transition-opacity duration-300 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          loading="lazy"
-          onLoad={() => setImageLoaded(true)}
-        />
-      </div>
-
-      {/* Product Name */}
-      <h3 className="text-xs xs:text-sm md:text-base text-gray-800 mb-1 font-semibold line-clamp-2 leading-tight min-h-[2.5rem]">
-        {product.name}
-      </h3>
-
-      {/* Rating and Reviews */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-1">
-          <StarRating rating={product.rating} />
-          <span className="text-xs text-gray-600 ml-1">({product.reviews})</span>
+        
+        {/* Image Carousel */}
+        <div className="relative w-full aspect-square">
+          <Image
+            src={product?.images?.[currentImageIndex]?.url || "/placeholder.png"}
+            alt={product.name}
+            width={400}
+            height={400}
+            className={`w-full h-full object-cover transition-opacity duration-300 ${
+              loaded ? "opacity-100" : "opacity-0"
+            }`}
+            onLoad={() => setLoaded(true)}
+            priority
+          />
+          
+          {/* Carousel Navigation Arrows (only show if multiple images) */}
+          {product.images && product.images.length > 1 && (
+            <>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrevImage();
+                }}
+                className="absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-60 text-white rounded-full p-1 sm:p-2 hover:bg-opacity-80 transition-all"
+                aria-label="Previous image"
+              >
+                <FaChevronLeft size={14} className="sm:w-4" />
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNextImage();
+                }}
+                className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-60 text-white rounded-full p-1 sm:p-2 hover:bg-opacity-80 transition-all"
+                aria-label="Next image"
+              >
+                <FaChevronRight size={14} className="sm:w-4" />
+              </button>
+            </>
+          )}
+          
+          {/* Image Indicators (dots) */}
+          {product.images && product.images.length > 1 && (
+            <div className="absolute bottom-2 sm:bottom-3 left-0 right-0 flex justify-center space-x-1 sm:space-x-2">
+              {product.images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex(index);
+                  }}
+                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all ${
+                    index === currentImageIndex 
+                      ? 'bg-white scale-125' 
+                      : 'bg-white bg-opacity-50'
+                  }`}
+                  aria-label={`View image ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Product Price */}
-      <p className="text-base xs:text-lg md:text-xl font-bold text-gray-900 mb-1">
-        {product.price}
-      </p>
+      {/* Product Details */}
+      <div className="flex flex-col flex-grow px-0 sm:px-1 w-full">
+        {/* Name */}
+        <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 line-clamp-2 flex-grow leading-tight min-h-[2.5rem] sm:min-h-[3rem]">
+          {product.name}
+        </h3>
 
-      {/* Product Info */}
-      <p className="text-xs xs:text-sm text-gray-600 mb-3 xs:mb-4 font-medium">{product.info}</p>
+        {/* Rating (if available) */}
+        {product.rating && (
+          <div className="flex items-center mb-2 sm:mb-3">
+            <div className="flex text-yellow-400">
+              {[...Array(5)].map((_, i) => {
+                const ratingValue = i + 1;
+                if (ratingValue <= Math.floor(product.rating)) {
+                  return <FaStar key={i} className="w-3 h-3 sm:w-3.5 sm:h-3.5" />;
+                } else if (ratingValue - 0.5 <= product.rating) {
+                  return <FaStarHalfAlt key={i} className="w-3 h-3 sm:w-3.5 sm:h-3.5" />;
+                } else {
+                  return <FaStar key={i} className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-300" />;
+                }
+              })}
+            </div>
+            <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
+          </div>
+        )}
 
-      {/* Add to Cart Button */}
-      <div className="mt-auto">
+        {/* Price */}
+        <div className="mb-3 sm:mb-4">
+          {product.salePrice ? (
+            <div className="flex items-center space-x-2">
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
+                {product.salePrice} AED
+              </p>
+              <p className="text-xs sm:text-sm text-gray-500 line-through">
+                {product.regularPrice} AED
+              </p>
+            </div>
+          ) : (
+            <p className="text-lg sm:text-xl font-bold text-gray-900">
+              {product.regularPrice} AED
+            </p>
+          )}
+        </div>
+
+        {/* Add To Cart Button */}
         <button
-          onClick={handleAddToCart}
-          className="w-full bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#16487a] hover:to-[#005099] text-white py-2 xs:py-2.5 px-3 xs:px-4 rounded-xl font-semibold text-xs xs:text-sm transition-all duration-200 transform hover:scale-105 shadow-md flex items-center justify-center space-x-2"
-          aria-label={`Add ${product.name} to cart`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToCart(product);
+          }}
+          className="w-full bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold mt-auto transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 min-h-[2.5rem] sm:min-h-[3rem]"
         >
-          <FaShoppingCart className="text-xs xs:text-sm" />
-          <span>Add to Cart</span>
+          <FaShoppingCart className="inline-block mr-1 sm:mr-2 w-3 h-3 sm:w-4 sm:h-4" />
+          Add to Cart
         </button>
       </div>
     </div>
   );
-});
+};
 
-ProductCard.displayName = 'ProductCard';
-
-const Watch = () => {
+// ⭐ Main Component
+export default function JustForYou() {
   const router = useRouter();
-  
-  // Memoize the products data
-  const products = useMemo(() => productsData, []);
-  
-  // State for wishlist and cart
+  const [products, setProducts] = useState([]);
   const [wishlist, setWishlist] = useState(new Set());
   const [cart, setCart] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Handle add to cart
+  const userId =
+    typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+
+  // 👉 Fetch API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const url = userId
+          ? `https://api.montres.ae/api/recommend/just-for-you/${userId}`
+          : `https://api.montres.ae/api/recommend/just-for-you`;
+
+        const res = await axios.get(url);
+
+        setProducts(res.data || []);
+        setLoading(false);
+      } catch (error) {
+        console.error("API Error:", error);
+        setError("Failed to load products. Please try again later.");
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [userId]);
+
+  // 👉 Add to cart
   const handleAddToCart = (product) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id);
-      if (existingItem) {
-        return prevCart.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+    setCart((prev) => {
+      const exist = prev.find((p) => p._id === product._id);
+      if (exist) {
+        return prev.map((p) =>
+          p._id === product._id ? { ...p, qty: p.qty + 1 } : p
         );
       }
-      return [...prevCart, { ...product, quantity: 1 }];
+      return [...prev, { ...product, qty: 1 }];
     });
     
-    // Show feedback (you can replace this with a toast notification)
-    console.log(`Added ${product.name} to cart`);
+    // Show a quick visual feedback
+    const button = document.activeElement;
+    if (button) {
+      button.classList.add('from-green-600', 'to-green-700');
+      setTimeout(() => {
+        button.classList.remove('from-green-600', 'to-green-700');
+        button.classList.add('from-[#1e518e]', 'to-[#0061b0]');
+      }, 500);
+    }
   };
 
-  // Handle toggle wishlist
+  // 👉 Wishlist toggle
   const handleToggleWishlist = (productId) => {
-    setWishlist(prevWishlist => {
-      const newWishlist = new Set(prevWishlist);
-      if (newWishlist.has(productId)) {
-        newWishlist.delete(productId);
-      } else {
-        newWishlist.add(productId);
-      }
-      return newWishlist;
+    setWishlist((prev) => {
+      const copy = new Set(prev);
+      if (copy.has(productId)) copy.delete(productId);
+      else copy.add(productId);
+      return copy;
     });
   };
 
-  // Handle product click - navigate to product details
+  // 👉 Product details page
   const handleProductClick = (productId) => {
     router.push(`/product/${productId}`);
   };
 
-  // Check if product is in wishlist
-  const isInWishlist = (productId) => wishlist.has(productId);
-
-  // Calculate total items in cart
-  const totalItemsInCart = cart.reduce((total, item) => total + item.quantity, 0);
+  const cartCount = cart.reduce((a, b) => a + b.qty, 0);
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 py-6 xs:py-8 sm:py-12">
-      {/* Section Title */}
-      <div className="text-center mb-8 xs:mb-10 sm:mb-12">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-          Just For You
-        </h2>
-        <p className="text-gray-600 text-sm xs:text-base max-w-2xl mx-auto px-4">
-          Discover our exclusive collection of premium watches crafted with precision and elegance
+    <div className="bg-gradient-to-b from-gray-50 to-white py-8 sm:py-12 px-4 sm:px-6 w-full">
+      <div className="text-center mb-8 sm:mb-12 w-full">
+        <h2 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Just For You</h2>
+        <p className="text-gray-600 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed px-2">
+          Discover our exclusive collection of premium watches, carefully selected based on your preferences and browsing history.
         </p>
       </div>
 
-      {/* Product Grid - Two columns on mobile, responsive layout */}
-      <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
-        <div className="grid gap-3 xs:gap-4 sm:gap-5 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard 
-              key={product.id} 
-              product={product}
-              onAddToCart={handleAddToCart}
-              onToggleWishlist={handleToggleWishlist}
-              isInWishlist={isInWishlist(product.id)}
-              onProductClick={handleProductClick}
-            />
-          ))}
+      {error && (
+        <div className="max-w-7xl mx-auto mb-6 sm:mb-8 p-3 sm:p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-center text-sm sm:text-base">
+          {error}
         </div>
-      </div>
+      )}
 
-      {/* Cart Summary */}
-      {totalItemsInCart > 0 && (
-        <div className="fixed bottom-4 right-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-4 py-2 rounded-full shadow-lg z-50">
-          <div className="flex items-center space-x-2">
-            <FaShoppingCart />
-            <span className="text-sm font-semibold">
-              {totalItemsInCart} {totalItemsInCart === 1 ? 'item' : 'items'}
-            </span>
+      {loading ? (
+        // Loading Skeleton
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl shadow p-3 sm:p-4 animate-pulse w-full">
+                <div className="w-full aspect-square bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl mb-3 sm:mb-4"></div>
+                <div className="h-4 sm:h-5 bg-gray-200 rounded mb-2 sm:mb-3"></div>
+                <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4 mb-3 sm:mb-4"></div>
+                <div className="h-10 sm:h-12 bg-gray-200 rounded-xl"></div>
+              </div>
+            ))}
           </div>
         </div>
+      ) : (
+        // Products Grid
+        <div className="max-w-7xl mx-auto w-full">
+          {/* Responsive Grid - Consistent spacing across devices */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+            {products.map((product) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                onAddToCart={handleAddToCart}
+                onToggleWishlist={handleToggleWishlist}
+                isInWishlist={wishlist.has(product._id)}
+                onProductClick={handleProductClick}
+              />
+            ))}
+          </div>
+
+          {/* Empty State */}
+          {products.length === 0 && !loading && (
+            <div className="text-center py-12 sm:py-16 w-full">
+              <div className="text-gray-400 text-4xl sm:text-6xl mb-3 sm:mb-4">🕒</div>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">No Products Found</h3>
+              <p className="text-gray-500 text-sm sm:text-base">We couldn't find any products matching your preferences.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Floating Cart Button */}
+      {cartCount > 0 && (
+        <button
+          onClick={() => router.push('/cart')}
+          className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white px-4 sm:px-6 py-3 sm:py-4 rounded-full shadow-2xl flex items-center transition-all duration-300 z-50 transform hover:scale-105 text-sm sm:text-base"
+        >
+          <div className="relative">
+            <FaShoppingCart className="text-lg sm:text-xl mr-2 sm:mr-3" />
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
+              {cartCount}
+            </span>
+          </div>
+          <span className="font-semibold">View Cart</span>
+        </button>
       )}
     </div>
   );
-};
-
-export default memo(Watch);
+}

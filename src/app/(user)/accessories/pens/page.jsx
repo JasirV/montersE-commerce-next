@@ -1,6 +1,9 @@
 "use client";
 import ProductCard from "@/features/product/ProductCard";
-import { AccessoriesBycategory, LeatherBycategory } from "@/service/productService";
+import {
+  AccessoriesBycategory,
+  LeatherBycategory,
+} from "@/service/productService";
 import { useParams } from "next/navigation";
 import React, {
   memo,
@@ -11,7 +14,7 @@ import React, {
   useState,
 } from "react";
 import { FiFilter } from "react-icons/fi";
-import FilterSidebar from "@/features/product/ProductFilterSidebar";
+import FilterSidebar from "@/features/product/ShopeBYFilterSidebar";
 
 const page = () => {
   const [crrentPage, setCurrentPage] = useState(1);
@@ -120,27 +123,27 @@ const page = () => {
   }, [categoryFilteredProducts, activeFilters]);
 
   const sortedProducts = useMemo(() => {
-  if (!sortOption) return filteredProducts;
+    if (!sortOption) return filteredProducts;
 
-  const result = [...filteredProducts].sort((a, b) => {
-    switch (sortOption) {
-      case "priceLowHigh":
-        return parseFloat(a.price) - parseFloat(b.price);
-      case "priceHighLow":
-        return parseFloat(b.price) - parseFloat(a.price);
-      case "rating":
-        return b.rating - a.rating;
-      case "discount":
-        return parseFloat(b.discount) - parseFloat(a.discount);
-      default:
-        return 0;
-    }
-  });
+    const result = [...filteredProducts].sort((a, b) => {
+      switch (sortOption) {
+        case "priceLowHigh":
+          return parseFloat(a.price) - parseFloat(b.price);
+        case "priceHighLow":
+          return parseFloat(b.price) - parseFloat(a.price);
+        case "rating":
+          return b.rating - a.rating;
+        case "discount":
+          return parseFloat(b.discount) - parseFloat(a.discount);
+        default:
+          return 0;
+      }
+    });
 
-  // 👇 if sorting resulted in empty array, fallback to original
-  console.log(products ,'pro')
-  return result.length > 0 ? result : products.products || [];
-}, [filteredProducts, sortOption, products]);
+    // 👇 if sorting resulted in empty array, fallback to original
+    console.log(products, "pro");
+    return result.length > 0 ? result : products.products || [];
+  }, [filteredProducts, sortOption, products]);
 
   console.log(products.totalProducts);
   const toggleFilter = (type, value) => {
@@ -165,7 +168,7 @@ const page = () => {
             <li>
               <a
                 href="#"
-                className="flex items-center text-gray-700 hover:text-[#8b6b4a]"
+                className="flex items-center text-gray-700 hover:text-[#8b6b4a] font-semibold"
               >
                 Home
               </a>
@@ -245,7 +248,6 @@ const page = () => {
                     <option value="featured">Featured</option>
                     <option value="priceLowHigh">Price: Low to High</option>
                     <option value="priceHighLow">Price: High to Low</option>
-                    <option value="rating">Rating</option>
                     <option value="discount">Discount</option>
                   </select>
                 </div>
@@ -308,7 +310,7 @@ const page = () => {
                 </div>
 
                 {/* Pagination */}
-                {console.log(products,'products')}
+                {console.log(products, "products")}
                 <Pagination
                   currentPage={products.currentPage}
                   totalPages={products.totalPages}

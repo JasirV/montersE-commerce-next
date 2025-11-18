@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import FilterSidebar from "./ProductFilterSidebar";
+import FilterSidebar from "./ShopeBYFilterSidebar";
 import { FiX } from "react-icons/fi";
 
 const FilterSection = ({

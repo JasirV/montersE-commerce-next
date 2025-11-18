@@ -14,22 +14,17 @@ import {
   FaRupeeSign,
 } from "react-icons/fa";
 import Link from "next/link";
-import Rolex from "../../assets/Rolex Submariner.jpg";
-import Omega from "../../assets/Omega Seamaster.jpg";
-import WatchCollection from "../../assets/Watch Collection.jpg";
-import LeatherWallet from "../../assets/Leather Wallet.jpg";
-import LeatherSale from "../../assets/Leather Sale.jpg";
-import LeatherBag from "../../assets/Leather Bag.jpg";
-import SilverCufflinks from "../../assets/Silver Cufflinks.jpg";
-import FountainPen from "../../assets/Fountain Pen.jpg";
-import AccessoryDeals from "../../assets/Accessory Deals.jpg";
 import { useCurrency } from "@/app/CurrencyContext";
-import newCurrency from '../../assets/newSymbole.png';
+import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
 import axios from "axios";
 
-// Import the MegaMenu component
-import MegaMenu from "./MegaMenu";
+// Import the MegaMenu components
+import WatchMegaMenu from "./MegaMenu";
+import ShopeBrandsMegaMenu from "./BrandsMegaMenu";
+import HandBagMegaMenu from './HnadBagMegaMenu';
+import JewelryMegaMenu from './JewelryMegaMenu';
+import AccessoriesMegaMenu from './AccessoriesMegaMenu';
 
 const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currency, setCurrency, setRate } = useCurrency();
@@ -38,7 +33,6 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState({
     code: "AED",
     symbol: "د.إ",
@@ -47,118 +41,14 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mega Menu Data
-  const megaMenuData = {
-    watches: {
-      categories: [
-        { name: "luxury Watches", path: "/watches/luxury" },
-        { name: "Sports Watches", path: "/watches/sports" },
-        { name: "Classic Watches", path: "/watches/classic" },
-      ],
-      featuredProducts: [
-        {
-          id: 1,
-          name: "Rolex Submariner",
-          price: "8,500",
-          image: Rolex,
-          width: 80,
-          height: 80,
-        },
-        {
-          id: 2,
-          name: "Omega Seamaster",
-          price: "4,200",
-          image: Omega,
-          width: 80,
-          height: 80,
-        },
-      ],
-      promotion: {
-        title: "Watch Collection",
-        description: "Premium timepieces 30% off",
-        image: WatchCollection,
-        width: 300,
-        height: 128,
-        cta: "Shop Watches",
-      },
-    },
-    leathers: {
-      categories: [
-        { name: "Bags", path: "/leathers/bags" },
-        { name: "Wallets", path: "/leathers/wallets" },
-        { name: "Belts", path: "/leathers/belts" },
-        { name: "Briefcases", path: "/leathers/briefcases" },
-        { name: "Accessories", path: "/leathers/accessories" },
-      ],
-      featuredProducts: [
-        {
-          id: 3,
-          name: "Premium Leather Bag",
-          price: "299",
-          image: LeatherBag,
-          width: 80,
-          height: 80,
-        },
-        {
-          id: 4,
-          name: "Genuine Leather Wallet",
-          price: "89",
-          image: LeatherWallet,
-          width: 80,
-          height: 80,
-        },
-      ],
-      promotion: {
-        title: "Leather Sale",
-        description: "Genuine leather items 25% off",
-        image: LeatherSale,
-        width: 300,
-        height: 128,
-        cta: "Shop Leather",
-      },
-    },
-    accessories: {
-      categories: [
-        { name: "Pens", path: "/accessories/pens" },
-        { name: "Cufflinks", path: "/accessories/cufflinks" },
-        { name: "Bracelets", path: "/accessories/bracelets" },
-        { name: "Scarves", path: "/accessories/scarves" },
-        { name: "Umbrellas", path: "/accessories/umbrellas" },
-      ],
-      featuredProducts: [
-        {
-          id: 5,
-          name: "Premium Fountain Pen",
-          price: "199",
-          image: FountainPen,
-          width: 80,
-          height: 80,
-        },
-        {
-          id: 6,
-          name: "Silver Cufflinks",
-          price: "129",
-          image: SilverCufflinks,
-          width: 80,
-          height: 80,
-        },
-      ],
-      promotion: {
-        title: "Accessory Deals",
-        description: "Luxury accessories up to 40% off",
-        image: AccessoryDeals,
-        width: 300,
-        height: 128,
-        cta: "Shop Accessories",
-      },
-    },
-  };
-
-  // Menu Items
+  // Menu Items with mega menu data
   const menuItems = [
     {
       name: "SHOP BY BRANDS",
       path: "/shop",
+      hasMegaMenu: true,
+      megaMenuType: "brands",
+      megaMenuData: {} // Add your actual data here
     },
     {
       name: "EXCLUSIVE COLLECTION",
@@ -166,61 +56,35 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     },
     {
       name: "WATCHES",
-      path: "/watches",
+      path: "/watches/Watches",
       hasMegaMenu: true,
-      megaMenuKey: "watches",
-      subMenu: [
-        { name: "Women", path: "/watches/women" },
-        { name: "Men/Unisex", path: "/watches/men-unisex" },
-      ],
+      megaMenuType: "watches",
+      megaMenuData: {} // Add your actual data here
     },
     {
-      name: "CLOCKS",
-      path: "/clocks",
-    },
-    {
-      name: "LEATHERS",
-      path: "/leathers",
+      name: "HANDBAGS",
+      path: "/leathers/bags",
       hasMegaMenu: true,
-      megaMenuKey: "leathers",
-      subMenu: [
-        {
-          name: "Bags",
-          path: "/leathers/bags",
-          subMenu: [
-            { name: "Women", path: "/leathers/bags/women" },
-            { name: "Men/Unisex", path: "/leathers/bags/men-unisex" },
-          ],
-        },
-        { name: "Wallets", path: "/leathers/wallets" },
-        { name: "Belts", path: "/leathers/belts" },
-      ],
+      megaMenuType: "handbags",
+      megaMenuData: {} // Add your actual data here
     },
     {
       name: "ACCESSORIES",
-      path: "/accessories",
+      path: "/accessories/Accessories",
       hasMegaMenu: true,
-      megaMenuKey: "accessories",
-      subMenu: [
-        { name: "Pens", path: "/accessories/pens" },
-        { name: "Cufflinks", path: "/accessories/cufflinks" },
-        { name: "Cards", path: "/accessories/cards" },
-        { name: "Scarfs", path: "/accessories/scarfs" },
-        { name: "Bracelets", path: "/accessories/bracelets" },
-        { name: "Umbrellas", path: "/accessories/umbrellas" },
-      ],
+      megaMenuType: "accessories",
+      megaMenuData: {} // Add your actual data here
     },
     {
       name: "JEWELRY",
       path: "/jewelry",
-      subMenu: [
-        { name: "Rings", path: "/jewelry/rings" },
-        { name: "Ear Rings", path: "/jewelry/ear-rings" },
-      ],
+      hasMegaMenu: true,
+      megaMenuType: "jewelry",
+      megaMenuData: {} // Add your actual data here
     },
     {
       name: "BRAND NEW",
-      path: "/brand-new",
+      path: "/BrandNew",
     },
   ];
 
@@ -283,16 +147,8 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
-    const checkScreenSize = () => setIsDesktop(window.innerWidth >= 768);
-
-    checkScreenSize();
     window.addEventListener("scroll", handleScroll);
-    window.addEventListener("resize", checkScreenSize);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", checkScreenSize);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Helper functions
@@ -310,10 +166,18 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     () => setIsCurrencyOpen((prev) => !prev),
     []
   );
-  const closeMobileMenu = useCallback(
-    () => setIsMobileMenuOpen(false),
-    [setIsMobileMenuOpen]
-  );
+  
+  const closeMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen(false);
+    setDropdown(null);
+    setIsHelpOpen(false);
+    setIsLanguageOpen(false);
+    setIsCurrencyOpen(false);
+  }, [setIsMobileMenuOpen]);
+
+  const handleMobileLinkClick = useCallback(() => {
+    closeMobileMenu();
+  }, [closeMobileMenu]);
 
   const handleCurrencySelect = useCallback((currency) => {
     handleCurrencyChange(currency);
@@ -341,7 +205,122 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           />
         );
       default:
-        return <span className="text-amber-600 font-bold">{selectedCurrency.symbol}</span>;
+        return (
+          <span className="text-amber-600 font-bold">
+            {selectedCurrency.symbol}
+          </span>
+        );
+    }
+  };
+
+  // Function to render the appropriate mega menu for desktop
+  const renderMegaMenu = (item) => {
+    if (!item.hasMegaMenu || !item.megaMenuData) return null;
+
+    const megaMenuProps = {
+      data: item.megaMenuData,
+      isMobile: false,
+      onItemClick: closeMobileMenu
+    };
+
+    switch (item.megaMenuType) {
+      case "brands":
+        return <ShopeBrandsMegaMenu {...megaMenuProps} />;
+      case "watches":
+        return <WatchMegaMenu {...megaMenuProps} />;
+      case "handbags":
+        return <HandBagMegaMenu {...megaMenuProps} />;
+      case "jewelry":
+        return <JewelryMegaMenu {...megaMenuProps} />;
+      case "accessories":
+        return <AccessoriesMegaMenu {...megaMenuProps} />;
+      default:
+        return null;
+    }
+  };
+
+  // Function to render mobile menu items with proper routing
+  const renderMobileMenuItem = (item) => (
+    <div key={item.name} className="border-b border-gray-200">
+      {!item.hasMegaMenu ? (
+        // Simple menu item with direct link
+        <Link
+          href={item.path}
+          className="w-full flex justify-between items-center px-6 py-4 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
+          onClick={handleMobileLinkClick}
+        >
+          <span className="font-semibold text-gray-700 text-base">
+            {item.name}
+          </span>
+        </Link>
+      ) : (
+        // Menu item with mega menu
+        <>
+          <button
+            onClick={() => toggleDropdown(item.name)}
+            className="w-full flex justify-between items-center px-6 py-4 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
+          >
+            <span className="font-semibold text-gray-700 text-base">
+              {item.name}
+            </span>
+            <span className="text-gray-400">
+              {dropdown === item.name ? (
+                <FaChevronDown size={16} />
+              ) : (
+                <FaChevronRight size={16} />
+              )}
+            </span>
+          </button>
+
+          {/* Mega Menu Content */}
+          {dropdown === item.name && item.hasMegaMenu && (
+            <div className="bg-gray-50 border-t border-gray-200">
+              <div className="px-6 py-3">
+                <Link
+                  href={item.path}
+                  className="block w-full text-center py-2 px-4 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors mb-3"
+                  onClick={handleMobileLinkClick}
+                >
+                  View All {item.name}
+                </Link>
+                
+                {/* Render appropriate mega menu component */}
+                {renderMobileMegaMenuContent(item)}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  // Function to render mobile mega menu content
+  const renderMobileMegaMenuContent = (item) => {
+    if (!item.hasMegaMenu || !item.megaMenuData) return null;
+
+    const megaMenuProps = {
+      data: item.megaMenuData,
+      isMobile: true,
+      onItemClick: handleMobileLinkClick
+    };
+
+    switch (item.megaMenuType) {
+      case "brands":
+        return <ShopeBrandsMegaMenu {...megaMenuProps} />;
+      case "watches":
+        return <WatchMegaMenu {...megaMenuProps} />;
+      case "handbags":
+        return <HandBagMegaMenu {...megaMenuProps} />;
+      case "jewelry":
+        return <JewelryMegaMenu {...megaMenuProps} />;
+      case "accessories":
+        return <AccessoriesMegaMenu {...megaMenuProps} />;
+      default:
+        return (
+          <div className="text-center py-4 text-gray-500">
+            Menu content coming soon
+          </div>
+        );
     }
   };
 
@@ -403,11 +382,11 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   // Function to render currency selector for mobile
   const renderMobileCurrencySelector = () => (
-    <div className="border-b border-gray-100">
+    <div className="border-b border-gray-200">
       <button
         onClick={toggleCurrency}
         disabled={isLoading}
-        className="w-full flex justify-between items-center px-5 py-3 text-left text-gray-800 hover:bg-gray-50 transition-colors disabled:opacity-50"
+        className="w-full flex justify-between items-center px-6 py-4 text-left text-gray-800 hover:bg-gray-50 transition-colors disabled:opacity-50"
       >
         <div className="flex items-center gap-3">
           {isLoading ? (
@@ -425,8 +404,8 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       </button>
 
       {isCurrencyOpen && (
-        <div className="bg-gray-50 pl-5">
-          <div className="px-5 py-2 text-xs font-semibold text-gray-500 border-t border-gray-200">
+        <div className="bg-gray-50 border-t border-gray-200">
+          <div className="px-6 py-2 text-xs font-semibold text-gray-500">
             SELECT CURRENCY
           </div>
           {currencyOptions.map((currency) => (
@@ -434,7 +413,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               key={currency.code}
               onClick={() => handleCurrencySelect(currency)}
               disabled={isLoading}
-              className={`w-full flex items-center gap-3 px-5 py-3 text-sm border-t border-gray-100 transition-colors ${
+              className={`w-full flex items-center gap-3 px-6 py-3 text-sm transition-colors ${
                 selectedCurrency.code === currency.code
                   ? "bg-amber-50 text-amber-700"
                   : "text-gray-600 hover:bg-gray-100"
@@ -454,75 +433,122 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     </div>
   );
 
-  // Function to render nested submenus for desktop
-  const renderDesktopSubMenu = (subItems, level = 0) => {
-    return (
-      <div
-        className={`absolute ${
-          level === 0 ? "left-0 top-full" : "left-full top-0"
-        } mt-0 w-52 bg-white shadow-xl rounded-b-md py-2 border-t-2 border-amber-300 z-50`}
+  // Function to render mobile help section
+  const renderMobileHelpSection = () => (
+    <div className="border-b border-gray-200">
+      <button
+        onClick={toggleHelp}
+        className="w-full flex justify-between items-center px-6 py-4 text-left text-gray-800 hover:bg-gray-50 transition-colors"
       >
-        {subItems.map((sub) => (
-          <div key={sub.name} className="relative group">
-            <Link
-              href={sub.path}
-              className="block px-4 py-2 text-gray-800 hover:bg-amber-50 text-sm border-b border-gray-100 transition-colors flex justify-between items-center"
-            >
-              {sub.name}
-              {sub.subMenu && (
-                <FaChevronRight size={12} className="text-gray-400" />
-              )}
-            </Link>
-
-            {sub.subMenu && (
-              <div className="opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                {renderDesktopSubMenu(sub.subMenu, level + 1)}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Function to render nested submenus for mobile
-  const renderMobileSubMenu = (subItems, parentName, level = 0) => {
-    return subItems.map((sub) => (
-      <div key={sub.name}>
-        <div className="flex justify-between items-center">
-          <Link
-            href={sub.path}
-            className="block px-5 py-3 text-gray-600 hover:bg-gray-100 text-sm border-t border-gray-100 transition-colors flex-1"
-            onClick={closeMobileMenu}
-          >
-            {sub.name}
-          </Link>
-          {sub.subMenu && (
-            <button
-              onClick={() => toggleDropdown(`${parentName}-${sub.name}`)}
-              className="px-4 py-3 text-gray-400"
-            >
-              {dropdown === `${parentName}-${sub.name}` ? (
-                <FaChevronDown size={14} />
-              ) : (
-                <FaChevronRight size={14} />
-              )}
-            </button>
-          )}
+        <div className="flex items-center gap-4">
+          <FaPhone className="text-[#1e518e]" size={18} />
+          <span className="font-semibold text-base">Help & Support</span>
         </div>
+        <FaChevronDown
+          className={`text-gray-400 transition-transform duration-200 ${
+            isHelpOpen ? "rotate-180" : ""
+          }`}
+          size={16}
+        />
+      </button>
+      
+      {isHelpOpen && (
+        <div className="bg-gray-50 border-t border-gray-200">
+          <a
+            href="tel:+97142671124"
+            className="flex items-center gap-4 px-6 py-3 text-gray-700 hover:bg-gray-100 text-sm border-b border-gray-200 transition-colors"
+            onClick={handleMobileLinkClick}
+          >
+            <FaPhone className="text-[#1e518e]" size={16} />
+            <div>
+              <div className="font-medium">Call Support</div>
+              <div className="text-xs text-gray-600">+971 4 267 1124</div>
+            </div>
+          </a>
+          <Link
+            href="/contact-us"
+            className="flex items-center gap-4 px-6 py-3 text-gray-700 hover:bg-gray-100 text-sm border-b border-gray-200 transition-colors"
+            onClick={handleMobileLinkClick}
+          >
+            <FaEnvelope className="text-[#1e518e]" size={16} />
+            <span className="font-medium">Contact Form</span>
+          </Link>
+          <Link
+            href="/LiveChat"
+            className="flex items-center gap-4 px-6 py-3 text-gray-700 hover:bg-gray-100 text-sm border-b border-gray-200 transition-colors"
+            onClick={handleMobileLinkClick}
+          >
+            <FaComments className="text-[#1e518e]" size={16} />
+            <span className="font-medium">Live Chat</span>
+          </Link>
+          <Link
+            href="/Faq"
+            className="flex items-center gap-4 px-6 py-3 text-gray-700 hover:bg-gray-100 text-sm transition-colors"
+            onClick={handleMobileLinkClick}
+          >
+            <FaQuestionCircle className="text-[#1e518e]" size={16} />
+            <span className="font-medium">FAQs</span>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
 
-        {sub.subMenu && dropdown === `${parentName}-${sub.name}` && (
-          <div className="bg-gray-100 pl-5">
-            {renderMobileSubMenu(
-              sub.subMenu,
-              `${parentName}-${sub.name}`,
-              level + 1
-            )}
-          </div>
-        )}
-      </div>
-    ));
-  };
+  // Function to render mobile language section
+  const renderMobileLanguageSection = () => (
+    <div className="border-b border-gray-200">
+      <button
+        onClick={toggleLanguage}
+        className="w-full flex justify-between items-center px-6 py-4 text-left text-gray-800 hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-4">
+          <FaGlobe className="text-[#1e518e]" size={18} />
+          <span className="font-semibold text-base">Language</span>
+        </div>
+        <FaChevronDown
+          className={`text-gray-400 transition-transform duration-200 ${
+            isLanguageOpen ? "rotate-180" : ""
+          }`}
+          size={16}
+        />
+      </button>
+      
+      {isLanguageOpen && (
+        <div className="bg-gray-50 border-t border-gray-200">
+          <button
+            className="w-full flex items-center gap-4 px-6 py-3 text-gray-700 hover:bg-gray-100 text-sm border-b border-gray-200 transition-colors"
+            onClick={() => {
+              setIsLanguageOpen(false);
+              handleMobileLinkClick();
+            }}
+          >
+            <span className="text-lg">🇬🇧</span>
+            <span className="font-medium">English</span>
+          </button>
+          <button
+            className="w-full flex items-center gap-4 px-6 py-3 text-gray-700 hover:bg-gray-100 text-sm border-b border-gray-200 transition-colors"
+            onClick={() => {
+              setIsLanguageOpen(false);
+              handleMobileLinkClick();
+            }}
+          >
+            <span className="text-lg">🇦🇪</span>
+            <span className="font-medium">العربية</span>
+          </button>
+          <button
+            className="w-full flex items-center gap-4 px-6 py-3 text-gray-700 hover:bg-gray-100 text-sm transition-colors"
+            onClick={() => {
+              setIsLanguageOpen(false);
+              handleMobileLinkClick();
+            }}
+          >
+            <span className="text-lg">🇮🇳</span>
+            <span className="font-medium">हिन्दी</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -545,7 +571,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                     onMouseLeave={() => setDropdown(null)}
                   >
                     <Link
-                      href={item.path || "#"}
+                      href={item.path}
                       className="block text-gray-800 font-semibold hover:text-amber-700 transition-colors text-sm xl:text-base whitespace-nowrap py-2 px-1 border-b-2 border-transparent hover:border-amber-500"
                     >
                       {item.name}
@@ -553,19 +579,8 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
                     {/* Mega Menu for specific items */}
                     {item.hasMegaMenu &&
-                      dropdown === item.name && (
-                        <MegaMenu 
-                          data={megaMenuData[item.megaMenuKey]} 
-                          megaMenuKey={item.megaMenuKey}
-                          isMobile={false}
-                        />
-                      )}
-
-                    {/* Regular Submenu for other items */}
-                    {item.subMenu &&
-                      !item.hasMegaMenu &&
                       dropdown === item.name &&
-                      renderDesktopSubMenu(item.subMenu)}
+                      renderMegaMenu(item)}
                   </div>
                 ))}
               </div>
@@ -597,17 +612,19 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                       HELP & SUPPORT
                     </div>
                     <a
-                      href="tel:+97112345678"
+                      href="tel:+97142671124"
                       className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm transition-colors border-b border-gray-100"
                     >
                       <FaPhone className="text-[#1e518e]" size={16} />
                       <div>
                         <div className="font-medium">Call Support</div>
-                        <div className="text-xs text-gray-500">+971 4 267 1124</div>
+                        <div className="text-xs text-gray-500">
+                          +971 4 267 1124
+                        </div>
                       </div>
                     </a>
                     <Link
-                      href="/ContactForm"
+                      href="/contact-us"
                       className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm transition-colors border-b border-gray-100"
                     >
                       <FaEnvelope className="text-[#1e518e]" size={16} />
@@ -671,194 +688,44 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         </div>
       </header>
 
-      {/* Mobile Menu - Updated for half-screen */}
+      {/* Mobile Menu - Fixed for better responsiveness */}
       <div
-        className={`fixed inset-y-0 left-0 w-4/5 max-w-sm bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 w-full max-w-sm bg-white z-50 transform transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         } lg:hidden`}
       >
         {/* Mobile Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-300 bg-gradient-to-r from-gray-50 to-white">
-          <h2 className="text-xl font-bold text-gray-800">Montres store</h2>
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
+          <h2 className="text-xl font-bold text-gray-800">Montres Store</h2>
           <button
             onClick={closeMobileMenu}
-            className="p-3 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="Close menu"
           >
-            <FaTimes size={24} />
+            <FaTimes size={20} />
           </button>
         </div>
 
         {/* Mobile Menu Content */}
-        <div className="overflow-y-auto h-full pb-32">
+        <div className="h-full overflow-y-auto pb-20">
           {/* Main Menu Items */}
-          {menuItems.map((item) => (
-            <div key={item.name} className="border-b border-gray-200">
-              {!item.subMenu && !item.hasMegaMenu ? (
-                <Link
-                  href={item.path}
-                  className="w-full flex justify-between items-center px-6 py-5 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
-                  onClick={closeMobileMenu}
-                >
-                  <span className="font-semibold text-gray-700 text-base hover:text-amber-600 transition">
-                    {item.name}
-                  </span>
-                </Link>
-              ) : (
-                <button
-                  onClick={() => toggleDropdown(item.name)}
-                  className="w-full flex justify-between items-center px-6 py-5 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
-                >
-                  <span className="font-semibold text-gray-700 text-base">
-                    {item.name}
-                  </span>
-                  <span className="text-gray-400">
-                    {dropdown === item.name ? (
-                      <FaChevronDown size={18} />
-                    ) : (
-                      <FaChevronRight size={18} />
-                    )}
-                  </span>
-                </button>
-              )}
-
-              {/* Mobile Menu Content */}
-              {(item.hasMegaMenu || item.subMenu) && dropdown === item.name && (
-                <div className="bg-white">
-                  {item.hasMegaMenu ? (
-                    <MegaMenu 
-                      data={megaMenuData[item.megaMenuKey]} 
-                      megaMenuKey={item.megaMenuKey}
-                      isMobile={true}
-                    />
-                  ) : (
-                    renderMobileSubMenu(item.subMenu, item.name)
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+          {menuItems.map(renderMobileMenuItem)}
 
           {/* Currency Selector for Mobile */}
           {renderMobileCurrencySelector()}
 
-          {/* Mobile Help */}
-          <div className="border-b border-gray-200">
-            <button
-              onClick={toggleHelp}
-              className="w-full flex justify-between items-center px-6 py-5 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
-            >
-              <div className="flex items-center gap-4">
-                <FaPhone className="text-[#1e518e]" size={20} />
-                <span className="font-semibold text-base">Help & Support</span>
-              </div>
-              <FaChevronDown
-                className={`text-gray-400 transition-transform duration-200 ${
-                  isHelpOpen ? "rotate-180" : ""
-                }`}
-                size={18}
-              />
-            </button>
-            {isHelpOpen && (
-              <div className="bg-gray-50 border-t border-gray-200">
-                <a
-                  href="tel:+97112345678"
-                  className="flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base border-b border-gray-200 transition-colors"
-                  onClick={closeMobileMenu}
-                >
-                  <FaPhone className="text-[#1e518e]" size={18} />
-                  <div>
-                    <div className="font-medium">Call Support</div>
-                    <div className="text-sm text-gray-600">+971 4 267 1124</div>
-                  </div>
-                </a>
-                <Link
-                  href="/ContactForm"
-                  className="flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base border-b border-gray-200 transition-colors"
-                  onClick={closeMobileMenu}
-                >
-                  <FaEnvelope className="text-[#1e518e]" size={18} />
-                  <span className="font-medium">Contact Form</span>
-                </Link>
-                <Link
-                  href="/LiveChat"
-                  className="flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base border-b border-gray-200 transition-colors"
-                  onClick={closeMobileMenu}
-                >
-                  <FaComments className="text-[#1e518e]" size={18} />
-                  <span className="font-medium">Live Chat</span>
-                </Link>
-                <Link
-                  href="/Faq"
-                  className="flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base transition-colors"
-                  onClick={closeMobileMenu}
-                >
-                  <FaQuestionCircle className="text-[#1e518e]" size={18} />
-                  <span className="font-medium">FAQs</span>
-                </Link>
-              </div>
-            )}
-          </div>
+          {/* Help Section */}
+          {renderMobileHelpSection()}
 
-          {/* Mobile Language */}
-          <div className="border-b border-gray-200">
-            <button
-              onClick={toggleLanguage}
-              className="w-full flex justify-between items-center px-6 py-5 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
-            >
-              <div className="flex items-center gap-4">
-                <FaGlobe className="text-[#1e518e]" size={20} />
-                <span className="font-semibold text-base">Language</span>
-              </div>
-              <FaChevronDown
-                className={`text-gray-400 transition-transform duration-200 ${
-                  isLanguageOpen ? "rotate-180" : ""
-                }`}
-                size={18}
-              />
-            </button>
-            {isLanguageOpen && (
-              <div className="bg-gray-50 border-t border-gray-200">
-                <button
-                  className="w-full flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base border-b border-gray-200 transition-colors"
-                  onClick={() => {
-                    setIsLanguageOpen(false);
-                    closeMobileMenu();
-                  }}
-                >
-                  <span className="text-xl">🇬🇧</span>
-                  <span className="font-medium">English</span>
-                </button>
-                <button
-                  className="w-full flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base border-b border-gray-200 transition-colors"
-                  onClick={() => {
-                    setIsLanguageOpen(false);
-                    closeMobileMenu();
-                  }}
-                >
-                  <span className="text-xl">🇦🇪</span>
-                  <span className="font-medium">العربية</span>
-                </button>
-                <button
-                  className="w-full flex items-center gap-4 px-6 py-4 text-gray-700 hover:bg-gray-100 text-base transition-colors"
-                  onClick={() => {
-                    setIsLanguageOpen(false);
-                    closeMobileMenu();
-                  }}
-                >
-                  <span className="text-xl">🇮🇳</span>
-                  <span className="font-medium">हिन्दी</span>
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Language Section */}
+          {renderMobileLanguageSection()}
         </div>
       </div>
 
-      {/* Overlay for mobile menu */}
+      {/* Overlay for mobile menu - Fixed background */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 backdrop-blur-sm bg-black/20 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={closeMobileMenu}
         ></div>
       )}

@@ -11,7 +11,7 @@ import React, {
   useRef,
 } from "react";
 import { FiFilter, FiX, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import FilterSidebar from "@/features/product/ProductFilterSidebar";
+import FilterSidebar from "@/features/product/ShopeBYFilterSidebar";
 
 const Page = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -193,11 +193,12 @@ const Page = () => {
           <ol className="inline-flex items-center space-x-1 text-xs xs:text-sm">
             <li>
               <a
-                href="#"
-                className="flex items-center text-gray-700 hover:text-[#8b6b4a]"
-              >
-                Home
-              </a>
+  href="#"
+  className="flex items-center text-gray-700 hover:text-[#8b6b4a] font-semibold"
+>
+  Home
+</a>
+
             </li>
           </ol>
         </nav>
@@ -274,7 +275,6 @@ const Page = () => {
                     <option value="featured">Featured</option>
                     <option value="priceLowHigh">Price: Low to High</option>
                     <option value="priceHighLow">Price: High to Low</option>
-                    <option value="rating">Rating</option>
                     <option value="discount">Discount</option>
                   </select>
                 </div>

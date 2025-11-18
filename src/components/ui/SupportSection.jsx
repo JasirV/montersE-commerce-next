@@ -28,7 +28,7 @@ const SupportSection = () => {
                 Help Center
               </p>
               <p className="text-gray-700 font-semibold break-words">
-                help.montres.ae
+                admin@montres.ae
               </p>
             </div>
           </div>
@@ -43,7 +43,7 @@ const SupportSection = () => {
                 Email Support
               </p>
               <p className="text-gray-700 font-semibold break-words">
-                care@montres.ae
+                sales@montres.ae
               </p>
             </div>
           </div>

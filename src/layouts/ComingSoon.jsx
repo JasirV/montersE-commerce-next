@@ -63,7 +63,7 @@ const ComingSoon = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="creativesalahu@gmail.com"
+                placeholder=" sales@montres.ae"
                 className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
@@ -80,7 +80,7 @@ const ComingSoon = () => {
           <div className="max-w-md mx-auto mb-8">
             <div className="mb-2 flex justify-between text-sm text-gray-600">
               <span>Maintenance Progress</span>
-              <span>65%</span>
+              <span>80%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
@@ -95,10 +95,10 @@ const ComingSoon = () => {
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Need immediate assistance?</h3>
             <p className="text-gray-600 mb-3">Contact us at:</p>
             <a 
-              href="mailto:creativesalahu@gmail.com" 
+              href="mailto: sales@montres.ae" 
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
-              creativesalahu@gmail.com
+              sales@montres.ae
             </a>
           </div>
         </div>
