@@ -6,6 +6,8 @@ import ProductCard from "./ProductCard";
 import FilterSidebar from "./ProductFilterSidebar";
 import { fetchProduct } from "../../service/productService";
 import { FiFilter, FiX, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import FilterSidebar2 from "./FilterSidebar2";
+import { defaultFiltersDataForWathch } from "@/utils/FilterDummayData";
 
 const ProductPage = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -246,7 +248,7 @@ const categoryFilteredProducts = useMemo(() => {
         <div className="flex flex-col md:flex-row gap-4 xs:gap-5 sm:gap-6">
           {/* Sidebar */}
           <aside className="md:w-64 lg:w-79">
-            <FilterSidebar
+            <FilterSidebar2
               activeFilters={activeFilters}
               toggleFilter={toggleFilter}
               mobileFiltersOpen={mobileFiltersOpen}
@@ -256,6 +258,7 @@ const categoryFilteredProducts = useMemo(() => {
               setBrandSearch={setBrandSearch}
               clearAllFilters={clearAllFilters}
               applyFilters={applyFilters}
+              defaultFiltersData={defaultFiltersDataForWathch}
             />
           </aside>
 
