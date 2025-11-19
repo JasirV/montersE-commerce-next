@@ -1,10 +1,10 @@
 "use client"
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { Check, Download, Share2, Home, ShoppingBag, Clock, Shield, Gift } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
 
-const TabbyPaymentSuccess = () => {
+const TabbyPaymentSuccessContent = () => {
   const searchParams = useSearchParams();
   const [orderDetails, setOrderDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -170,8 +170,6 @@ const TabbyPaymentSuccess = () => {
           {/* Content */}
           <div className="pt-8 sm:pt-10 px-4 sm:px-6 pb-4 sm:pb-6">
             
-        
-
             {/* Amount */}
             <div className="text-center mb-6 sm:mb-8">
               <p className="text-gray-600 text-sm mb-2">Total Order Amount</p>
@@ -340,6 +338,22 @@ const TabbyPaymentSuccess = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// Main component that wraps with Suspense
+const TabbyPaymentSuccess = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading payment confirmation...</p>
+        </div>
+      </div>
+    }>
+      <TabbyPaymentSuccessContent />
+    </Suspense>
   );
 };
 
