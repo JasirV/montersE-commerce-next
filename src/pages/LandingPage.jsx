@@ -29,7 +29,7 @@ export default function IndexPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsModalOpen(true)
-    }, 3000)
+    }, 6000)
     return () => clearTimeout(timer)
   }, [])
 
