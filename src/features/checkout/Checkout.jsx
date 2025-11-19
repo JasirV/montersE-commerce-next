@@ -270,34 +270,31 @@ const CheckoutPage = () => {
     shippingForm.country,
   ]);
 
-  const createOrder = async () => {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        alert("Please login to continue");
-        return;
-      }
+const createOrder = async () => {
+  setIsLoading(true);
 
-      // Filter valid items only
-      const validItems = checkoutProducts.filter(isValidProduct);
-      
-      if (validItems.length === 0) {
-        alert("No valid products in cart");
-        setIsLoading(false);
-        return;
-      }
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      alert("Please login to continue");
+      setIsLoading(false);
+      return;
+    }
 
-      // Prepare items array for order
-      const items = validItems.map((item) => ({
-        productId: item.productId._id,
-        quantity: item.quantity,
-      }));
+    const validItems = checkoutProducts.filter(isValidProduct);
+    if (validItems.length === 0) {
+      alert("No valid products in cart");
+      setIsLoading(false);
+      return;
+    }
 
-      // Prepare shipping address
-      let shippingAddress = {};
-      if (selectedAddress) {
-        shippingAddress = {
+    const items = validItems.map((item) => ({
+      productId: item.productId._id,
+      quantity: item.quantity,
+    }));
+
+    const shippingAddress = selectedAddress
+      ? {
           firstName: selectedAddress.firstName,
           lastName: selectedAddress.lastName,
           email: selectedAddress.email,
@@ -308,9 +305,8 @@ const CheckoutPage = () => {
           state: selectedAddress.state,
           country: selectedAddress.country,
           postalCode: selectedAddress.postalCode,
-        };
-      } else {
-        shippingAddress = {
+        }
+      : {
           firstName: shippingForm.firstName,
           lastName: shippingForm.lastName,
           email: shippingForm.email,
@@ -322,14 +318,10 @@ const CheckoutPage = () => {
           country: shippingForm.country,
           postalCode: shippingForm.postalCode,
         };
-      }
 
-      // Prepare billing address
-      let billingAddress = {};
-      if (billingSameAsShipping) {
-        billingAddress = { ...shippingAddress };
-      } else {
-        billingAddress = {
+    const billingAddress = billingSameAsShipping
+      ? { ...shippingAddress }
+      : {
           firstName: billingForm.firstName,
           lastName: billingForm.lastName,
           email: billingForm.email,
@@ -341,86 +333,107 @@ const CheckoutPage = () => {
           country: billingForm.country,
           postalCode: billingForm.postalCode,
         };
-      }
 
-      // Validate required fields
-      if (
-        !shippingAddress.firstName ||
-        !shippingAddress.lastName ||
-        !shippingAddress.phone ||
-        !shippingAddress.email ||
-        !shippingAddress.street ||
-        !shippingAddress.city ||
-        !shippingAddress.state ||
-        !shippingAddress.country
-      ) {
-        alert("Please fill all required shipping address fields");
+    // Required field check
+    const requiredFields = [
+      "firstName",
+      "lastName",
+      "phone",
+      "email",
+      "street",
+      "city",
+      "state",
+      "country"
+    ];
+
+    for (let field of requiredFields) {
+      if (!shippingAddress[field]) {
+        alert("Please fill all required shipping fields");
         setIsLoading(false);
         return;
       }
-
-      if (
-        !billingSameAsShipping &&
-        (!billingAddress.firstName ||
-          !billingAddress.lastName ||
-          !billingAddress.phone ||
-          !billingAddress.email ||
-          !billingAddress.street ||
-          !billingAddress.city ||
-          !billingAddress.state ||
-          !billingAddress.country)
-      ) {
-        alert("Please fill all required billing address fields");
-        setIsLoading(false);
-        return;
-      }
-
-      const orderData = {
-        items,
-        shippingAddress,
-        billingAddress,
-        paymentMethod,
-        subtotal,
-        shippingFee,
-        total: finalTotal,
-        vatAmount,
-      };
-
-      console.log("Creating order with data:", orderData);
-
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/order/create`,
-        orderData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.success) {
-        if (paymentMethod === "stripe" && response.data.checkoutUrl) {
-          window.location.href = response.data.checkoutUrl;
-        } else if (paymentMethod === "tabby" && response.data.paymentUrl) {
-          window.location.href = response.data.paymentUrl;
-        } else {
-          setStep("success");
-        }
-      } else {
-        throw new Error(response.data.message || "Failed to create order");
-      }
-    } catch (error) {
-      console.error("Order creation error:", error);
-      alert(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to create order"
-      );
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    if (!billingSameAsShipping) {
+      for (let field of requiredFields) {
+        if (!billingAddress[field]) {
+          alert("Please fill all required billing fields");
+          setIsLoading(false);
+          return;
+        }
+      }
+    }
+
+    const orderData = {
+      items,
+      shippingAddress,
+      billingAddress,
+      paymentMethod,
+      subtotal,
+      shippingFee,
+      total: finalTotal,
+      vatAmount,
+    };
+
+    if(paymentMethod=="stripe"){
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASEURL}/order/create`,
+      orderData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = response.data;
+
+    if (!data.success) {
+      throw new Error(data.message || "Failed to create order");
+    }
+
+    if (data.checkoutUrl) {
+      // Stripe or Tabby redirect
+      window.location.href = data.checkoutUrl;
+      return;
+    }
+
+    // If Order created without payment (ex: COD)
+    setStep("success");
+  }else if (paymentMethod=="tabby"){
+     const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASEURL}/order/tabby`,
+      orderData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = response.data;
+
+    if (!data.success) {
+      throw new Error(data.message || "Failed to create order");
+    }
+
+    if (data.checkoutUrl) {
+      // Stripe or Tabby redirect
+      window.location.href = data.checkoutUrl;
+      return;
+    }
+  }
+
+  } catch (error) {
+    console.error("Order creation failed:", error);
+    alert(error.response?.data?.message || error.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handlePlaceOrder = () => {
     if (!privacyAccepted) {
@@ -1074,9 +1087,8 @@ const CheckoutPage = () => {
                     </div>
                   </label>
 
-                  {/* Tabby Payment Option */}
                   <label
-                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
                       paymentMethod === "tabby"
                         ? "border-blue-500 bg-blue-50"
                         : "border-gray-200"
