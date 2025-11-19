@@ -26,13 +26,13 @@ export default function IndexPage() {
     setModalIsOpen(true);
   };
 
-    // Auto-open modal after 3 seconds (optional)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsModalOpen(true)
-    }, 6000)
-    return () => clearTimeout(timer)
-  }, [])
+  //   // Auto-open modal after 3 seconds (optional)
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     setIsModalOpen(true)
+  //   }, 6000)
+  //   return () => clearTimeout(timer)
+  // }, [])
 
 
 

@@ -554,7 +554,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     <>
       {/* Desktop SubNavbar */}
       <header
-        className={`w-full bg-white sticky top-[80px] z-50 transition-all duration-300 ${
+        className={`w-full bg-white sticky top-[80px] z-40 transition-all duration-300 ${
           isScrolled ? "shadow-lg" : "shadow-sm"
         } hidden lg:block`}
       >
