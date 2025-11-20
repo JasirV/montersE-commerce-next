@@ -527,7 +527,7 @@ const ShopeBYFilterSidebar = ({
       >
         {/* Overlay */}
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 transition-opacity duration-300"
+          className="fixed inset-0  bg-opacity-40 transition-opacity duration-300"
           onClick={() => setMobileFiltersOpen(false)}
           aria-hidden="true"
         />
