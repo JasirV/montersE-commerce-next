@@ -36,11 +36,7 @@ const WishlistIcon = ({
       aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
       disabled={isSoldOut && !isWishlisted}
     >
-      <FiHeart
-        className={`w-4 h-4 ${
-          isWishlisted ? "fill-current" : ""
-        }`}
-      />
+      <FiHeart className={`w-4 h-4 ${isWishlisted ? "fill-current" : ""}`} />
     </button>
   );
 };
@@ -79,9 +75,7 @@ const RatingDisplay = ({ rating, isSoldOut = false }) => {
         ))}
       </div>
       <span
-        className={`text-xs ${
-          isSoldOut ? "text-gray-400" : "text-gray-600"
-        }`}
+        className={`text-xs ${isSoldOut ? "text-gray-400" : "text-gray-600"}`}
       >
         ({rating})
       </span>
@@ -225,7 +219,7 @@ const ImageSlider = ({ images, productName, isSoldOut, onImageClick }) => {
         {isSoldOut && (
           <div className="absolute inset-0 bg-white bg-opacity-20 flex items-center justify-center z-20">
             <div className="text-center">
-              <div className="text-lg font-semibold text-gray-500 tracking-wide">
+              <div className="text-lg font-semibold text-red-600 tracking-wide">
                 SOLD OUT
               </div>
             </div>
@@ -271,7 +265,7 @@ const ImageSlider = ({ images, productName, isSoldOut, onImageClick }) => {
       </div>
       {isSoldOut && (
         <div className="absolute inset-0 bg-white/35 flex items-center justify-center z-20">
-          <span className="text-black text-[16px] font-medium tracking-wide">
+          <span className="text-red-700 text-[16px] font-medium tracking-wide">
             SOLD OUT
           </span>
         </div>
@@ -286,7 +280,7 @@ const ImageSlider = ({ images, productName, isSoldOut, onImageClick }) => {
               handlePrev();
             }}
             className={`absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 transition-all duration-200 z-20 ${
-              isHovered ? 'opacity-100' : 'opacity-0'
+              isHovered ? "opacity-100" : "opacity-0"
             }`}
             aria-label="Previous image"
           >
@@ -299,7 +293,7 @@ const ImageSlider = ({ images, productName, isSoldOut, onImageClick }) => {
               handleNext();
             }}
             className={`absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 transition-all duration-200 z-20 ${
-              isHovered ? 'opacity-100' : 'opacity-0'
+              isHovered ? "opacity-100" : "opacity-0"
             }`}
             aria-label="Next image"
           >
