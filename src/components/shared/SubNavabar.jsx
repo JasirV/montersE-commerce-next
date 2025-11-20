@@ -22,9 +22,9 @@ import axios from "axios";
 // Import the MegaMenu components
 import WatchMegaMenu from "./MegaMenu";
 import ShopeBrandsMegaMenu from "./BrandsMegaMenu";
-import HandBagMegaMenu from './HnadBagMegaMenu';
-import JewelryMegaMenu from './JewelryMegaMenu';
-import AccessoriesMegaMenu from './AccessoriesMegaMenu';
+import HandBagMegaMenu from "./HnadBagMegaMenu";
+import JewelryMegaMenu from "./JewelryMegaMenu";
+import AccessoriesMegaMenu from "./AccessoriesMegaMenu";
 
 const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currency, setCurrency, setRate } = useCurrency();
@@ -48,7 +48,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       path: "/shop",
       hasMegaMenu: true,
       megaMenuType: "brands",
-      megaMenuData: {} // Add your actual data here
+      megaMenuData: {}, // Add your actual data here
     },
     {
       name: "EXCLUSIVE COLLECTION",
@@ -59,28 +59,28 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       path: "/watches/Watches",
       hasMegaMenu: true,
       megaMenuType: "watches",
-      megaMenuData: {} // Add your actual data here
+      megaMenuData: {}, // Add your actual data here
     },
     {
       name: "HANDBAGS",
       path: "/leathers/bags",
       hasMegaMenu: true,
       megaMenuType: "handbags",
-      megaMenuData: {} // Add your actual data here
+      megaMenuData: {}, // Add your actual data here
     },
     {
       name: "ACCESSORIES",
       path: "/accessories/Accessories",
       hasMegaMenu: true,
       megaMenuType: "accessories",
-      megaMenuData: {} // Add your actual data here
+      megaMenuData: {}, // Add your actual data here
     },
     {
       name: "JEWELRY",
       path: "/jewelry",
       hasMegaMenu: true,
       megaMenuType: "jewelry",
-      megaMenuData: {} // Add your actual data here
+      megaMenuData: {}, // Add your actual data here
     },
     {
       name: "BRAND NEW",
@@ -166,7 +166,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     () => setIsCurrencyOpen((prev) => !prev),
     []
   );
-  
+
   const closeMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(false);
     setDropdown(null);
@@ -220,7 +220,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     const megaMenuProps = {
       data: item.megaMenuData,
       isMobile: false,
-      onItemClick: closeMobileMenu
+      onItemClick: closeMobileMenu,
     };
 
     switch (item.megaMenuType) {
@@ -283,7 +283,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 >
                   View All {item.name}
                 </Link>
-                
+
                 {/* Render appropriate mega menu component */}
                 {renderMobileMegaMenuContent(item)}
               </div>
@@ -301,7 +301,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     const megaMenuProps = {
       data: item.megaMenuData,
       isMobile: true,
-      onItemClick: handleMobileLinkClick
+      onItemClick: handleMobileLinkClick,
     };
 
     switch (item.megaMenuType) {
@@ -451,7 +451,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           size={16}
         />
       </button>
-      
+
       {isHelpOpen && (
         <div className="bg-gray-50 border-t border-gray-200">
           <a
@@ -512,7 +512,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           size={16}
         />
       </button>
-      
+
       {isLanguageOpen && (
         <div className="bg-gray-50 border-t border-gray-200">
           <button
@@ -554,11 +554,11 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     <>
       {/* Desktop SubNavbar */}
       <header
-        className={`w-full bg-white sticky top-14 lg:top-16 z-40 transition-all duration-300 ${
+        className={`w-full bg-white sticky top-[80px] z-40 transition-all duration-300 ${
           isScrolled ? "shadow-lg" : "shadow-sm"
         } hidden lg:block`}
       >
-        <div className="container mx-auto px-4 lg:px-8">
+        <div className="container mx-auto px-5 lg:px-8">
           <div className="flex justify-between items-center h-14">
             {/* Main Navigation */}
             <nav className="flex-1 flex justify-center">

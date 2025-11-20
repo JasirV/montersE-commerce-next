@@ -240,12 +240,7 @@ const CheckoutPage = () => {
     setVatAmount(vatValue);
     setFinalTotal(finalTotalValue);
 
-    console.log("Fallback calculation:", {
-      subtotal: subtotalValue,
-      shipping: shippingValue,
-      vat: vatValue,
-      total: finalTotalValue,
-    });
+
   };
 
   // Update totals when form fields are completed
