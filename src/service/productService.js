@@ -166,18 +166,68 @@ export async function WatchBycategory(style, params = {}) {
 }
 
 
-export async function LeatherBycategory(
-  category,
-  { page = 1, limit = 15 } = {}
-) {
+
+
+// service/productService.js
+export async function LeatherBycategory(category, params = {}) {
   try {
-    const endpoint = `/leather/category/${category}?page=${page}&limit=${limit}`;
+    const { 
+      page = 1, 
+      limit = 16,
+      sortBy = "newest",
+      leatherType = "all",
+      ...filters 
+    } = params;
+
+    // Build URL query string
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    // Add sort parameter if not default
+    if (sortBy && sortBy !== "featured") {
+      queryParams.append("sortBy", sortBy);
+    }
+
+    // Add dynamic filter params
+    Object.entries(filters).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach(v => {
+          if (v !== undefined && v !== null && v !== '') {
+            queryParams.append(key, v);
+          }
+        });
+      } else if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value);
+      }
+    });
+
+    // Handle price range separately
+    if (filters.minPrice) {
+      queryParams.append("minPrice", filters.minPrice);
+    }
+    if (filters.maxPrice) {
+      queryParams.append("maxPrice", filters.maxPrice);
+    }
+
+    // safe encode category
+    const safeCategory = category || "All";
+    const endpoint = `/leather/category/${safeCategory}?${queryParams.toString()}`;
+
+    console.log("Leather API Call:", endpoint);
+
     const response = await api.get(endpoint);
     return { data: response.data, error: null, isLoading: false };
+
   } catch (error) {
+    console.error("Leather API Error:", error);
     return { data: null, error, isLoading: false };
   }
 }
+
+
+
 export async function AccessoriesBycategory(
   category,
   { page = 1, limit = 15 } = {}
