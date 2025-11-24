@@ -20,7 +20,14 @@ const ProductGrid = () => {
           const filtered = res.data.homeProducts.filter(
             (item) => item.title.toLowerCase() !== "jewelry"
           );
-          setHomeProducts(filtered);
+          
+          // ✅ Ensure each category has exactly 3 products
+          const categoriesWithThreeProducts = filtered.map(category => ({
+            ...category,
+            products: category.products?.slice(0, 3) || [] // Take only first 3 products
+          }));
+          
+          setHomeProducts(categoriesWithThreeProducts);
         } else {
           setHomeProducts([]);
         }
@@ -36,8 +43,8 @@ const ProductGrid = () => {
   const SkeletonCard = () => (
     <div className="flex flex-col items-center text-center animate-pulse">
       <div className="w-full aspect-square rounded-lg bg-gray-300 mb-2"></div>
-      <div className="h-4 w-2/3 bg-gray-300 rounded mb-1"></div>
-      <div className="h-3 w-1/2 bg-gray-300 rounded"></div>
+      <div className="h-3 w-2/3 bg-gray-300 rounded mb-1"></div>
+      <div className="h-4 w-1/2 bg-gray-300 rounded"></div>
     </div>
   );
 
@@ -77,30 +84,33 @@ const ProductGrid = () => {
 
               {/* Product Grid */}
               <div className="grid grid-cols-3 gap-4">
-                {Array.from({ length: 3 }).map((_, index) => {
-                  const product = categoryItem.products[index];
-
-                  return product ? (
+                {categoryItem.products && categoryItem.products.length > 0 ? (
+                  categoryItem.products.map((product, index) => (
                     <div
                       key={product._id || index}
                       className="flex flex-col items-center text-center group"
                     >
-                      {/* Image */}
-                      <div className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
+                      {/* Image Container - Slightly larger */}
+                      <div className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-gray-50 mb-1">
                         <Link href={`/ProductDetailPage/${product._id}`}>
                           <Image
                             src={product.images?.[0]?.url}
                             alt={product.name || "Product"}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            width={300}
-                            height={300}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            width={150}
+                            height={150}
                             loading="lazy"
                           />
                         </Link>
                       </div>
 
-                      {/* Price */}
-                      <p className="mt-2 text-sm sm:text-base font-semibold text-gray-900">
+                      {/* Product Name - Smaller font */}
+                      <p className="text-xs text-gray-600 line-clamp-2 mt-1 min-h-[2rem] leading-tight">
+                        {product.name || product.sku}
+                      </p>
+
+                      {/* Price - Larger and bolder */}
+                      <p className="text-sm font-bold text-gray-900 mt-1">
                         {product.salePrice
                           ? `${(
                               parseFloat(
@@ -109,21 +119,19 @@ const ProductGrid = () => {
                             ).toFixed(2)} ${currency}`
                           : "Price N/A"}
                       </p>
-
-                      {/* Name */}
-                      <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mt-1">
-                        {product.name || product.sku}
-                      </p>
                     </div>
-                  ) : (
+                  ))
+                ) : (
+                  // Show 3 "No Product" placeholders
+                  Array.from({ length: 3 }).map((_, index) => (
                     <div
                       key={index}
                       className="flex flex-col items-center justify-center border border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-400 text-xs py-6"
                     >
                       No Product
                     </div>
-                  );
-                })}
+                  ))
+                )}
               </div>
             </div>
           ))
