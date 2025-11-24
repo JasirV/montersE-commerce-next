@@ -12,6 +12,7 @@ import Link from "next/link";
 
 
  const handleBannerClick = (banner) => {
+  if (!banner.link) return;
   if (banner.link?.startsWith("#")) {
     const sectionId = banner.link.replace("#", "");
 
