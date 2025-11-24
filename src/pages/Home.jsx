@@ -16,7 +16,11 @@ const ProductGrid = () => {
         setLoading(true);
         const res = await getHomeProductGrid();
         if (res?.data?.homeProducts) {
-          setHomeProducts(res.data.homeProducts);
+          // ❌ Remove JEWELRY Category Here
+          const filtered = res.data.homeProducts.filter(
+            (item) => item.title.toLowerCase() !== "jewelry"
+          );
+          setHomeProducts(filtered);
         } else {
           setHomeProducts([]);
         }
@@ -39,12 +43,12 @@ const ProductGrid = () => {
 
   if (loading) {
     return (
-      <div className="bg-gray-50 min-h-[100px] p-4 sm:p-6 lg:p-8">
+      <div className="bg-gray-50 min-h-[100px] p-6 lg:p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="bg-white rounded-xl shadow-md p-5">
               <div className="h-6 w-1/3 bg-gray-300 rounded mb-4 animate-pulse"></div>
-              <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((__, i) => (
                   <SkeletonCard key={i} />
                 ))}
@@ -57,13 +61,14 @@ const ProductGrid = () => {
   }
 
   return (
-    <div className="bg-gray-50 min-h-[100px] p-4 sm:p-6 lg:p-8">
+    <div className="bg-gray-50 p-6 lg:p-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
         {homeProducts.length > 0 ? (
           homeProducts.map((categoryItem) => (
             <div
               key={categoryItem._id}
-              className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 p-5"
+              className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-5 border border-gray-100"
             >
               {/* Category Title */}
               <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">
@@ -71,9 +76,10 @@ const ProductGrid = () => {
               </h2>
 
               {/* Product Grid */}
-              <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, index) => {
                   const product = categoryItem.products[index];
+
                   return product ? (
                     <div
                       key={product._id || index}
@@ -85,7 +91,7 @@ const ProductGrid = () => {
                           <Image
                             src={product.images?.[0]?.url}
                             alt={product.name || "Product"}
-                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             width={300}
                             height={300}
                             loading="lazy"
@@ -101,10 +107,10 @@ const ProductGrid = () => {
                                 product.salePrice.toString().replace(/,/g, "")
                               ) * rate
                             ).toFixed(2)} ${currency}`
-                          : "Price not available"}
+                          : "Price N/A"}
                       </p>
 
-                      {/* Product Name */}
+                      {/* Name */}
                       <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mt-1">
                         {product.name || product.sku}
                       </p>
@@ -114,7 +120,7 @@ const ProductGrid = () => {
                       key={index}
                       className="flex flex-col items-center justify-center border border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-400 text-xs py-6"
                     >
-                      Empty
+                      No Product
                     </div>
                   );
                 })}
@@ -126,6 +132,7 @@ const ProductGrid = () => {
             No categories found.
           </p>
         )}
+
       </div>
     </div>
   );
