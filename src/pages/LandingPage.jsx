@@ -59,7 +59,7 @@ export default function IndexPage() {
       </div>
       <Home />
       <WatchBrand />
-      <Form />
+      <Form id="watch-form" />
       <JustforyouWatch />
       <PremiumBrands />
       <Watch />

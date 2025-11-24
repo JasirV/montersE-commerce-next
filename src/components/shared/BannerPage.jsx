@@ -5,19 +5,48 @@ import LuxuryWatchCollection from "../../assets/Banners/LuxuryWatchCollection.jp
 import NewArrivals2025 from "../../assets/Banners/NewArrivals2025.jpg";
 import ExclusiveLimited from "../../assets/Banners/ExclusiveLimited.jpg";
 import WorldWideShipping from "../../assets/Banners/WorldWideShipping.jpg";
+import BestDeal from "../../assets/Banners/Best Deal Today.png";
+import Link from "next/link";
+
+
+
+
+ const handleBannerClick = (banner) => {
+  if (!banner.link) return;
+  if (banner.link?.startsWith("#")) {
+    const sectionId = banner.link.replace("#", "");
+
+    // If already on homepage
+    if (window.location.pathname === "/") {
+      document.getElementById(sectionId)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    } else {
+      // Redirect to home page with hash
+      window.location.href = `/#${sectionId}`;
+    }
+
+    return;
+  }
+
+  // For normal links (external or internal pages)
+  window.location.href = banner.link;
+};
 
 const banners = [
   {
     image: LuxuryWatchCollection,
-    alt: "Luxury Watch Collection",
-    title: "LUXURY COLLECTION",
-    subtitle: "Timeless Elegance",
-    description:
-      "Discover our premium luxury watches with exquisite craftsmanship.",
-    ctaText: "Shop Now",
+    // alt: "Luxury Watch Collection",
+    // title: "LUXURY COLLECTION",
+    // subtitle: "Timeless Elegance",
+    // description:
+    //   "Discover our premium luxury watches with exquisite craftsmanship.",
+    // ctaText: "Shop Now",
   },
   {
     image: NewArrivals2025,
+    link:'#watch-form'
     // alt: "New Arrivals 2025",
     // title: "NEW ARRIVALS",
     // subtitle: "2025 Collection",
@@ -26,6 +55,7 @@ const banners = [
   },
   {
     image: ExclusiveLimited,
+    link: "/watches",
     // alt: "Limited Edition Luxury Watches",
     // title: "LIMITED EDITION",
     // subtitle: "Only 50 Pieces Worldwide",
@@ -34,11 +64,19 @@ const banners = [
   },
   {
     image: WorldWideShipping,
-    alt: "Worldwide Shipping",
-    title: "WORLDWIDE SHIPPING",
-    subtitle: "Fast & Secure",
-    description: "We deliver your luxury watches to over 100 countries safely.",
-    ctaText: "Learn More",
+    // alt: "Worldwide Shipping",
+    // title: "WORLDWIDE SHIPPING",
+    // subtitle: "Fast & Secure",
+    // description: "We deliver your luxury watches to over 100 countries safely.",
+    // ctaText: "Learn More",
+  },
+  {
+    image: BestDeal,
+    // alt: "Worldwide Shipping",
+    // title: "WORLDWIDE SHIPPING",
+    // subtitle: "Fast & Secure",
+    // description: "We deliver your luxury watches to over 100 countries safely.",
+    // ctaText: "Learn More",
   },
 ];
 
@@ -65,8 +103,12 @@ const BannerPage = () => {
     <div className="w-full relative overflow-hidden">
       <Slider {...settings}>
         {banners.map((banner, index) => (
-          <div key={index} className="relative w-full">
+          <div key={index} className="relative w-full" >
             {/* Optimized Image Container */}
+            <div
+    onClick={() => handleBannerClick(banner)}
+    className="cursor-pointer"
+  >
             <div className="relative w-full aspect-[16/9] sm:aspect-[16/7] md:aspect-[16/6] lg:aspect-[16/5]">
               <img
                 src={banner.image.src}
@@ -77,7 +119,7 @@ const BannerPage = () => {
               />
 
               {/* Gradient Overlay for better text readability */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
+              {/* <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div> */}
 
               {/* Content Container */}
               <div className="absolute inset-0 flex flex-col justify-center items-start px-4 sm:px-8 md:px-12 lg:px-20 xl:px-32 text-white">
@@ -105,6 +147,7 @@ const BannerPage = () => {
                   )}
                 </div>
               </div>
+            </div>
             </div>
           </div>
         ))}
