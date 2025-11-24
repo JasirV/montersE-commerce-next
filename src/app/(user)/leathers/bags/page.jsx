@@ -1,7 +1,7 @@
 "use client";
 import ProductCard from "@/features/product/ProductCard";
 import { LeatherBycategory } from "@/service/productService";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import React, {
   memo,
   Suspense,
@@ -9,11 +9,19 @@ import React, {
   useMemo,
   useState,
   useRef,
+  useCallback,
 } from "react";
 import { FiFilter, FiX, FiChevronLeft, FiChevronRight, FiHome } from "react-icons/fi";
-import FilterSidebar from "@/features/product/ShopeBYFilterSidebar";
+import HandbagFilterSidebar from "@/features/product/HangBagFilter";
 
-const Page = () => {
+// Create a component that uses useSearchParams and wrap it in Suspense
+const SearchParamsWrapper = ({ children }) => {
+  const searchParams = useSearchParams();
+  return children(searchParams);
+};
+
+// Main component without useSearchParams
+const PageContent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [products, setProducts] = useState({
     products: [],
@@ -24,222 +32,400 @@ const Page = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortOption, setSortOption] = useState("featured");
-  const { category, subcategory } = useParams();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [brandSearch, setBrandSearch] = useState("");
   const [shouldApplyFilters, setShouldApplyFilters] = useState(false);
-
-  // Ref for scroll target
+  const [searchParamsState, setSearchParamsState] = useState(null);
+  
+  const { category, subcategory } = useParams();
   const productsSectionRef = useRef(null);
 
-  const productsPerPage = 16; // Optimized for 4 columns
+  const productsPerPage = 16;
 
+  // Updated active filters structure for handbags
   const [activeFilters, setActiveFilters] = useState({
-    category: [],
-    price: [],
+    subCategory: [],
     brand: [],
-    discount: [],
-    rating: [],
-    availability: [],
-    badges: [],
+    color: [],
     material: [],
-    style: [],
-    color: []
+    condition: [],
+    priceRange: { min: 0, max: 100000 },
+    gender: [],
+    hardware: [],
+    interiorMaterial: [],
+    availability: []
   });
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const { data, error, isLoading } = await LeatherBycategory("Bag", {
-          page: currentPage,
-          limit: productsPerPage,
-          category: activeFilters.category,
-          brand: activeFilters.brand,
-          price: activeFilters.price,
-          availability: activeFilters.availability,
-          badges: activeFilters.badges,
-          material: activeFilters.material,
-          style: activeFilters.style,
-          color: activeFilters.color
-        });
-        if (data) {
-          setProducts(
-            data || {
-              products: [],
-              totalPages: 0,
-              currentPage: 1,
-              totalProducts: 0,
-            }
-          );
-        } else {
-          setError(error);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-        setShouldApplyFilters(false);
+  // ✅ CORRECTED: Update URL with current filters and pagination
+  const updateURL = useCallback((filters, page, sort) => {
+    if (typeof window === 'undefined') return;
+    
+    const params = new URLSearchParams();
+
+    // Add all filters to URL
+    Object.entries(filters).forEach(([key, value]) => {
+      if (key === "priceRange" && value) {
+        if (value.min > 0) params.set("minPrice", value.min.toString());
+        if (value.max < 100000) params.set("maxPrice", value.max.toString());
+      } else if (Array.isArray(value) && value.length > 0) {
+        value.forEach((v) => params.append(key, v));
       }
+    });
+
+    // Add pagination and sort
+    params.set("page", page.toString());
+    if (sort && sort !== "featured") {
+      params.set("sortBy", sort);
+    }
+
+    // Update URL without page reload
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, "", newUrl);
+  }, []);
+
+  // Build API parameters from active filters
+  const buildApiParams = useCallback(() => {
+    const params = {
+      page: currentPage,
+      limit: productsPerPage,
+      // Add your specific filter parameters here based on your API
+      brand: activeFilters.brand,
+      subCategory: activeFilters.subCategory,
+      color: activeFilters.color,
+      material: activeFilters.material,
+      condition: activeFilters.condition,
+      gender: activeFilters.gender,
+      availability: activeFilters.availability,
+      minPrice: activeFilters.priceRange?.min,
+      maxPrice: activeFilters.priceRange?.max
     };
+
+    // Add category from URL if available
+    if (category) {
+      params.category = [category];
+    }
+
+    // Add sort option
+    if (sortOption && sortOption !== "featured") {
+      const sortMappings = {
+        priceLowHigh: "price_low_high",
+        priceHighLow: "price_high_low",
+        newest: "newest",
+        premium: "premium",
+        rating: "rating",
+        discount: "discount",
+      };
+      params.sortBy = sortMappings[sortOption] || sortOption;
+    }
+
+    console.log("Final API params for leather bags:", params);
+    return params;
+  }, [activeFilters, currentPage, sortOption, category, productsPerPage]);
+
+  // Fetch products based on current filters
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const apiParams = buildApiParams();
+      console.log("Fetching leather bags with params:", apiParams);
+
+      const result = await LeatherBycategory("Bag", apiParams);
+
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to fetch leather bags");
+      }
+
+      if (result.data) {
+        console.log(
+          "Leather bags fetched successfully:",
+          result.data.products.length
+        );
+        setProducts(result.data);
+      }
+    } catch (err) {
+      console.error("Error fetching leather bags:", err);
+      setError("Failed to load leather bags. Please try again later.");
+    } finally {
+      setLoading(false);
+      setShouldApplyFilters(false);
+    }
+  }, [buildApiParams]);
+
+  // Initialize filters from URL on component mount
+  useEffect(() => {
+    if (!searchParamsState) return;
+
+    const initialFilters = { 
+      subCategory: [],
+      brand: [],
+      color: [],
+      material: [],
+      condition: [],
+      priceRange: { min: 0, max: 100000 },
+      gender: [],
+      hardware: [],
+      interiorMaterial: [],
+      availability: []
+    };
+    let hasURLFilters = false;
+
+    const filterKeys = [
+      "subCategory",
+      "brand",
+      "color",
+      "material",
+      "condition",
+      "gender",
+      "hardware",
+      "interiorMaterial",
+      "availability"
+    ];
+
+    filterKeys.forEach((key) => {
+      const values = searchParamsState.getAll(key);
+      if (values.length > 0) {
+        initialFilters[key] = values;
+        hasURLFilters = true;
+      }
+    });
+
+    // Handle price range
+    const minPrice = searchParamsState.get("minPrice");
+    const maxPrice = searchParamsState.get("maxPrice");
+    if (minPrice || maxPrice) {
+      initialFilters.priceRange = {
+        min: minPrice ? parseInt(minPrice) : 0,
+        max: maxPrice ? parseInt(maxPrice) : 100000,
+      };
+      hasURLFilters = true;
+    }
+
+    // Handle sort option
+    const urlSortOption = searchParamsState.get("sortBy");
+    if (urlSortOption) {
+      setSortOption(urlSortOption);
+    }
+
+    // Handle page
+    const urlPage = searchParamsState.get("page");
+    if (urlPage) {
+      setCurrentPage(parseInt(urlPage));
+    }
+
+    if (hasURLFilters) {
+      setActiveFilters(initialFilters);
+    }
+  }, [searchParamsState]);
+
+  // Fetch products when filters, page, or sort change
+  useEffect(() => {
     fetchProducts();
-  }, [currentPage, shouldApplyFilters]);
+  }, [fetchProducts]);
+
+  // Update URL when filters change
+  useEffect(() => {
+    updateURL(activeFilters, currentPage, sortOption);
+  }, [activeFilters, currentPage, sortOption, updateURL]);
 
   // Scroll to top when page changes
   useEffect(() => {
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: "smooth"
+      behavior: 'smooth'
     });
   }, [currentPage]);
 
-  const clearAllFilters = () => {
+  // Extract unique values for dynamic filters
+  const brands = useMemo(() => {
+    return [...new Set(products.products?.map(p => p.brand).filter(Boolean))];
+  }, [products.products]);
+
+  const subCategories = useMemo(() => {
+    return [...new Set(products.products?.flatMap(p => p.categories || []).filter(Boolean))];
+  }, [products.products]);
+
+  const colors = useMemo(() => {
+    return [...new Set(products.products?.map(p => p.color).filter(Boolean))];
+  }, [products.products]);
+
+  const materials = useMemo(() => {
+    return [...new Set(products.products?.map(p => p.material).filter(Boolean))];
+  }, [products.products]);
+
+  // Toggle filter function for HandbagFilterSidebar
+  const toggleFilter = useCallback((filterType, value) => {
+    setCurrentPage(1); // Reset to first page when filters change
+
+    setActiveFilters(prev => {
+      // Handle price range separately
+      if (filterType === 'priceRange') {
+        return {
+          ...prev,
+          priceRange: value
+        };
+      }
+      
+      // Handle array-based filters
+      if (Array.isArray(prev[filterType])) {
+        const currentArray = prev[filterType];
+        const updatedArray = currentArray.includes(value)
+          ? currentArray.filter(item => item !== value)
+          : [...currentArray, value];
+        
+        return {
+          ...prev,
+          [filterType]: updatedArray
+        };
+      }
+      
+      return prev;
+    });
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
     setActiveFilters({
-      category: [],
-      price: [],
+      subCategory: [],
       brand: [],
-      discount: [],
-      rating: [],
-      availability: [],
-      badges: [],
+      color: [],
       material: [],
-      style: [],
-      color: []
+      condition: [],
+      priceRange: { min: 0, max: 100000 },
+      gender: [],
+      hardware: [],
+      interiorMaterial: [],
+      availability: []
     });
     setCurrentPage(1);
     setShouldApplyFilters(true);
-  };
+  }, []);
 
-  const handlePageChange = (page) => {
+  const applyFilters = useCallback(() => {
+    setMobileFiltersOpen(false);
+    setShouldApplyFilters(true);
+  }, []);
+
+  const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
-  };
+  }, []);
 
-  const toggleFilter = (type, value) => {
-    setActiveFilters((prev) => {
-      const updated = prev[type].includes(value)
-        ? prev[type].filter((v) => v !== value)
-        : [...prev[type], value];
-      return { ...prev, [type]: updated };
-    });
-    setCurrentPage(1);
-  };
-
-  const applyFilters = () => {
-    setCurrentPage(1);
-    setShouldApplyFilters(true);
-  };
-
-  const categoryFilteredProducts = useMemo(() => {
-    if (loading) return [];
-    return products?.products?.filter((p) => {
-      const isCategoryMatch =
-        p.categories &&
-        p.categories.some((cat) =>
-          cat?.toLowerCase()?.includes(category?.toLowerCase())
-        );
-
-      if (subcategory) {
-        return (
-          isCategoryMatch &&
-          p.categories &&
-          p.categories.some((cat) =>
-            cat.toLowerCase().includes(subcategory.toLowerCase())
-          )
-        );
+  // Filter products based on active filters
+  const filteredProducts = useMemo(() => {
+    if (!products.products?.length) return [];
+    
+    return products.products.filter(product => {
+      // Sub Category filter
+      if (activeFilters.subCategory.length > 0) {
+        const productCategories = product.categories || [];
+        if (!activeFilters.subCategory.some(subCat => 
+          productCategories.includes(subCat)
+        )) return false;
       }
 
-      return isCategoryMatch;
-    });
-  }, [category, subcategory, products, loading]);
+      // Brand filter
+      if (activeFilters.brand.length > 0 && product.brand) {
+        if (!activeFilters.brand.includes(product.brand)) return false;
+      }
 
-  const filteredProducts = useMemo(() => {
-    return categoryFilteredProducts.filter((p) => {
-      if (
-        activeFilters.category.length &&
-        !activeFilters.category.includes(p.category)
-      )
-        return false;
-      if (activeFilters.brand.length && !activeFilters.brand.includes(p.brand))
-        return false;
-      if (activeFilters.availability.includes("inStock") && !p.inStock)
-        return false;
-      if (
-        activeFilters.availability.includes("fastDelivery") &&
-        !p.fastDelivery
-      )
-        return false;
-      if (
-        activeFilters.rating.length &&
-        p.rating < Math.min(...activeFilters.rating)
-      )
-        return false;
-      if (
-        activeFilters.badges.length &&
-        (!p.badge || !activeFilters.badges.includes(p.badge))
-      )
-        return false;
-      if (
-        activeFilters.material.length &&
-        (!p.material || !activeFilters.material.includes(p.material))
-      )
-        return false;
-      if (
-        activeFilters.style.length &&
-        (!p.style || !activeFilters.style.includes(p.style))
-      )
-        return false;
-      if (
-        activeFilters.color.length &&
-        (!p.color || !activeFilters.color.includes(p.color))
-      )
-        return false;
+      // Color filter
+      if (activeFilters.color.length > 0 && product.color) {
+        if (!activeFilters.color.includes(product.color)) return false;
+      }
+
+      // Material filter
+      if (activeFilters.material.length > 0 && product.material) {
+        if (!activeFilters.material.includes(product.material)) return false;
+      }
+
+      // Condition filter
+      if (activeFilters.condition.length > 0 && product.condition) {
+        if (!activeFilters.condition.includes(product.condition)) return false;
+      }
+
+      // Gender filter
+      if (activeFilters.gender.length > 0 && product.gender) {
+        if (!activeFilters.gender.includes(product.gender)) return false;
+      }
+
+      // Price range filter
+      if (activeFilters.priceRange && product.price) {
+        const productPrice = parseFloat(product.price);
+        if (productPrice < activeFilters.priceRange.min || 
+            productPrice > activeFilters.priceRange.max) {
+          return false;
+        }
+      }
+
+      // Availability filter
+      if (activeFilters.availability.length > 0) {
+        if (activeFilters.availability.includes('In Stock') && !product.inStock) {
+          return false;
+        }
+        if (activeFilters.availability.includes('Sold Out') && product.inStock) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [categoryFilteredProducts, activeFilters]);
+  }, [products.products, activeFilters]);
 
+  // Sort products
   const sortedProducts = useMemo(() => {
-    if (!sortOption) return filteredProducts;
+    if (!filteredProducts.length) return [];
 
-    const result = [...filteredProducts].sort((a, b) => {
+    return [...filteredProducts].sort((a, b) => {
       switch (sortOption) {
         case "priceLowHigh":
-          return parseFloat(a.price) - parseFloat(b.price);
+          return parseFloat(a.price || 0) - parseFloat(b.price || 0);
         case "priceHighLow":
-          return parseFloat(b.price) - parseFloat(a.price);
+          return parseFloat(b.price || 0) - parseFloat(a.price || 0);
         case "rating":
-          return b.rating - a.rating;
+          return (b.rating || 0) - (a.rating || 0);
         case "discount":
-          return parseFloat(b.discount) - parseFloat(a.discount);
+          return parseFloat(b.discount || 0) - parseFloat(a.discount || 0);
         case "newest":
-          return new Date(b.createdAt) - new Date(a.createdAt);
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
         case "premium":
-          // Prioritize premium leather bags
           return (b.isPremium || 0) - (a.isPremium || 0);
         default:
           return 0;
       }
     });
-
-    return result.length > 0 ? result : products.products || [];
-  }, [filteredProducts, sortOption, products]);
-
-  const brands = useMemo(
-    () => [...new Set(categoryFilteredProducts.map((p) => p.brand))],
-    [categoryFilteredProducts]
-  );
+  }, [filteredProducts, sortOption]);
 
   // Calculate display range for pagination
-  const getDisplayRange = () => {
+  const getDisplayRange = useCallback(() => {
     const startItem = (currentPage - 1) * productsPerPage + 1;
     const endItem = Math.min(
       currentPage * productsPerPage,
       products.totalProducts || 0
     );
     return { startItem, endItem };
-  };
+  }, [currentPage, products.totalProducts, productsPerPage]);
 
   const { startItem, endItem } = getDisplayRange();
+
+  // Get active filter count for badge
+  const getActiveFilterCount = useCallback(() => {
+    let count = 0;
+    
+    // Count array filters
+    Object.entries(activeFilters).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        count += value.length;
+      }
+    });
+    
+    // Count price range if not default
+    if (activeFilters.priceRange && 
+        (activeFilters.priceRange.min > 0 || activeFilters.priceRange.max < 100000)) {
+      count += 1;
+    }
+    
+    return count;
+  }, [activeFilters]);
 
   return (
     <div className="bg-[#f8f5f2] min-h-screen">
@@ -281,30 +467,32 @@ const Page = () => {
         >
           <FiFilter className="h-4 w-4 xs:h-5 xs:w-5" />
           <span className="font-medium">Filters</span>
-          {Object.values(activeFilters).some(arr => arr.length > 0) && (
+          {getActiveFilterCount() > 0 && (
             <span className="bg-[#8b6b4a] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {Object.values(activeFilters).flat().length}
+              {getActiveFilterCount()}
             </span>
           )}
         </button>
 
         <div className="flex flex-col md:flex-row gap-6 xs:gap-7 sm:gap-8">
-          {/* Sidebar */}
+          {/* Handbag Filter Sidebar */}
           <aside className="md:w-72 lg:w-80">
-            <FilterSidebar
+            <HandbagFilterSidebar
               activeFilters={activeFilters}
               toggleFilter={toggleFilter}
               mobileFiltersOpen={mobileFiltersOpen}
               setMobileFiltersOpen={setMobileFiltersOpen}
-              brands={brands}
-              brandSearch={brandSearch}
-              setBrandSearch={setBrandSearch}
               clearAllFilters={clearAllFilters}
               applyFilters={applyFilters}
+              // Pass dynamic data
+              brands={brands}
+              subCategories={subCategories}
+              colors={colors}
+              materials={materials}
             />
           </aside>
 
-          {/* Products Section with ref for scrolling */}
+          {/* Products Section */}
           <main className="flex-1 min-w-0" ref={productsSectionRef}>
             {/* Header Section */}
             {!loading && (
@@ -316,7 +504,7 @@ const Page = () => {
                       {subcategory && ` / ${subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}`}
                     </h1>
                     <p className="text-sm xs:text-base font-semibold text-gray-700 bg-gray-50 px-3 py-1 rounded-lg">
-                      {sortedProducts.length} {sortedProducts.length === 1 ? "leather bag" : "leather bags"} found
+                      {products.totalProducts || 0} {products.totalProducts === 1 ? "leather bag" : "leather bags"} found
                     </p>
                   </div>
                   
@@ -351,29 +539,51 @@ const Page = () => {
                   </div>
                 </div>
 
-                {/* Active Filters */}
-                {Object.values(activeFilters).some((arr) => arr.length > 0) && (
+                {/* Active Filters Display */}
+                {getActiveFilterCount() > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium text-gray-600">Active filters:</span>
-                      {Object.entries(activeFilters).map(([type, values]) =>
-                        values.map((val) => (
-                          <span
-                            key={`${type}-${val}`}
-                            className="inline-flex items-center rounded-full bg-[#8b6b4a] bg-opacity-10 px-3 py-1.5 text-sm font-medium text-[#8b6b4a]"
-                          >
-                            {val}
-                            <button
-                              type="button"
-                              className="ml-2 hover:text-[#6a4f36] transition-colors duration-200"
-                              onClick={() => toggleFilter(type, val)}
-                              aria-label={`Remove ${val} filter`}
+                      
+                      {/* Display array filters */}
+                      {Object.entries(activeFilters).map(([type, values]) => {
+                        if (Array.isArray(values) && values.length > 0) {
+                          return values.map((val) => (
+                            <span
+                              key={`${type}-${val}`}
+                              className="inline-flex items-center rounded-full  bg-opacity-10 px-3 py-1.5 text-sm font-medium text-[#8b6b4a]"
                             >
-                              <FiX className="h-3 w-3" />
-                            </button>
-                          </span>
-                        ))
+                              {val}
+                              <button
+                                type="button"
+                                className="ml-2 hover:text-[#6a4f36] transition-colors duration-200"
+                                onClick={() => toggleFilter(type, val)}
+                                aria-label={`Remove ${val} filter`}
+                              >
+                                <FiX className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ));
+                        }
+                        return null;
+                      })}
+                      
+                      {/* Display price range filter if active */}
+                      {activeFilters.priceRange && 
+                       (activeFilters.priceRange.min > 0 || activeFilters.priceRange.max < 100000) && (
+                        <span className="inline-flex items-center rounded-full bg-[#8b6b4a] bg-opacity-10 px-3 py-1.5 text-sm font-medium text-[#8b6b4a]">
+                          AED {activeFilters.priceRange.min.toLocaleString()} - AED {activeFilters.priceRange.max.toLocaleString()}
+                          <button
+                            type="button"
+                            className="ml-2 hover:text-[#6a4f36] transition-colors duration-200"
+                            onClick={() => toggleFilter('priceRange', { min: 0, max: 100000 })}
+                            aria-label="Remove price range filter"
+                          >
+                            <FiX className="h-3 w-3" />
+                          </button>
+                        </span>
                       )}
+                      
                       <button
                         onClick={clearAllFilters}
                         className="text-sm font-semibold text-red-600 hover:text-red-700 hover:underline whitespace-nowrap transition-colors duration-200"
@@ -404,8 +614,29 @@ const Page = () => {
               </div>
             )}
 
-            {/* Products Grid - Optimized for 4 columns on desktop */}
-            {!loading && products.products?.length > 0 ? (
+            {/* Error State */}
+            {error && !loading && (
+              <div className="text-center py-12 xs:py-16 sm:py-20 bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="max-w-md mx-auto">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                    <FiX className="w-8 h-8 text-red-500" />
+                  </div>
+                  <h3 className="text-xl xs:text-2xl font-bold text-gray-900 mb-2">
+                    Error Loading Leather Bags
+                  </h3>
+                  <p className="text-gray-600 mb-6 text-sm xs:text-base">{error}</p>
+                  <button
+                    onClick={fetchProducts}
+                    className="px-6 py-3 text-sm xs:text-base font-semibold rounded-lg bg-[#8b6b4a] text-white hover:bg-[#6a4f36] transition-colors duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Products Grid */}
+            {!loading && !error && products.products?.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 lg:gap-6">
                   <Suspense
@@ -425,7 +656,7 @@ const Page = () => {
                       </div>
                     }
                   >
-                    {products.products.map((product) => (
+                    {sortedProducts.map((product) => (
                       <div key={product._id} className="flex justify-center">
                         <ProductCard 
                           product={product} 
@@ -437,14 +668,17 @@ const Page = () => {
                 </div>
 
                 {/* Pagination */}
-                <MobileResponsivePagination
-                  currentPage={currentPage}
-                  totalPages={products.totalPages || 1}
-                  onPageChange={handlePageChange}
-                />
+                {products.totalPages > 1 && (
+                  <MobileResponsivePagination
+                    currentPage={currentPage}
+                    totalPages={products.totalPages || 1}
+                    onPageChange={handlePageChange}
+                  />
+                )}
               </>
             ) : (
-              !loading && (
+              !loading &&
+              !error && (
                 <div className="text-center py-12 xs:py-16 sm:py-20 bg-white rounded-xl shadow-sm border border-gray-100">
                   <div className="max-w-md mx-auto">
                     <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
@@ -474,7 +708,7 @@ const Page = () => {
   );
 };
 
-// Mobile Responsive Pagination Component
+// Mobile Responsive Pagination Component (keep the same as before)
 const MobileResponsivePagination = memo(
   ({ currentPage, totalPages, onPageChange }) => {
     const generatePageNumbers = () => {
@@ -650,5 +884,25 @@ const MobileResponsivePagination = memo(
 );
 
 MobileResponsivePagination.displayName = "MobileResponsivePagination";
+
+// Main page component with Suspense boundary
+const Page = () => {
+  return (
+    <Suspense 
+      fallback={
+        <div className="bg-[#f8f5f2] min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8b6b4a] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading leather bags...</p>
+          </div>
+        </div>
+      }
+    >
+      <SearchParamsWrapper>
+        {(searchParams) => <PageContent searchParams={searchParams} />}
+      </SearchParamsWrapper>
+    </Suspense>
+  );
+};
 
 export default Page;

@@ -1,0 +1,843 @@
+// features/product/LeatherGoodsFilterSidebar.jsx
+"use client";
+
+import React, { useState, useMemo, useEffect } from "react";
+import { Disclosure } from "@headlessui/react";
+
+// Import icons directly
+import { 
+  FiFilter, 
+  FiChevronDown, 
+  FiSearch,
+  FiX
+} from "react-icons/fi";
+import { 
+  FaTimes, 
+  FaSlidersH
+} from "react-icons/fa";
+
+// Price Range Filter Component
+const PriceRangeFilter = ({ activeFilters, toggleFilter }) => {
+  const priceRange = activeFilters?.priceRange || { min: 0, max: 100000 };
+  
+  const handlePriceRangeChange = (field, value) => {
+    const numValue = parseInt(value) || 0;
+    const currentRange = activeFilters?.priceRange || { min: 0, max: 100000 };
+    
+    let newRange;
+    if (field === 'min') {
+      newRange = { 
+        ...currentRange, 
+        min: Math.min(numValue, currentRange.max - 100)
+      };
+    } else {
+      newRange = { 
+        ...currentRange, 
+        max: Math.max(numValue, currentRange.min + 100)
+      };
+    }
+    
+    toggleFilter('priceRange', newRange);
+  };
+
+  const handleQuickRangeSelect = (min, max) => {
+    toggleFilter('priceRange', { min, max });
+  };
+
+  const quickRanges = [
+    { min: 0, max: 500, label: "Under AED 500" },
+    { min: 500, max: 1000, label: "AED 500 - AED 1,000" },
+    { min: 1000, max: 2500, label: "AED 1,000 - AED 2,500" },
+    { min: 2500, max: 5000, label: "AED 2,500 - AED 5,000" },
+    { min: 5000, max: 10000, label: "AED 5,000 - AED 10,000" },
+    { min: 10000, max: 25000, label: "AED 10,000 - AED 25,000" },
+    { min: 25000, max: 50000, label: "AED 25,000 - AED 50,000" },
+    { min: 50000, max: 100000, label: "Over AED 50,000" },
+  ];
+
+  // Calculate slider positions for visual representation
+  const minPercentage = (priceRange.min / 100000) * 100;
+  const maxPercentage = (priceRange.max / 100000) * 100;
+
+  return (
+    <div className="space-y-4 p-1">
+      {/* Current Range Display */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-gray-700">
+          AED {priceRange.min.toLocaleString()} - AED {priceRange.max.toLocaleString()}
+        </span>
+      </div>
+
+      {/* Custom Range Slider */}
+      <div className="relative py-6">
+        {/* Track */}
+        <div className="relative h-2 bg-gray-200 rounded-full">
+          {/* Selected Range */}
+          <div 
+            className="absolute h-2 bg-indigo-600 rounded-full"
+            style={{
+              left: `${minPercentage}%`,
+              width: `${maxPercentage - minPercentage}%`
+            }}
+          ></div>
+        </div>
+
+        {/* Min Thumb */}
+        <div 
+          className="absolute top-1/2 transform -translate-y-1/2 w-4 h-4 bg-white border-2 border-indigo-600 rounded-full shadow-lg cursor-pointer hover:scale-110 transition-transform"
+          style={{ left: `${minPercentage}%` }}
+        >
+          <input
+            type="range"
+            min="0"
+            max="100000"
+            step="100"
+            value={priceRange.min}
+            onChange={(e) => handlePriceRangeChange('min', e.target.value)}
+            className="absolute w-full h-full opacity-0 cursor-pointer"
+          />
+        </div>
+
+        {/* Max Thumb */}
+        <div 
+          className="absolute top-1/2 transform -translate-y-1/2 w-4 h-4 bg-white border-2 border-indigo-600 rounded-full shadow-lg cursor-pointer hover:scale-110 transition-transform"
+          style={{ left: `${maxPercentage}%` }}
+        >
+          <input
+            type="range"
+            min="0"
+            max="100000"
+            step="100"
+            value={priceRange.max}
+            onChange={(e) => handlePriceRangeChange('max', e.target.value)}
+            className="absolute w-full h-full opacity-0 cursor-pointer"
+          />
+        </div>
+      </div>
+
+      {/* Input Fields */}
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            Min Price (AED)
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="100000"
+            step="100"
+            value={priceRange.min}
+            onChange={(e) => handlePriceRangeChange('min', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            placeholder="0"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            Max Price (AED)
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="100000"
+            step="100"
+            value={priceRange.max}
+            onChange={(e) => handlePriceRangeChange('max', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            placeholder="100000"
+          />
+        </div>
+      </div>
+
+      {/* Quick Select Buttons */}
+      <div className="pt-2">
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          Quick Select
+        </label>
+        <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
+          {quickRanges.map((range, index) => (
+            <button
+              key={index}
+              type="button"
+              className={`px-3 py-2 text-xs border rounded-lg transition-all duration-200 text-left ${
+                priceRange.min === range.min && priceRange.max === range.max
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+              }`}
+              onClick={() => handleQuickRangeSelect(range.min, range.max)}
+            >
+              {range.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Reset Button */}
+      {(priceRange.min > 0 || priceRange.max < 100000) && (
+        <div className="pt-2">
+          <button
+            type="button"
+            className="w-full px-3 py-2 text-xs text-gray-600 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+            onClick={() => toggleFilter('priceRange', { min: 0, max: 100000 })}
+          >
+            Reset Price Range
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Filter section component
+const FilterSection = ({ section, activeFilters, toggleFilter, searchTerms, setSearchTerms }) => {
+  const [localSearch, setLocalSearch] = useState("");
+  
+  const searchTerm = searchTerms?.[section.id] || "";
+  const setSearchTerm = (value) => {
+    setSearchTerms?.(prev => ({ ...prev, [section.id]: value }));
+  };
+
+  // Filter options based on search
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm) return section.options;
+    return section.options.filter(option => 
+      option.label.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [section.options, searchTerm]);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setLocalSearch(value);
+    setSearchTerm(value);
+  };
+
+  // Handle checkbox change
+  const handleCheckboxChange = (value) => {
+    if (toggleFilter) {
+      toggleFilter(section.id, value);
+    }
+  };
+
+  return (
+    <Disclosure as="div" className="border-b border-gray-200 py-4">
+      {({ open }) => (
+        <>
+          <h3 className="-mx-2 -my-3 flow-root">
+            <Disclosure.Button className="flex w-full items-center justify-between bg-white px-2 py-3 text-gray-600 hover:text-gray-900">
+              <span className="text-base xs:text-lg font-bold text-gray-900">
+                {section.name}
+              </span>
+              <span className="ml-6 flex items-center">
+                <FiChevronDown
+                  className={`${
+                    open ? "-rotate-180" : "rotate-0"
+                  } h-5 xs:h-6 w-5 xs:w-6 transform transition-transform duration-200`}
+                  aria-hidden="true"
+                />
+              </span>
+            </Disclosure.Button>
+          </h3>
+          <Disclosure.Panel className="pt-4 pb-2 transition-all duration-300 ease-in-out">
+            <div className="space-y-3">
+              {/* Search input for searchable sections */}
+              {(section.type === "search-checkbox") && (
+                <div className="relative mb-3">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <FiSearch className="h-4 xs:h-5 w-4 xs:w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={localSearch}
+                    onChange={handleSearchChange}
+                    className="block w-full rounded-lg border-0 py-1.5 xs:py-2 pl-8 xs:pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 text-xs xs:text-sm"
+                    placeholder={`Search ${section.name.toLowerCase()}...`}
+                  />
+                </div>
+              )}
+
+              {/* Price Range */}
+              {section.type === "price-range" && (
+                <PriceRangeFilter 
+                  activeFilters={activeFilters}
+                  toggleFilter={toggleFilter}
+                />
+              )}
+
+              {/* Checkbox options */}
+              {(section.type === "checkbox" || section.type === "search-checkbox") && filteredOptions.map((option, optionIdx) => (
+                <div key={option.value} className="flex items-center">
+                  <input
+                    id={`filter-${section.id}-${optionIdx}`}
+                    name={`${section.id}[]`}
+                    type="checkbox"
+                    className="h-4 xs:h-5 w-4 xs:w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    checked={
+                      Array.isArray(activeFilters?.[section.id]) && 
+                      activeFilters[section.id].includes(option.value)
+                    }
+                    onChange={() => handleCheckboxChange(option.value)}
+                  />
+                  <label
+                    htmlFor={`filter-${section.id}-${optionIdx}`}
+                    className="ml-2 xs:ml-3 text-xs xs:text-sm text-gray-600 cursor-pointer"
+                  >
+                    {option.label}
+                  </label>
+                </div>
+              ))}
+
+              {/* Color Picker */}
+              {section.type === "color-picker" && filteredOptions.map((option, optionIdx) => (
+                <div key={option.value} className="flex items-center">
+                  <input
+                    id={`filter-${section.id}-${optionIdx}`}
+                    name={`${section.id}[]`}
+                    type="checkbox"
+                    className="h-4 xs:h-5 w-4 xs:w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    checked={
+                      Array.isArray(activeFilters?.[section.id]) && 
+                      activeFilters[section.id].includes(option.value)
+                    }
+                    onChange={() => handleCheckboxChange(option.value)}
+                  />
+                  <label
+                    htmlFor={`filter-${section.id}-${optionIdx}`}
+                    className="ml-2 xs:ml-3 text-xs xs:text-sm text-gray-600 flex items-center gap-2 cursor-pointer"
+                  >
+                    <span 
+                      className="w-4 h-4 rounded-full border border-gray-300"
+                      style={{ 
+                        backgroundColor: option.color,
+                        border: option.border || 'none'
+                      }}
+                    ></span>
+                    {option.label}
+                  </label>
+                </div>
+              ))}
+
+              {/* Show message if no results */}
+              {filteredOptions.length === 0 && section.type !== "color-picker" && (
+                <div className="text-center text-gray-500 text-xs py-2">
+                  No {section.name.toLowerCase()} found
+                </div>
+              )}
+            </div>
+          </Disclosure.Panel>
+        </>
+      )}
+    </Disclosure>
+  );
+};
+
+// Advanced Filters Modal
+const AdvancedFiltersModal = ({ 
+  isOpen, 
+  onClose, 
+  activeFilters, 
+  toggleFilter,
+  brands = [],
+  categories = []
+}) => {
+  const [searchTerms, setSearchTerms] = useState({});
+
+  // Advanced filters data for leather goods
+  const advancedFiltersData = useMemo(() => [
+    {
+      id: "hardware",
+      name: "Hardware",
+      type: "checkbox",
+      options: [
+        { value: "Gold", label: "Gold" },
+        { value: "Rose Gold", label: "Rose Gold" },
+        { value: "Silver", label: "Silver" },
+        { value: "Platinum", label: "Platinum" },
+        { value: "Chrome", label: "Chrome" },
+        { value: "Gunmetal", label: "Gunmetal" },
+        { value: "Black Metal", label: "Black Metal" },
+        { value: "Brass", label: "Brass" },
+        { value: "Matte Gold", label: "Matte Gold" },
+        { value: "Matte Silver", label: "Matte Silver" },
+        { value: "Ruthenium", label: "Ruthenium" },
+        { value: "Palladium", label: "Palladium" },
+        { value: "Antique Gold", label: "Antique Gold" },
+        { value: "Antique Silver", label: "Antique Silver" },
+      ],
+    },
+    {
+      id: "interiorMaterial",
+      name: "Interior Material",
+      type: "checkbox",
+      options: [
+        { value: "Fabric", label: "Fabric" },
+        { value: "Canvas", label: "Canvas" },
+        { value: "Leather", label: "Leather" },
+        { value: "Suede", label: "Suede" },
+        { value: "Microfiber", label: "Microfiber" },
+        { value: "Textile", label: "Textile" },
+        { value: "Nylon", label: "Nylon" },
+        { value: "Polyester", label: "Polyester" },
+        { value: "Felt", label: "Felt" },
+        { value: "Satin", label: "Satin" },
+        { value: "Silk", label: "Silk" },
+        { value: "Cotton", label: "Cotton" },
+        { value: "Wool Blend", label: "Wool Blend" },
+        { value: "Alcantara", label: "Alcantara" },
+      ],
+    },
+    {
+      id: "size",
+      name: "Size",
+      type: "checkbox",
+      options: [
+        { value: "Small", label: "Small" },
+        { value: "Medium", label: "Medium" },
+        { value: "Large", label: "Large" },
+        { value: "Extra Large", label: "Extra Large" },
+      ],
+    },
+  ], []);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center">
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white w-full max-w-2xl max-h-[90vh] md:max-h-[80vh] md:rounded-2xl shadow-xl transform transition-all">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h2 className="text-lg font-bold text-gray-900">Advanced Filters</h2>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+          >
+            <FaTimes size={20} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="overflow-y-auto p-4 space-y-4 max-h-[calc(90vh-120px)]">
+          {advancedFiltersData.map((section) => (
+            <FilterSection
+              key={section.id}
+              section={section}
+              activeFilters={activeFilters}
+              toggleFilter={toggleFilter}
+              searchTerms={searchTerms}
+              setSearchTerms={setSearchTerms}
+            />
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-4 sticky bottom-0 bg-white">
+          <div className="flex gap-3">
+            <button
+              className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const LeatherGoodsFilterSidebar = ({ 
+  activeFilters = {
+    mainCategory: [],
+    subCategory: [],
+    brand: [],
+    color: [],
+    material: [],
+    condition: [],
+    priceRange: { min: 0, max: 100000 },
+    gender: [],
+    hardware: [],
+    interiorMaterial: [],
+    size: [],
+    availability: []
+  }, 
+  toggleFilter, 
+  mobileFiltersOpen, 
+  setMobileFiltersOpen,
+  clearAllFilters,
+  applyFilters,
+  // Props for dynamic filters
+  brands = [],
+  categories = []
+}) => {
+  const [searchTerms, setSearchTerms] = useState({});
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Main Categories for Leather Goods
+  const mainCategories = [
+    "Hand Bag",
+    "Wallet",
+    "Card Holder", 
+    "Belt",
+    "Briefcase",
+    "Pouch"
+  ];
+
+  // Sub Categories based on Main Category
+  const getSubCategories = (mainCategory) => {
+    const subCategoryMap = {
+      "Hand Bag": [
+        "Tote Bag",
+        "Crossbody Bag", 
+        "Shoulder Bag",
+        "Backpack",
+        "Clutch",
+        "Hobo Bag",
+        "Satchel",
+        "Bucket Bag",
+        "Messenger Bag"
+      ],
+      "Wallet": [
+        "Bifold Wallet",
+        "Trifold Wallet",
+        "Card Holder",
+        "Money Clip Wallet",
+        "Travel Wallet",
+        "Checkbook Wallet"
+      ],
+      "Card Holder": [
+        "Slim Card Holder",
+        "RFID Card Holder",
+        "Multi-card Holder"
+      ],
+      "Belt": [
+        "Dress Belt",
+        "Casual Belt", 
+        "Reversible Belt",
+        "Designer Belt"
+      ],
+      "Briefcase": [
+        "Laptop Briefcase",
+        "Executive Briefcase",
+        "Messenger Briefcase"
+      ],
+      "Pouch": [
+        "Cosmetic Pouch",
+        "Travel Pouch",
+        "Document Pouch"
+      ]
+    };
+    return subCategoryMap[mainCategory] || [];
+  };
+
+  // Get all subcategories based on selected main categories
+  const allSubCategories = useMemo(() => {
+    if (activeFilters.mainCategory?.length > 0) {
+      return activeFilters.mainCategory.flatMap(mainCat => getSubCategories(mainCat));
+    }
+    return [];
+  }, [activeFilters.mainCategory]);
+
+  // Dynamic filter data based on actual products
+  const filters = useMemo(() => {
+    const baseFilters = [
+      {
+        id: "mainCategory",
+        name: "MAIN CATEGORY",
+        type: "checkbox",
+        options: mainCategories.map(cat => ({ value: cat, label: cat })),
+      },
+      {
+        id: "subCategory",
+        name: "SUB CATEGORY",
+        type: "search-checkbox",
+        options: allSubCategories.length > 0 
+          ? allSubCategories.map(cat => ({ value: cat, label: cat }))
+          : [],
+      },
+      {
+        id: "brand",
+        name: "BRAND",
+        type: "search-checkbox",
+        options: brands.length > 0 
+          ? brands.map(brand => ({ value: brand, label: brand }))
+          : [
+              { value: "Louis Vuitton", label: "Louis Vuitton" },
+              { value: "Gucci", label: "Gucci" },
+              { value: "Chanel", label: "Chanel" },
+              { value: "Hermès", label: "Hermès" },
+              { value: "Prada", label: "Prada" },
+            ],
+      },
+      {
+        id: "price",
+        name: "PRICE",
+        type: "price-range",
+        options: []
+      },
+      {
+        id: "color",
+        name: "COLOR",
+        type: "color-picker",
+        options: [
+          { value: "Black", label: "Black", color: "#000000" },
+          { value: "White", label: "White", color: "#FFFFFF", border: "1px solid #E5E7EB" },
+          { value: "Brown", label: "Brown", color: "#8B4513" },
+          { value: "Blue", label: "Blue", color: "#3B82F6" },
+          { value: "Red", label: "Red", color: "#EF4444" },
+          { value: "Green", label: "Green", color: "#10B981" },
+          { value: "Purple", label: "Purple", color: "#8B5CF6" },
+          { value: "Pink", label: "Pink", color: "#EC4899" },
+          { value: "Yellow", label: "Yellow", color: "#F59E0B" },
+          { value: "Orange", label: "Orange", color: "#F97316" },
+          { value: "Gray", label: "Gray", color: "#6B7280" },
+          { value: "Silver", label: "Silver", color: "#9CA3AF" },
+          { value: "Gold", label: "Gold", color: "#F59E0B" },
+          { value: "Rose Gold", label: "Rose Gold", color: "#FECDD3" },
+          { value: "Beige", label: "Beige", color: "#F5F5DC" },
+          { value: "Multi-color", label: "Multi-color", color: "linear-gradient(45deg, #FF0000, #00FF00, #0000FF)" },
+        ],
+      },
+      {
+        id: "material",
+        name: "MATERIAL",
+        type: "checkbox",
+        options: [
+          { value: "Full-grain leather", label: "Full-grain leather" },
+          { value: "Top-grain leather", label: "Top-grain leather" },
+          { value: "Genuine leather", label: "Genuine leather" },
+          { value: "Vegan Leather", label: "Vegan Leather" },
+          { value: "Canvas + Leather", label: "Canvas + Leather" },
+          { value: "Suede", label: "Suede" },
+          { value: "Canvas", label: "Canvas" },
+          { value: "Nylon", label: "Nylon" },
+          { value: "Polyester", label: "Polyester" },
+          { value: "Cotton", label: "Cotton" },
+          { value: "Straw", label: "Straw" },
+          { value: "Raffia", label: "Raffia" },
+        ],
+      },
+      {
+        id: "condition",
+        name: "CONDITION",
+        type: "checkbox",
+        options: [
+          { value: "Brand New", label: "Brand New" },
+          { value: "Unworn / Like New", label: "Unworn / Like New" },
+          { value: "Pre-Owned", label: "Pre-Owned" },
+          { value: "Excellent", label: "Excellent" },
+          { value: "Not Working / For Parts", label: "Not Working / For Parts" },
+        ],
+      },
+      {
+        id: "gender",
+        name: "GENDER",
+        type: "checkbox",
+        options: [
+          { value: "Men/Unisex", label: "Men / Unisex" },
+          { value: "Women", label: "Women" },
+        ],
+      },
+      {
+        id: "availability",
+        name: "AVAILABILITY",
+        type: "checkbox",
+        options: [
+          { value: "In Stock", label: "In Stock" },
+          { value: "Sold Out", label: "Sold Out" },
+        ],
+      },
+    ];
+
+    return baseFilters;
+  }, [brands, allSubCategories]);
+
+  // Check if there are any active filters
+  const hasActiveFilters = useMemo(() => {
+    return Object.values(activeFilters).some(value => {
+      if (value === null) return false;
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === 'object') {
+        // For priceRange, check if it's different from default
+        if (value.min !== undefined && value.max !== undefined) {
+          return value.min !== 0 || value.max !== 100000;
+        }
+        return Object.keys(value).length > 0;
+      }
+      return false;
+    });
+  }, [activeFilters]);
+
+  // Debug logs
+  useEffect(() => {
+    console.log('LeatherGoodsFilterSidebar - Active Filters:', activeFilters);
+    console.log('LeatherGoodsFilterSidebar - Price Range:', activeFilters?.priceRange);
+  }, [activeFilters]);
+
+  return (
+    <>
+      {/* Mobile Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+        <div className="flex justify-around items-center h-14 xs:h-16">
+          {/* Filters */}
+          <button
+            onClick={() => setMobileFiltersOpen(true)}
+            className="flex flex-col items-center justify-center text-indigo-600 p-1 xs:p-2 transition-colors duration-200 relative"
+            aria-label="Open filters"
+          >
+            <FiFilter className="h-5 xs:h-6 w-5 xs:w-6" />
+            <span className="text-[10px] xs:text-xs mt-0.5">Filters</span>
+            {hasActiveFilters && (
+              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+            )}
+          </button>
+
+          {/* Advanced Filters */}
+          <button
+            onClick={() => setShowAdvancedFilters(true)}
+            className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 p-1 xs:p-2 transition-colors duration-200"
+          >
+            <FaSlidersH className="h-5 xs:h-6 w-5 xs:w-6" />
+            <span className="text-[10px] xs:text-xs mt-0.5">Advanced</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Filters Sidebar */}
+      <div
+        className={`md:hidden fixed inset-0 z-50 ${
+          mobileFiltersOpen ? "block" : "hidden"
+        }`}
+      >
+        {/* Overlay */}
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 transition-opacity duration-300"
+          onClick={() => setMobileFiltersOpen(false)}
+          aria-hidden="true"
+        />
+
+        {/* Mobile sidebar */}
+        <div
+          className={`fixed inset-y-0 left-0 w-72 xs:w-80 bg-white z-50 shadow-xl transform transition-transform duration-300 ease-in-out ${
+            mobileFiltersOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex justify-between items-center p-3 xs:p-4 border-b border-gray-200">
+            <h2 className="text-base xs:text-lg font-bold text-gray-800">
+              Filters
+            </h2>
+            <button
+              onClick={() => setMobileFiltersOpen(false)}
+              className="p-1 xs:p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              aria-label="Close filters"
+            >
+              <FiX size={18} />
+            </button>
+          </div>
+
+          {/* Filters content */}
+          <div className="px-3 xs:px-4 pb-20 overflow-y-auto h-[calc(100%-120px)]">
+            {filters.map((section) => (
+              <FilterSection 
+                key={section.id} 
+                section={section} 
+                activeFilters={activeFilters}
+                toggleFilter={toggleFilter}
+                searchTerms={searchTerms}
+                setSearchTerms={setSearchTerms}
+              />
+            ))}
+          </div>
+
+          {/* Fixed buttons at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 xs:p-4 flex justify-between gap-2 xs:gap-3">
+            <button
+              className="px-4 xs:px-6 py-2 xs:py-3 text-xs xs:text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 flex-1 transition-colors duration-200"
+              onClick={clearAllFilters}
+            >
+              Clear all
+            </button>
+            <button
+              className="px-4 xs:px-6 py-2 xs:py-3 text-xs xs:text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex-1 transition-colors duration-200"
+              onClick={applyFilters}
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Advanced Filters Modal */}
+      <AdvancedFiltersModal
+        isOpen={showAdvancedFilters}
+        onClose={() => setShowAdvancedFilters(false)}
+        activeFilters={activeFilters}
+        toggleFilter={toggleFilter}
+        brands={brands}
+        categories={categories}
+      />
+
+      {/* Desktop filters */}
+      <div className="hidden md:block">
+        <div className="sticky top-20">
+          <div
+            className="bg-white p-4 xs:p-5 sm:p-6 rounded-lg shadow-sm border border-gray-200"
+          >
+            <div className="flex items-center justify-between mb-4 xs:mb-5 sm:mb-6">
+              <h2 className="text-lg xs:text-xl font-bold text-gray-900">
+                Filters
+              </h2>
+              {hasActiveFilters && (
+                <button 
+                  className="text-sm xs:text-base font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
+                  onClick={clearAllFilters}
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+
+            {/* Advanced Filters Button for Desktop */}
+            <button
+              onClick={() => setShowAdvancedFilters(true)}
+              className="w-full mb-4 px-4 py-3 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200 flex items-center justify-center gap-2"
+            >
+              <FaSlidersH size={16} />
+              Advanced Filters
+            </button>
+
+            {filters.map((section) => (
+              <FilterSection
+                key={section.id}
+                section={section}
+                activeFilters={activeFilters}
+                toggleFilter={toggleFilter}
+                searchTerms={searchTerms}
+                setSearchTerms={setSearchTerms}
+              />
+            ))}
+
+            {/* Apply Filters Button for Desktop */}
+            {hasActiveFilters && (
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <button
+                  className="w-full px-4 py-3 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+                  onClick={applyFilters}
+                >
+                  Apply Filters
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default LeatherGoodsFilterSidebar;
