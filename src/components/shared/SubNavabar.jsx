@@ -68,6 +68,13 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       megaMenuType: "handbags",
       megaMenuData: {}, // Add your actual data here
     },
+      {
+      name: "LEATHER GOODS",
+      path: "/leathers/LeatherGoodsAll",
+      // hasMegaMenu: true,
+      // megaMenuType: "handbags",
+      megaMenuData: {}, // Add your actual data here
+    },
     {
       name: "ACCESSORIES",
       path: "/accessories/Accessories",
@@ -75,13 +82,13 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       megaMenuType: "accessories",
       megaMenuData: {}, // Add your actual data here
     },
-    {
-      name: "JEWELRY",
-      path: "/jewelry",
-      hasMegaMenu: true,
-      megaMenuType: "jewelry",
-      megaMenuData: {}, // Add your actual data here
-    },
+    // {
+    //   name: "JEWELRY",
+    //   path: "/jewelry",
+    //   hasMegaMenu: true,
+    //   megaMenuType: "jewelry",
+    //   megaMenuData: {}, // Add your actual data here
+    // },
     {
       name: "BRAND NEW",
       path: "/BrandNew",
