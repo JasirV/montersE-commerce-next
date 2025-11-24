@@ -17,13 +17,14 @@ const LoginForm = ({ setActiveTab, onRequestClose }) => {
   }, []);
 
   const handleGoogleLogin = () => {
-    // Redirect user to backend Google OAuth endpoint
-    window.location.href = "http://localhost:9000/api/Auth/google";
+    const base = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_BASEURL || "http://localhost:9000/api";
+    const callback = `${window.location.origin}/auth/success`;
+    window.location.href = `${base}/auth/google?redirect_uri=${encodeURIComponent(callback)}`;
   };
 
   const handleFacebookLogin = () => {
-    // Redirect user to backend Facebook OAuth endpoint
-    window.location.href = "http://localhost:9000/api/Auth/facebook";
+    const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+    window.location.href = `${base}/auth/facebook`;
   };
 
   const handleSubmit = async (e) => {
