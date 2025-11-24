@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BASEURL,
-  withCredentials: true, // allows sending refreshToken cookie automatically
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_BASEURL,
+  withCredentials: true,
 });
 
 // 🟢 Request Interceptor — Add Access Token
