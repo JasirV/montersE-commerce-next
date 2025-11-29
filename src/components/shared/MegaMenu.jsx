@@ -2,9 +2,11 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation"; // Added missing import
 import watchImage from "../../assets/classic.jpg";
 
-const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
+const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false, onItemClick }) => { // Added onItemClick prop
+  const router = useRouter();
   const categories = [
     "Luxury",
     "Sports", 
@@ -19,7 +21,7 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
   const allBrands = [
-   "Aigner",
+    "Aigner",
     "Akribos Xxiv",
     "Apogsum",
     "AquaMarin",
@@ -162,6 +164,7 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
 
   const [selectedLetter, setSelectedLetter] = useState(null);
 
+  // Fixed: Removed duplicate filteredBrands declaration
   const filteredBrands = useMemo(() => {
     if (!selectedLetter) return allBrands;
 
@@ -169,6 +172,36 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
       brand.toLowerCase().startsWith(selectedLetter.toLowerCase())
     );
   }, [selectedLetter, allBrands]);
+
+  // Function to create URL-friendly brand slug
+  const createBrandSlug = (brandName) => {
+    return brandName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+  };
+
+  // Handle brand click - navigate to brand page
+  const handleBrandClick = (brandName) => {
+    const brandSlug = createBrandSlug(brandName);
+    
+    // Navigate to brand watches page
+    router.push(`/brand/${brandSlug}`);
+    
+    // Close the mega menu if onItemClick callback is provided
+    if (onItemClick) {
+      onItemClick();
+    }
+  };
+
+  // Handle category click
+  const handleCategoryClick = (category) => {
+    // You can implement category navigation here
+    console.log(`Category clicked: ${category}`);
+    if (onItemClick) {
+      onItemClick();
+    }
+  };
 
   const handleLetterClick = (letter) => {
     setSelectedLetter(selectedLetter === letter ? null : letter);
@@ -205,6 +238,7 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
                 <Link
                   href={getCategoryUrl(category)}
                   className="text-gray-600 hover:text-amber-600 block py-1 text-sm"
+                  onClick={() => handleCategoryClick(category)}
                 >
                   {category} Watches
                 </Link>
@@ -233,13 +267,14 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
           </div>
 
           {/* Brand List for Mobile */}
-          <div className="max-h-[200px] overflow-y-auto pr-2">
+          <div id="brands-section" className="max-h-[200px] overflow-y-auto pr-2">
             <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
               {filteredBrands.map((brand, index) => (
                 <Link
                   key={index}
-                  href={`/brands/${brand.toLowerCase().replace(/\s+/g, "-")}`}
+                  href={`/brand/${createBrandSlug(brand)}`} // Fixed URL pattern consistency
                   className="hover:text-amber-600 cursor-pointer transition-colors truncate py-1"
+                  onClick={() => handleBrandClick(brand)}
                 >
                   {brand}
                 </Link>
@@ -260,6 +295,7 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
             <Link
               href="/watches/Watches"
               className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold text-sm transition-colors inline-block w-full"
+              onClick={onItemClick}
             >
               Shop All Watches
             </Link>
@@ -284,6 +320,7 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
                 <Link
                   href={getCategoryUrl(category)}
                   className="hover:text-amber-600 transition-colors cursor-pointer py-1 lg:py-0 block"
+                  onClick={() => handleCategoryClick(category)}
                 >
                   {category} Watches
                 </Link>
@@ -296,6 +333,7 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
             <Link
               href="/watches/Watches"
               className="bg-amber-500 hover:bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold text-sm transition-colors w-full block"
+              onClick={onItemClick}
             >
               Shop All Watches
             </Link>
@@ -309,7 +347,7 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
             {letters.map((letter, i) => (
               <button
                 key={i}
-                onClick={() => handleLetterClickWithScroll(letter)}
+                onClick={() => handleLetterClick(letter)}
                 className={`w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center rounded-full border text-xs lg:text-sm font-medium transition-colors ${
                   selectedLetter === letter
                     ? "bg-amber-500 text-white border-amber-500"
@@ -351,8 +389,9 @@ const WatchMegaMenu = ({ data, megaMenuKey, isMobile = false }) => {
               filteredBrands.map((brand, index) => (
                 <Link
                   key={index}
-                  href={`/brands/${brand.toLowerCase().replace(/\s+/g, "-")}`}
+                  href={`/brand/${createBrandSlug(brand)}`} // Fixed URL pattern consistency
                   className="hover:text-amber-600 cursor-pointer transition-colors truncate py-1 lg:py-0"
+                  onClick={() => handleBrandClick(brand)}
                 >
                   {brand}
                 </Link>

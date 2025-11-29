@@ -388,9 +388,6 @@ const JustforyouWatch = () => {
             <div className="w-1.5 h-1.5 xs:w-2 xs:h-2 bg-white rounded-full animate-ping"></div>
           </div>
         )}
-
-
-      
       </div>
     </section>
   );
