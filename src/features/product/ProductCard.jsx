@@ -360,6 +360,21 @@ const ProductCard = ({ product }) => {
         )
       : null;
 
+  // Check if product is a bag (category check)
+  const isBagCategory = () => {
+    // Check multiple ways a product might be categorized as a bag
+    if (product.leatherMainCategory?.toLowerCase().includes('Bag')) return true;
+    if (product.subCategory?.toLowerCase().includes('Bag')) return true;
+    if (product.tags?.some(tag => tag.toLowerCase().includes('Bag'))) return true;
+    if (product.name?.toLowerCase().includes('Bag')) return true;
+    
+    // Also check for leather bags specifically
+    if (product.category?.toLowerCase().includes('leather')) return true;
+    if (product.material?.toLowerCase().includes('leather')) return true;
+    
+    return false;
+  };
+
   // Fetch user's wishlists
   useEffect(() => {
     const fetchWishlists = async () => {
@@ -405,9 +420,15 @@ const ProductCard = ({ product }) => {
     }
   }, [user]);
 
-  // Handle click on product card
+  // Handle click on product card - Now routes based on product category
   const handleProductClick = () => {
-    router.push(`/ProductDetailPage/${product._id}`);
+    if (isBagCategory()) {
+      // Route to LeatherBagsDetails for bags
+      router.push(`/LeatherBagsDetails/${product._id}`);
+    } else {
+      // Route to regular ProductDetailPage for other products
+      router.push(`/ProductDetailPage/${product._id}`);
+    }
   };
 
   // Handle view details button click
