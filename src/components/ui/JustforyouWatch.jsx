@@ -224,7 +224,7 @@ const JustforyouWatch = () => {
         setError(null);
 
         const response = await axios.get(
-          "https://api.montres.ae/api/home/trusted"
+          "http://localhost:9000/api/home/trusted"
         );
 
         console.log("Response data.data:", response.data.data);

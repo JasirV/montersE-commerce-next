@@ -322,9 +322,70 @@ const ProductCard = ({ product }) => {
     }
   };
 
+  const isBagCategory = (product) => {
+    // Check multiple ways a product might be categorized as a bag
+    const searchTerms = ['bag', 'handbag', 'backpack', 'purse', 'tote', 'satchel', 'clutch', 'duffel', 'messenger', 'briefcase', 'wallet', 'pouch'];
+    
+    // Convert all relevant fields to lowercase for comparison
+    const leatherMainCategory = product.leatherMainCategory?.toLowerCase() || '';
+    const subCategory = product.subCategory?.toLowerCase() || '';
+    const category = product.category?.toLowerCase() || '';
+    const material = product.material?.toLowerCase() || '';
+    const name = product.name?.toLowerCase() || '';
+    const description = product.description?.toLowerCase() || '';
+    const tags = Array.isArray(product.tags) 
+      ? product.tags.map(tag => tag.toLowerCase()) 
+      : [];
+    
+    // Check if any search term appears in any relevant field
+    for (const term of searchTerms) {
+      if (
+        leatherMainCategory.includes(term) ||
+        subCategory.includes(term) ||
+        category.includes(term) ||
+        name.includes(term) ||
+        description.includes(term) ||
+        tags.some(tag => tag.includes(term))
+      ) {
+        return true;
+      }
+    }
+    
+    // Check for leather specifically
+    if (
+      leatherMainCategory.includes('leather') ||
+      material.includes('leather') ||
+      category.includes('leather') ||
+      tags.some(tag => tag.includes('leather'))
+    ) {
+      // Additional check to ensure it's actually a bag, not just leather product
+      // Check if name or description contains any bag-related terms
+      const bagRelatedTerms = ['bag', 'handbag', 'backpack', 'purse', 'tote', 'satchel', 'clutch'];
+      for (const term of bagRelatedTerms) {
+        if (name.includes(term) || description.includes(term)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  };
+
   const handleProductClick = (product) => {
-    const productId = product._id || product.productId?._id;
-    if (productId) {
+    // Get the product ID from all possible locations
+    const productId = product._id || product.productId?._id || product.id;
+    
+    if (!productId) {
+      console.warn('No product ID found: ', product);
+      return;
+    }
+    
+    // Check if it's a bag category
+    if (isBagCategory(product)) {
+      // Route to LeatherBagsDetails for bags
+      router.push(`/LeatherBagsDetails/${productId}`);
+    } else {
+      // Route to ProductDetailPage for other products
       router.push(`/ProductDetailPage/${productId}`);
     }
   };
