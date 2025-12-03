@@ -365,8 +365,8 @@ export default function JustForYou() {
         setError(null);
 
         const url = userId
-          ? `http://localhost:9000/api/recommend/just-for-you/${userId}`
-          : `http://localhost:9000/api/recommend/just-for-you`;
+          ? `https://api.montres.ae/api/recommend/just-for-you/${userId}`
+          : `https://api.montres.ae/api/recommend/just-for-you`;
 
         const res = await axios.get(url);
 
