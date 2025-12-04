@@ -9,7 +9,6 @@ import {
   FaHeart,
   FaChevronDown,
   FaSignOutAlt,
-  FaStar,
 } from "react-icons/fa";
 import Link from "next/link";
 import Image from "next/image";
@@ -22,7 +21,7 @@ import api from "@/api/axiosIntespter";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
 
-const Navbar = ({ onSignUpClick }) => {
+const Navbar = () => {
   const global = useContext(GlobalContext);
   if (!global) return null;
 
@@ -424,6 +423,11 @@ const Navbar = ({ onSignUpClick }) => {
       )}
     </div>
   );
+
+
+  const onSignUpClick = () => {
+    router.push("/login");
+  };
 
   return (
     <>

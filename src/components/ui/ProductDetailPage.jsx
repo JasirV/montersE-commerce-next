@@ -19,6 +19,12 @@ import {
   FaBoxOpen,
   FaThumbsDown,
   FaBell,
+  FaRuler,
+  FaPalette,
+  FaCalendar,
+  FaTag,
+  FaCube,
+  FaCheck,
 } from "react-icons/fa";
 import {
   FaFacebookF,
@@ -32,12 +38,37 @@ import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
 
 import { addToCart, fetchProduct } from "@/service/productService";
-import { toast } from "react-toastify";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 import SimilarProduct from "./SimillarProduct";
 import { GlobalContext } from "../shared/context/GlobalContext";
 import axios from "axios";
 import ProductDetails from "./ProductSpecification";
 import ShopByCategory from "@/features/product/ShopeByCatgeory";
+
+// Toastify configuration function
+const showToast = (message, type = "success") => {
+  const backgroundColor = type === "success" ? "#4CAF50" : 
+                         type === "error" ? "#F44336" : 
+                         type === "info" ? "#2196F3" : 
+                         type === "warning" ? "#FF9800" : "#333";
+  
+  Toastify({
+    text: message,
+    duration: 3000,
+    gravity: "top",
+    position: "right",
+    backgroundColor: backgroundColor,
+    stopOnFocus: true,
+    className: "custom-toast",
+    style: {
+      borderRadius: "8px",
+      padding: "12px 16px",
+      fontSize: "14px",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    },
+  }).showToast();
+};
 
 const ProductDetailPage = () => {
   const { incrementWishlist, decrementWishlist, incrementCart, user } =
@@ -75,7 +106,7 @@ const ProductDetailPage = () => {
         setSelectedImage(data?.images?.[0]?.url);
         console.log("Fetched product data:", data);
       } catch (err) {
-        setError("Failed to load products");
+        setError("Failed to load product details");
         console.error("Error loading product:", err);
       } finally {
         setLoading(false);
@@ -138,7 +169,6 @@ const ProductDetailPage = () => {
           }
         );
 
-        // Correct way to access response data
         if (res.data && res.data.wishlists?.length > 0) {
           const defaultWishlist =
             res.data.wishlists.find((w) => w.isDefault) ||
@@ -213,18 +243,18 @@ const ProductDetailPage = () => {
     }
   }, [user, product, isSoldOut]);
 
-  // Add/Remove from wishlist API
+  // Add/Remove from wishlist API with login check
   const handleWishlistToggle = async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        // Redirect to login or show login modal
-        router.push("/");
+        showToast("Please login to add to wishlist", "info");
+        router.push("/login");
         return;
       }
 
       if (!defaultWishlistId) {
-        toast.error("No default wishlist found");
+        showToast("No default wishlist found", "error");
         return;
       }
 
@@ -247,7 +277,7 @@ const ProductDetailPage = () => {
         );
         decrementWishlist();
         setIsWishlisted(false);
-        console.log("Product removed from wishlist");
+        showToast("Removed from wishlist", "success");
       } else {
         // Add to wishlist
         await axios.post(
@@ -265,16 +295,15 @@ const ProductDetailPage = () => {
         );
         incrementWishlist();
         setIsWishlisted(true);
-        console.log("Product added to wishlist");
+        showToast("Added to wishlist", "success");
       }
     } catch (error) {
       console.error("Error updating wishlist:", error);
-
-      // Show user-friendly error message
       if (error.response?.status === 401) {
-        router.push("/");
+        showToast("Session expired. Please login again.", "error");
+        router.push("/login");
       } else {
-        alert("Failed to update wishlist. Please try again.");
+        showToast("Failed to update wishlist. Please try again.", "error");
       }
     } finally {
       setWishlistLoading(false);
@@ -283,28 +312,25 @@ const ProductDetailPage = () => {
 
   // Enhanced Handle share button click for mobile
   const handleShareClick = () => {
-    // Check if it's a mobile device and if Web Share API is supported
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile && navigator.share) {
-      // Use native share dialog on mobile
       navigator
         .share({
-          title: product?.name || "Hermès Watch",
-          text: "Check out this beautiful watch!",
+          title: product?.name || "Premium Product",
+          text: "Check out this amazing product!",
           url: window.location.href,
         })
         .then(() => {
-          console.log("Successful share");
           setShowShareOptions(false);
+          showToast("Shared successfully!", "success");
         })
         .catch((error) => {
-          console.log("Error sharing:", error);
-          // Fallback to custom share options if native share fails
-          setShowShareOptions(!showShareOptions);
+          if (error.name !== "AbortError") {
+            setShowShareOptions(!showShareOptions);
+          }
         });
     } else {
-      // Show custom share options on desktop or when native share isn't available
       setShowShareOptions(!showShareOptions);
     }
   };
@@ -313,7 +339,9 @@ const ProductDetailPage = () => {
   const handleSocialShare = (platform) => {
     let shareUrl = "";
     const productUrl = encodeURIComponent(window.location.href);
-    const productTitle = encodeURIComponent(product?.name || "Premium Watch");
+    const productTitle = encodeURIComponent(
+      product?.name || "Premium Product"
+    );
 
     switch (platform) {
       case "facebook":
@@ -334,6 +362,7 @@ const ProductDetailPage = () => {
 
     window.open(shareUrl, "_blank");
     setShowShareOptions(false);
+    showToast(`Shared on ${platform.charAt(0).toUpperCase() + platform.slice(1)}`, "success");
   };
 
   // Handle image selection
@@ -346,24 +375,23 @@ const ProductDetailPage = () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        toast.error("Please login to get restock notifications");
-        router.push("/");
+        showToast("Please login to get restock notifications", "info");
+        router.push("/login");
         return;
       }
 
       if (!email) {
-        toast.error("Please enter your email address");
+        showToast("Please enter your email address", "error");
         return;
       }
 
       if (!product?._id) {
-        toast.error("Product information is missing");
+        showToast("Product information is missing", "error");
         return;
       }
 
       setIsSubscribing(true);
 
-     
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/restock-notifications/subscribe`,
         {
@@ -378,7 +406,6 @@ const ProductDetailPage = () => {
         }
       );
 
-      // Handle different response formats
       if (
         response.data.success ||
         response.status === 200 ||
@@ -386,56 +413,48 @@ const ProductDetailPage = () => {
       ) {
         setIsSubscribed(true);
         setShowRestockInput(false);
-        toast.success("You'll be notified when this product is back in stock!");
-        console.log(
-          "Restock notification subscription successful:",
-          response.data
-        );
+        showToast("You'll be notified when this product is back in stock!", "success");
       } else {
         throw new Error("Subscription failed");
       }
     } catch (error) {
       console.error("Restock subscription error:", error);
-
-      // Enhanced error handling
       let errorMessage = "Failed to subscribe for notifications";
 
       if (error.response) {
-        // Server responded with error status
         errorMessage =
           error.response.data?.message ||
           error.response.data?.error ||
           errorMessage;
 
-        // Handle specific status codes
         if (error.response.status === 409) {
           errorMessage =
             "You're already subscribed to notifications for this product";
           setIsSubscribed(true);
+          showToast(errorMessage, "info");
         } else if (error.response.status === 401) {
           errorMessage = "Please login again";
-          router.push("/");
+          showToast(errorMessage, "error");
+          router.push("/login");
         } else if (error.response.status === 404) {
           errorMessage = "Product not found";
+          showToast(errorMessage, "error");
         }
       } else if (error.request) {
-        // Network error
         errorMessage = "Network error. Please check your connection.";
+        showToast(errorMessage, "error");
       }
 
-      toast.error(errorMessage);
+      showToast(errorMessage, "error");
     } finally {
       setIsSubscribing(false);
     }
   };
 
-  // Unsubscribe from restock notifications (optional feature)
   const handleRestockUnsubscribe = async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token || !product?._id) return;
-
-   
 
       const response = await axios.delete(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/restock-notifications/unsubscribe`,
@@ -452,17 +471,24 @@ const ProductDetailPage = () => {
 
       if (response.data.success || response.status === 200) {
         setIsSubscribed(false);
-        toast.success("You've been unsubscribed from restock notifications");
+        showToast("You've been unsubscribed from restock notifications", "success");
       }
     } catch (error) {
       console.error("Unsubscribe error:", error);
-      toast.error("Failed to unsubscribe");
+      showToast("Failed to unsubscribe", "error");
     }
   };
 
+  // Add to cart with login check
   const handleAddToCart = async () => {
     try {
       const token = localStorage.getItem("accessToken");
+      if (!token) {
+        showToast("Please login to add items to cart", "info");
+        router.push("/login");
+        return;
+      }
+
       console.log(id, "id");
       await addToCart(token, id, 1);
       incrementCart();
@@ -472,8 +498,10 @@ const ProductDetailPage = () => {
       localStorage.setItem("cart", JSON.stringify(cart));
 
       setIsInCart(true);
+      showToast("Added to cart successfully!", "success");
     } catch (error) {
       console.error("Add to cart failed:", error);
+      showToast("Failed to add to cart. Please try again.", "error");
     }
   };
 
@@ -481,10 +509,12 @@ const ProductDetailPage = () => {
     router.push("/cart");
   };
 
+  // Buy now with login check
   const handleBuyNow = async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
+        showToast("Please login to purchase", "info");
         router.push("/login");
         return;
       }
@@ -500,7 +530,7 @@ const ProductDetailPage = () => {
       router.push(`/checkout?productId=${id}&quantity=1`);
     } catch (error) {
       console.error("Buy now failed:", error);
-      toast.error("Unable to proceed to checkout. Please try again.");
+      showToast("Unable to proceed to checkout. Please try again.", "error");
     }
   };
 
@@ -518,140 +548,140 @@ const ProductDetailPage = () => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
-  // Enhanced Restock Notification Input Component
   // Premium Card Style Restock Notification Input Component
-const RestockNotificationInput = () => (
-  <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 mt-4 overflow-hidden transition-all duration-300 transform hover:shadow-2xl">
-    {/* Header with Gradient */}
-    <div className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] p-4">
-      <div className="flex items-center gap-3">
-        <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-          <FaBell className="text-white text-lg" />
-        </div>
-        <div>
-          <h3 className="font-bold text-white text-lg">Restock Alert</h3>
-          <p className="text-blue-100 text-sm">Don't miss out when it's back!</p>
+  const RestockNotificationInput = () => (
+    <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg sm:shadow-2xl border border-gray-100 mt-4 overflow-hidden transition-all duration-300">
+      {/* Header with Gradient */}
+      <div className="bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] p-3 sm:p-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+            <FaBell className="text-white text-base sm:text-lg" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-base sm:text-lg">Restock Alert</h3>
+            <p className="text-blue-100 text-xs sm:text-sm">Don't miss out when it's back!</p>
+          </div>
         </div>
       </div>
-    </div>
-    
-    {/* Content */}
-    <div className="p-6">
-      <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-        We'll instantly notify you at <strong className="text-gray-900">{email || 'your email'}</strong> when 
-        <strong className="text-gray-900"> {product?.name}</strong> is available again.
-      </p>
       
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <input
-              type="email"
-              placeholder="Enter your best email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base transition-all duration-200 bg-gray-50"
-            />
-          </div>
-          
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowRestockInput(false)}
-              className="px-4 py-3 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium text-sm"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleRestockSubscribe}
-              disabled={isSubscribing || !email || !/\S+@\S+\.\S+/.test(email)}
-              className="px-6 py-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isSubscribing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Subscribing
-                </>
-              ) : (
-                <>
-                  <FaBell className="text-white" />
-                  Notify Me
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+      {/* Content */}
+      <div className="p-4 sm:p-6">
+        <p className="text-gray-600 text-xs sm:text-sm mb-4 leading-relaxed">
+          We'll instantly notify you at <strong className="text-gray-900">{email || 'your email'}</strong> when 
+          <strong className="text-gray-900"> {product?.name}</strong> is available again.
+        </p>
         
-        {email && !/\S+@\S+\.\S+/.test(email) && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-red-700 text-sm">
-              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              Please enter a valid email address to get notifications
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <input
+                type="email"
+                placeholder="Enter your best email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base transition-all duration-200 bg-gray-50"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowRestockInput(false)}
+                className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 border border-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-50 transition-colors font-medium text-xs sm:text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRestockSubscribe}
+                disabled={isSubscribing || !email || !/\S+@\S+\.\S+/.test(email)}
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium text-xs sm:text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isSubscribing ? (
+                  <>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Subscribing
+                  </>
+                ) : (
+                  <>
+                    <FaBell className="text-white text-xs sm:text-sm" />
+                    Notify Me
+                  </>
+                )}
+              </button>
             </div>
           </div>
-        )}
-        
-        <div className="flex items-center justify-center gap-4 text-xs text-gray-500 pt-2">
-          <span className="flex items-center gap-1">
-            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            No spam
-          </span>
-          <span className="flex items-center gap-1">
-            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            Instant alert
-          </span>
-          <span className="flex items-center gap-1">
-            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            1-click stop
-          </span>
+          
+          {email && !/\S+@\S+\.\S+/.test(email) && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-2 sm:p-3">
+              <div className="flex items-center gap-2 text-red-700 text-xs sm:text-sm">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                Please enter a valid email address
+              </div>
+            </div>
+          )}
+          
+          <div className="flex items-center justify-center gap-2 sm:gap-4 text-xs text-gray-500 pt-2">
+            <span className="flex items-center gap-1 text-xs">
+              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              No spam
+            </span>
+            <span className="flex items-center gap-1 text-xs">
+              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Instant alert
+            </span>
+            <span className="flex items-center gap-1 text-xs">
+              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              1-click stop
+            </span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+
   // Loading State
   if (isLoading) {
     return (
-      <div className="bg-gray-100 min-h-screen py-3 xs:py-4 sm:py-6 px-2 xs:px-3 sm:px-4">
-        <div className="max-w-7xl mx-auto bg-white shadow-md rounded-lg p-3 xs:p-4 sm:p-6">
+      <div className="bg-gray-100 min-h-screen py-3 sm:py-6 px-2 sm:px-4">
+        <div className="max-w-7xl mx-auto bg-white shadow-md rounded-lg p-3 sm:p-6">
           <div className="animate-pulse">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
               {/* Image Section Skeleton */}
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                  <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-300 rounded-full"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-300 rounded-full"></div>
                 </div>
-                <div className="w-full h-72 xs:h-80 sm:h-96 md:h-[500px] bg-gray-300 rounded-lg"></div>
+                <div className="w-full h-60 sm:h-80 md:h-[400px] lg:h-[500px] bg-gray-300 rounded-lg"></div>
                 <div className="flex gap-2 justify-center">
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 bg-gray-300 rounded-md"
+                      className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gray-300 rounded-md"
                     ></div>
                   ))}
                 </div>
               </div>
 
               {/* Content Section Skeleton */}
-              <div className="space-y-6">
-                <div className="h-8 bg-gray-300 rounded w-3/4"></div>
-                <div className="h-6 bg-gray-300 rounded w-1/2"></div>
-                <div className="h-12 bg-gray-300 rounded w-1/3"></div>
-                <div className="space-y-3">
-                  <div className="h-4 bg-gray-300 rounded"></div>
-                  <div className="h-4 bg-gray-300 rounded"></div>
-                  <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+              <div className="space-y-4 sm:space-y-6">
+                <div className="h-6 sm:h-8 bg-gray-300 rounded w-3/4"></div>
+                <div className="h-4 sm:h-6 bg-gray-300 rounded w-1/2"></div>
+                <div className="h-8 sm:h-12 bg-gray-300 rounded w-1/3"></div>
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="h-3 sm:h-4 bg-gray-300 rounded"></div>
+                  <div className="h-3 sm:h-4 bg-gray-300 rounded"></div>
+                  <div className="h-3 sm:h-4 bg-gray-300 rounded w-2/3"></div>
                 </div>
-                <div className="h-12 bg-gray-300 rounded"></div>
-                <div className="h-24 bg-gray-300 rounded"></div>
+                <div className="h-10 sm:h-12 bg-gray-300 rounded"></div>
+                <div className="h-20 sm:h-24 bg-gray-300 rounded"></div>
               </div>
             </div>
           </div>
@@ -663,18 +693,18 @@ const RestockNotificationInput = () => (
   // Error State
   if (error || !product) {
     return (
-      <div className="bg-gray-100 min-h-screen flex items-center justify-center py-3 xs:py-4 sm:py-6 px-2 xs:px-3 sm:px-4">
-        <div className="max-w-md mx-auto bg-white shadow-md rounded-lg p-6 text-center">
-          <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
+      <div className="bg-gray-100 min-h-screen flex items-center justify-center py-3 sm:py-6 px-2 sm:px-4">
+        <div className="max-w-md mx-auto bg-white shadow-md rounded-lg p-4 sm:p-6 text-center">
+          <div className="text-red-500 text-4xl sm:text-5xl mb-4">⚠️</div>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
             Product Not Available
           </h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 text-sm sm:text-base mb-4">
             The product you're looking for is currently unavailable.
           </p>
           <button
             onClick={() => router.back()}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
           >
             Go Back
           </button>
@@ -686,36 +716,39 @@ const RestockNotificationInput = () => (
   return (
     <div className="bg-gray-100 min-h-screen">
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-4 px-3 sm:px-4">
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="max-w-7xl mx-auto py-3 sm:py-4 px-2 sm:px-4">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm overflow-hidden">
           {/* Product Header */}
-          <div className="border-b border-gray-100 p-4">
+          <div className="border-b border-gray-100 p-3 sm:p-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {product.name || "Premium Watch"}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+                  {product.name || "Premium Product"}
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm text-gray-500">{product.brand}</span>
+                  <span className="text-xs sm:text-sm text-gray-500">{product.brand}</span>
+                  {product.model && (
+                    <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline">• {product.model}</span>
+                  )}
                 </div>
               </div>
 
               {/* Action Buttons - Top Right */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 self-start sm:self-auto">
                 <button
                   onClick={handleWishlistToggle}
                   disabled={wishlistLoading}
-                  className={`p-3 rounded-xl border transition-colors ${
+                  className={`p-2 sm:p-3 rounded-lg sm:rounded-xl border transition-colors ${
                     wishlistLoading ? "opacity-50 cursor-not-allowed" : ""
                   } ${
                     "bg-white border-gray-200 hover:bg-gray-50"
                   }`}
                 >
                   {wishlistLoading ? (
-                    <div className="w-5 h-5 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
                   ) : (
                     <FaHeart
-                      size={20}
+                      size={16}
                       className={
                         isWishlisted
                           ? "text-red-500 fill-red-500"
@@ -728,60 +761,103 @@ const RestockNotificationInput = () => (
                 <div className="relative">
                   <button
                     onClick={handleShareClick}
-                    className="bg-white p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                    className="bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
                   >
-                    <FaShareAlt size={18} className="text-gray-600" />
+                    <FaShareAlt size={16} className="text-gray-600" />
                   </button>
 
                   {showShareOptions && (
-                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl py-3 z-50 border border-gray-200">
-                      <div className="flex flex-col">
-                        <div className="px-4 py-2 border-b border-gray-100">
-                          <h3 className="text-sm font-semibold text-gray-700">
-                            Share this product
-                          </h3>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 p-3">
-                          <button
-                            onClick={() => handleSocialShare("facebook")}
-                            className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                          >
-                            <FaFacebookF className="text-blue-600 text-lg" />
-                            <span>Facebook</span>
-                          </button>
-                          <button
-                            onClick={() => handleSocialShare("twitter")}
-                            className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                          >
-                            <FaTwitter className="text-blue-400 text-lg" />
-                            <span>Twitter</span>
-                          </button>
-                          <button
-                            onClick={() => handleSocialShare("pinterest")}
-                            className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                          >
-                            <FaPinterest className="text-red-600 text-lg" />
-                            <span>Pinterest</span>
-                          </button>
-                          <button
-                            onClick={() => handleSocialShare("whatsapp")}
-                            className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                          >
-                            <FaWhatsapp className="text-green-500 text-lg" />
-                            <span>WhatsApp</span>
-                          </button>
+                    <>
+                      {/* Mobile Full Screen Share Options */}
+                      <div className="sm:hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-center">
+                        <div className="bg-white w-full rounded-t-2xl animate-slide-up">
+                          <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                            <h3 className="font-semibold text-gray-800">Share this product</h3>
+                            <button 
+                              onClick={() => setShowShareOptions(false)}
+                              className="text-gray-500 hover:text-gray-700"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 p-4">
+                            {[
+                              { platform: "facebook", icon: FaFacebookF, color: "text-blue-600", label: "Facebook" },
+                              { platform: "twitter", icon: FaTwitter, color: "text-blue-400", label: "Twitter" },
+                              { platform: "pinterest", icon: FaPinterest, color: "text-red-600", label: "Pinterest" },
+                              { platform: "whatsapp", icon: FaWhatsapp, color: "text-green-500", label: "WhatsApp" },
+                            ].map((item) => (
+                              <button
+                                key={item.platform}
+                                onClick={() => handleSocialShare(item.platform)}
+                                className="flex flex-col items-center gap-2 p-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
+                              >
+                                <item.icon className={`text-2xl ${item.color}`} />
+                                <span className="text-sm font-medium">{item.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                          <div className="p-4 border-t border-gray-200">
+                            <button
+                              onClick={() => setShowShareOptions(false)}
+                              className="w-full py-3 text-gray-600 hover:text-gray-800 font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
+
+                      {/* Desktop Share Options */}
+                      <div className="hidden sm:block absolute right-0 mt-2 w-56 sm:w-64 bg-white rounded-xl shadow-xl py-3 z-50 border border-gray-200">
+                        <div className="flex flex-col">
+                          <div className="px-4 py-2 border-b border-gray-100">
+                            <h3 className="text-sm font-semibold text-gray-700">
+                              Share this product
+                            </h3>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 p-3">
+                            <button
+                              onClick={() => handleSocialShare("facebook")}
+                              className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                              <FaFacebookF className="text-blue-600 text-lg" />
+                              <span>Facebook</span>
+                            </button>
+                            <button
+                              onClick={() => handleSocialShare("twitter")}
+                              className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                              <FaTwitter className="text-blue-400 text-lg" />
+                              <span>Twitter</span>
+                            </button>
+                            <button
+                              onClick={() => handleSocialShare("pinterest")}
+                              className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                              <FaPinterest className="text-red-600 text-lg" />
+                              <span>Pinterest</span>
+                            </button>
+                            <button
+                              onClick={() => handleSocialShare("whatsapp")}
+                              className="flex flex-col items-center gap-2 p-3 text-xs text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                              <FaWhatsapp className="text-green-500 text-lg" />
+                              <span>WhatsApp</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 sm:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 md:p-6">
             {/* Left Column - Images with Side Thumbnails */}
-            <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
               {/* Thumbnails Column - Side Layout */}
               {images.length > 0 && (
                 <div className="flex lg:flex-col order-2 lg:order-1 gap-2 lg:gap-3">
@@ -791,13 +867,13 @@ const RestockNotificationInput = () => (
                       <button
                         onClick={() => handleThumbnailNavigate("prev")}
                         disabled={thumbnailStartIndex === 0}
-                        className={`hidden lg:flex items-center justify-center w-8 h-8 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors mx-auto ${
+                        className={`hidden lg:flex items-center justify-center w-7 h-7 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors mx-auto ${
                           thumbnailStartIndex === 0
                             ? "opacity-50 cursor-not-allowed"
                             : ""
                         }`}
                       >
-                        <FaChevronLeft size={14} className="text-gray-600" />
+                        <FaChevronLeft size={12} className="text-gray-600" />
                       </button>
 
                       {/* Mobile horizontal navigation */}
@@ -805,31 +881,31 @@ const RestockNotificationInput = () => (
                         <button
                           onClick={() => handleThumbnailNavigate("prev")}
                           disabled={thumbnailStartIndex === 0}
-                          className={`flex items-center justify-center w-8 h-8 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors ${
+                          className={`flex items-center justify-center w-7 h-7 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors ${
                             thumbnailStartIndex === 0
                               ? "opacity-50 cursor-not-allowed"
                               : ""
                           }`}
                         >
-                          <FaChevronLeft size={14} className="text-gray-600" />
+                          <FaChevronLeft size={12} className="text-gray-600" />
                         </button>
                         <button
                           onClick={() => handleThumbnailNavigate("next")}
                           disabled={thumbnailStartIndex >= maxThumbnailIndex}
-                          className={`flex items-center justify-center w-8 h-8 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors ${
+                          className={`flex items-center justify-center w-7 h-7 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors ${
                             thumbnailStartIndex >= maxThumbnailIndex
                               ? "opacity-50 cursor-not-allowed"
                               : ""
                           }`}
                         >
-                          <FaChevronRight size={14} className="text-gray-600" />
+                          <FaChevronRight size={12} className="text-gray-600" />
                         </button>
                       </div>
                     </>
                   )}
 
                   {/* Thumbnails Container */}
-                  <div className="flex lg:flex-col gap-2 lg:gap-3 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto scrollbar-hide">
+                  <div className="flex lg:flex-col gap-2 lg:gap-3 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto scrollbar-hide pb-1">
                     {visibleImages.map((image, idx) => (
                       <div
                         key={thumbnailStartIndex + idx}
@@ -846,9 +922,9 @@ const RestockNotificationInput = () => (
                             thumbnailStartIndex + idx + 1
                           }`}
                           unoptimized
-                          width={80}
-                          height={80}
-                          className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 object-cover rounded-md"
+                          width={70}
+                          height={70}
+                          className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 object-cover rounded-md"
                         />
                       </div>
                     ))}
@@ -859,19 +935,19 @@ const RestockNotificationInput = () => (
                     <button
                       onClick={() => handleThumbnailNavigate("next")}
                       disabled={thumbnailStartIndex >= maxThumbnailIndex}
-                      className={`hidden lg:flex items-center justify-center w-8 h-8 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors mx-auto ${
+                      className={`hidden lg:flex items-center justify-center w-7 h-7 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors mx-auto ${
                         thumbnailStartIndex >= maxThumbnailIndex
                           ? "opacity-50 cursor-not-allowed"
                           : ""
                       }`}
                     >
-                      <FaChevronRight size={14} className="text-gray-600" />
+                      <FaChevronRight size={12} className="text-gray-600" />
                     </button>
                   )}
 
                   {/* Thumbnail Counter */}
                   {images.length > 0 && (
-                    <div className="hidden lg:block text-center mt-2">
+                    <div className="hidden lg:block text-center mt-1">
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                         {thumbnailStartIndex + 1}-
                         {Math.min(
@@ -888,7 +964,7 @@ const RestockNotificationInput = () => (
               {/* Main Image Container */}
               <div className="flex-1 order-1 lg:order-2">
                 <div
-                  className={`w-full h-72 sm:h-96 lg:h-[500px] bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border-2 border-gray-100`}
+                  className={`w-full h-60 sm:h-72 md:h-80 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center border-2 border-gray-100`}
                 >
                   <Image
                     src={
@@ -898,15 +974,15 @@ const RestockNotificationInput = () => (
                     unoptimized
                     width={600}
                     height={600}
-                    className="object-contain w-full h-full"
+                    className="object-contain w-full h-full p-2"
                     priority
                   />
                 </div>
 
                 {/* Image Counter for Mobile */}
                 {images.length > 0 && (
-                  <div className="lg:hidden text-center mt-3">
-                    <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                  <div className="lg:hidden text-center mt-2">
+                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
                       {images.findIndex(
                         (img) => (img.url || img) === selectedImage
                       ) + 1}{" "}
@@ -918,41 +994,41 @@ const RestockNotificationInput = () => (
             </div>
 
             {/* Right Column - Details */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Price Section */}
-              <div className={`rounded-2xl p-6 border ${
+              <div className={`rounded-lg sm:rounded-xl p-4 sm:p-6 border ${
                 isSoldOut 
                   ? "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200" 
                   : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100"
               }`}>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <div className={`text-3xl sm:text-4xl font-bold flex items-center ${
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <div className={`text-2xl sm:text-3xl lg:text-4xl font-bold flex items-center ${
                       isSoldOut ? "text-gray-600" : "text-gray-900"
                     }`}>
                       <Image
                         src={newCurrency}
                         alt="Currency"
-                        width={28}
-                        height={28}
-                        className="mr-2"
+                        width={24}
+                        height={24}
+                        className="mr-1 sm:mr-2 w-5 h-5 sm:w-7 sm:h-7"
                       />
-                      {formatPrice(product.salePrice) || "65,000"}
+                      {formatPrice(product.salePrice || product.sellingPrice) || "65,000"}
                     </div>
                     {product.regularPrice &&
-                      product.regularPrice > product.salePrice && (
+                      product.regularPrice > (product.salePrice || product.sellingPrice) && (
                         <>
-                          <div className="text-xl text-gray-500 line-through flex items-center">
+                          <div className="text-lg sm:text-xl text-gray-500 line-through flex items-center">
                             <Image
                               src={newCurrency}
                               alt="Currency"
-                              width={20}
-                              height={20}
-                              className="mr-1"
+                              width={18}
+                              height={18}
+                              className="mr-1 w-4 h-4 sm:w-5 sm:h-5"
                             />
                             {formatPrice(product.regularPrice)}
                           </div>
-                          <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                          <span className="bg-green-500 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-semibold">
                             {calculateDiscount()}% OFF
                           </span>
                         </>
@@ -960,9 +1036,9 @@ const RestockNotificationInput = () => (
                   </div>
 
                   {/* Stock Status */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span
-                      className={`text-sm font-medium px-3 py-1 rounded-full ${
+                      className={`text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full ${
                         product.stockQuantity > 0
                           ? "bg-green-100 text-green-800"
                           : "bg-red-100 text-red-800"
@@ -972,7 +1048,7 @@ const RestockNotificationInput = () => (
                     </span>
                     {product.stockQuantity > 0 && (
                       <span className="text-xs text-gray-500">
-                        ({product.stockQuantity} items available)
+                        ({product.stockQuantity} available)
                       </span>
                     )}
                   </div>
@@ -986,21 +1062,21 @@ const RestockNotificationInput = () => (
                     {isInCart ? (
                       <button
                         onClick={handleGoToCart}
-                        className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-4 rounded-xl font-semibold hover:opacity-90 transition-opacity text-lg shadow-lg"
+                        className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold hover:opacity-90 transition-opacity text-base sm:text-lg shadow-lg"
                       >
                         GO TO CART
                       </button>
                     ) : (
                       <button
                         onClick={handleAddToCart}
-                        className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-4 rounded-xl font-semibold hover:opacity-90 transition-opacity text-lg shadow-lg"
+                        className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold hover:opacity-90 transition-opacity text-base sm:text-lg shadow-lg"
                       >
                         ADD TO CART
                       </button>
                     )}
                     <button
                       onClick={handleBuyNow}
-                      className="flex-1 bg-orange-600 text-white py-4 rounded-xl font-semibold hover:bg-orange-700 transition-colors text-lg shadow-lg"
+                      className="flex-1 bg-orange-600 text-white py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold hover:bg-orange-700 transition-colors text-base sm:text-lg shadow-lg"
                     >
                       BUY NOW
                     </button>
@@ -1010,17 +1086,17 @@ const RestockNotificationInput = () => (
                     {isSubscribed ? (
                       <button
                         onClick={handleRestockUnsubscribe}
-                        className="flex-1 bg-green-600 text-white py-4 rounded-xl font-semibold hover:bg-green-700 transition-colors text-lg shadow-lg flex items-center justify-center gap-3"
+                        className="flex-1 bg-green-600 text-white py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold hover:bg-green-700 transition-colors text-base sm:text-lg shadow-lg flex items-center justify-center gap-2 sm:gap-3"
                       >
-                        <FaBell className="text-white" />
+                        <FaBell className="text-white text-sm sm:text-base" />
                         NOTIFICATIONS ENABLED
                       </button>
                     ) : (
                       <button
                         onClick={() => setShowRestockInput(true)}
-                        className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-4 rounded-xl font-semibold hover:opacity-90 transition-opacity text-lg shadow-lg flex items-center justify-center gap-3"
+                        className="flex-1 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold hover:opacity-90 transition-opacity text-base sm:text-lg shadow-lg flex items-center justify-center gap-2 sm:gap-3"
                       >
-                        <FaBell className="text-white" />
+                        <FaBell className="text-white text-sm sm:text-base" />
                         NOTIFY WHEN AVAILABLE
                       </button>
                     )}
@@ -1028,39 +1104,39 @@ const RestockNotificationInput = () => (
                 )}
               </div>
 
-              {/* Restock Notification Input - Shows when button is clicked */}
+              {/* Restock Notification Input */}
               {showRestockInput && !isSubscribed && <RestockNotificationInput />}
 
               {/* Premium Features */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-4">
-                <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                  <FaHeadset className="text-blue-600 text-2xl mx-auto mb-2" />
-                  <h3 className="font-semibold text-sm text-gray-900">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 py-3 sm:py-4">
+                <div className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-200">
+                  <FaHeadset className="text-blue-600 text-base sm:text-lg lg:text-xl mx-auto mb-1 sm:mb-2" />
+                  <h3 className="font-semibold text-xs sm:text-sm text-gray-900 truncate">
                     ACTIVE LISTEN
                   </h3>
-                  <p className="text-xs text-gray-600 mt-1">24/7 Support</p>
+                  <p className="text-xs text-gray-600 mt-1 truncate">24/7 Support</p>
                 </div>
-                <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                  <FaShieldAlt className="text-blue-600 text-2xl mx-auto mb-2" />
-                  <h3 className="font-semibold text-sm text-gray-900">
-                    SUPERLATIVE CONSIDERATION
+                <div className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-200">
+                  <FaShieldAlt className="text-blue-600 text-base sm:text-lg lg:text-xl mx-auto mb-1 sm:mb-2" />
+                  <h3 className="font-semibold text-xs sm:text-sm text-gray-900 truncate">
+                    SECURE
                   </h3>
-                  <p className="text-xs text-gray-600 mt-1">Premium Service</p>
+                  <p className="text-xs text-gray-600 mt-1 truncate">Premium Service</p>
                 </div>
-                <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                  <Package className="text-blue-600 text-2xl mx-auto mb-2" />
-                  <h3 className="font-semibold text-sm text-gray-900">
-                    OFFICIALLY CLIENTED
+                <div className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-200">
+                  <Package className="text-blue-600 text-base sm:text-lg lg:text-xl mx-auto mb-1 sm:mb-2" />
+                  <h3 className="font-semibold text-xs sm:text-sm text-gray-900 truncate">
+                    AUTHENTIC
                   </h3>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Authentic Product
+                  <p className="text-xs text-gray-600 mt-1 truncate">
+                    Genuine Product
                   </p>
                 </div>
               </div>
 
               {/* Product Description */}
-              <div className="border-t border-gray-200 pt-6">
-                <h2 className="font-bold text-xl mb-4 text-gray-900">
+              <div className="border-t border-gray-200 pt-4 sm:pt-6">
+                <h2 className="font-bold text-lg sm:text-xl mb-3 sm:mb-4 text-gray-900">
                   Product Description
                 </h2>
                 <ProductDescription
@@ -1070,30 +1146,30 @@ const RestockNotificationInput = () => (
               </div>
 
               {/* Enhanced Product Specifications */}
-              <div className="border-t border-gray-200 pt-6">
+              <div className="border-t border-gray-200 pt-4 sm:pt-6">
                 <ProductDetails product={product} />
               </div>
 
               {/* Benefits & Policies */}
-              <div className="border rounded-2xl p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-                <h2 className="font-bold text-xl mb-6 text-blue-900">
+              <div className="border rounded-lg sm:rounded-xl p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                <h2 className="font-bold text-lg sm:text-xl mb-4 sm:mb-6 text-blue-900">
                   Benefits & Policies
                 </h2>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                  <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-blue-100 shadow-sm">
-                    <FaShieldAlt className="text-blue-600 text-xl" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl border border-blue-100 shadow-sm">
+                    <FaShieldAlt className="text-blue-600 text-base sm:text-xl" />
                     <div>
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
                         Secure Payment
                       </span>
                       <p className="text-xs text-gray-600">SSL encrypted</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-blue-100 shadow-sm">
-                    <FaHeadset className="text-blue-600 text-xl" />
+                  <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl border border-blue-100 shadow-sm">
+                    <FaHeadset className="text-blue-600 text-base sm:text-xl" />
                     <div>
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
                         365 Days Help
                       </span>
                       <p className="text-xs text-gray-600">24/7 Support</p>
@@ -1101,10 +1177,10 @@ const RestockNotificationInput = () => (
                   </div>
                 </div>
 
-                <h3 className="font-semibold text-lg mb-4 text-blue-900">
+                <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4 text-blue-900">
                   Return & Warranty Policy
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   {[
                     { icon: FaUndo, text: "Upto 7 Days Returnable" },
                     { icon: FaQuestionCircle, text: "Missing Product" },
@@ -1114,10 +1190,10 @@ const RestockNotificationInput = () => (
                   ].map((item, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-3 p-3 bg-white rounded-lg border border-blue-100"
+                      className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white rounded-lg border border-blue-100"
                     >
-                      <item.icon className="text-blue-600 text-base" />
-                      <span className="text-sm font-medium text-gray-700">
+                      <item.icon className="text-blue-600 text-sm sm:text-base" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">
                         {item.text}
                       </span>
                     </div>
@@ -1132,7 +1208,7 @@ const RestockNotificationInput = () => (
       {/* Similar Products */}
       <Suspense
         fallback={
-          <div className="h-48 xs:h-56 sm:h-64 bg-gray-100 mt-6 animate-pulse rounded-lg"></div>
+          <div className="h-48 sm:h-64 bg-gray-100 mt-6 animate-pulse rounded-lg"></div>
         }
       >
         <SimilarProduct productId={id} />
@@ -1140,10 +1216,10 @@ const RestockNotificationInput = () => (
 
       <Suspense
         fallback={
-          <div className="h-48 xs:h-56 sm:h-64 bg-gray-100 mt-6 animate-pulse rounded-lg"></div>
+          <div className="h-48 sm:h-64 bg-gray-100 mt-6 animate-pulse rounded-lg"></div>
         }
       >
-       <ShopByCategory/>
+        <ShopByCategory/>
       </Suspense>
     </div>
   );
@@ -1157,23 +1233,23 @@ const ProductDescription = ({ description, shortDescription }) => {
 
   if (!content) {
     return (
-      <ul className="space-y-3 text-gray-700">
-        <li className="flex items-start gap-3">
-          <span className="text-blue-500 mt-1">•</span>
-          <span className="text-sm leading-relaxed">
-            Premium quality watch with authentic craftsmanship
+      <ul className="space-y-2 sm:space-y-3 text-gray-700">
+        <li className="flex items-start gap-2 sm:gap-3">
+          <span className="text-blue-500 mt-1 text-xs sm:text-sm">•</span>
+          <span className="text-xs sm:text-sm leading-relaxed">
+            Premium quality product with authentic craftsmanship
           </span>
         </li>
-        <li className="flex items-start gap-3">
-          <span className="text-blue-500 mt-1">•</span>
-          <span className="text-sm leading-relaxed">
-            Imported movement for precise timekeeping
+        <li className="flex items-start gap-2 sm:gap-3">
+          <span className="text-blue-500 mt-1 text-xs sm:text-sm">•</span>
+          <span className="text-xs sm:text-sm leading-relaxed">
+            Made with high-quality materials
           </span>
         </li>
-        <li className="flex items-start gap-3">
-          <span className="text-blue-500 mt-1">•</span>
-          <span className="text-sm leading-relaxed">
-            Water resistant design
+        <li className="flex items-start gap-2 sm:gap-3">
+          <span className="text-blue-500 mt-1 text-xs sm:text-sm">•</span>
+          <span className="text-xs sm:text-sm leading-relaxed">
+            Durable and long-lasting design
           </span>
         </li>
       </ul>
@@ -1191,11 +1267,11 @@ const ProductDescription = ({ description, shortDescription }) => {
 
       return (
         <div className="text-gray-700">
-          <ul className="space-y-3">
+          <ul className="space-y-2 sm:space-y-3">
             {visibleItems.map((li, idx) => (
-              <li key={idx} className="flex items-start gap-3">
-                <span className="text-blue-500 mt-1">•</span>
-                <span className="text-sm leading-relaxed">
+              <li key={idx} className="flex items-start gap-2 sm:gap-3">
+                <span className="text-blue-500 mt-1 text-xs sm:text-sm">•</span>
+                <span className="text-xs sm:text-sm leading-relaxed">
                   {li.textContent}
                 </span>
               </li>
@@ -1205,7 +1281,7 @@ const ProductDescription = ({ description, shortDescription }) => {
           {listItems.length > 6 && (
             <button
               onClick={() => setShowAll(!showAll)}
-              className="text-blue-600 text-sm mt-4 hover:underline font-semibold"
+              className="text-blue-600 text-xs sm:text-sm mt-3 sm:mt-4 hover:underline font-semibold"
             >
               {showAll ? "Show Less" : "Show All Key Features"}
             </button>
@@ -1221,11 +1297,11 @@ const ProductDescription = ({ description, shortDescription }) => {
 
   return (
     <div className="text-gray-700">
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {visibleLines.map((line, idx) => (
-          <div key={idx} className="flex items-start gap-3">
-            <span className="text-blue-500 mt-1">•</span>
-            <span className="text-sm leading-relaxed">{line}</span>
+          <div key={idx} className="flex items-start gap-2 sm:gap-3">
+            <span className="text-blue-500 mt-1 text-xs sm:text-sm">•</span>
+            <span className="text-xs sm:text-sm leading-relaxed">{line}</span>
           </div>
         ))}
       </div>
@@ -1233,7 +1309,7 @@ const ProductDescription = ({ description, shortDescription }) => {
       {lines.length > 6 && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="text-blue-600 text-sm mt-4 hover:underline font-semibold"
+          className="text-blue-600 text-xs sm:text-sm mt-3 sm:mt-4 hover:underline font-semibold"
         >
           {showAll ? "Show Less" : "Show All Key Features"}
         </button>
@@ -1241,5 +1317,69 @@ const ProductDescription = ({ description, shortDescription }) => {
     </div>
   );
 };
+
+// Add custom CSS for animations and responsive styles
+const style = `
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+  
+  @media (min-width: 640px) {
+    .custom-toast {
+      font-size: 14px;
+      padding: 12px 16px;
+      border-radius: 8px;
+    }
+  }
+  
+  @media (max-width: 639px) {
+    .custom-toast {
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin: 8px;
+      width: calc(100% - 16px);
+    }
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  /* Touch-friendly buttons */
+  button, 
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Optimize images for mobile */
+  @media (max-width: 640px) {
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+  }
+`;
+
+// Add the style to the document head
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = style;
+  document.head.appendChild(styleElement);
+}
 
 export default ProductDetailPage;

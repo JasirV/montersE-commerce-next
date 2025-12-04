@@ -1,7 +1,6 @@
 "use client";
 import React, { useState,useEffect } from "react";
 import Navbar from "@/components/shared/Navbar";
-import AuthModal from "@/features/auth/AuthModal";
 import Landing from "@/components/shared/BannerPage";
 import Home from "@/pages/Home";
 import WatchBrand from "@/layouts/WatchBrand";
@@ -42,12 +41,12 @@ export default function IndexPage() {
         onSignUpClick={() => handleAuthAction("register")}
         onLoginClick={() => handleAuthAction("login")}
       />
-
+{/* 
       <AuthModal
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}
         defaultAction={authAction}
-      />
+      /> */}
 
      <NewsletterModal 
         isOpen={isModalOpen} 
