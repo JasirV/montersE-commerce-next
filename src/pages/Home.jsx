@@ -15,8 +15,18 @@ const ProductGrid = () => {
       try {
         setLoading(true);
         const res = await getHomeProductGrid();
+
         if (res?.data?.homeProducts) {
-          setHomeProducts(res.data.homeProducts);
+          const filtered = res.data.homeProducts.filter(
+            (item) => item.title.toLowerCase() !== "jewelry"
+          );
+
+          const categoriesWithThreeProducts = filtered.map((category) => ({
+            ...category,
+            products: category.products?.slice(0, 3) || [],
+          }));
+
+          setHomeProducts(categoriesWithThreeProducts);
         } else {
           setHomeProducts([]);
         }
@@ -26,25 +36,26 @@ const ProductGrid = () => {
         setLoading(false);
       }
     };
+
     fetchHomeProducts();
   }, []);
 
   const SkeletonCard = () => (
-    <div className="flex flex-col items-center text-center animate-pulse">
-      <div className="w-full aspect-square rounded-lg bg-gray-300 mb-2"></div>
-      <div className="h-4 w-2/3 bg-gray-300 rounded mb-1"></div>
-      <div className="h-3 w-1/2 bg-gray-300 rounded"></div>
+    <div className="flex flex-col items-center text-center animate-pulse h-full">
+      <div className="w-full h-[110px] bg-gray-300 rounded mb-2"></div>
+      <div className="h-3 w-2/3 bg-gray-300 rounded mb-1"></div>
+      <div className="h-4 w-1/2 bg-gray-300 rounded"></div>
     </div>
   );
 
   if (loading) {
     return (
-      <div className="bg-gray-50 min-h-[100px] p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="bg-gray-50 p-6 lg:p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-md p-5">
+            <div key={index} className="bg-white rounded-xl shadow-md p-4">
               <div className="h-6 w-1/3 bg-gray-300 rounded mb-4 animate-pulse"></div>
-              <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 {Array.from({ length: 3 }).map((__, i) => (
                   <SkeletonCard key={i} />
                 ))}
@@ -57,67 +68,69 @@ const ProductGrid = () => {
   }
 
   return (
-    <div className="bg-gray-50 min-h-[100px] p-4 sm:p-6 lg:p-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="bg-gray-50 p-6 lg:p-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
         {homeProducts.length > 0 ? (
           homeProducts.map((categoryItem) => (
             <div
               key={categoryItem._id}
-              className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 p-5"
+              className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-4 border border-gray-100"
             >
               {/* Category Title */}
-              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">
+              <h2 className="text-lg font-semibold mb-3 text-gray-800 border-b border-gray-200 pb-2">
                 {categoryItem.title}
               </h2>
 
               {/* Product Grid */}
-              <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {Array.from({ length: 3 }).map((_, index) => {
-                  const product = categoryItem.products[index];
-                  return product ? (
+              <div className="grid grid-cols-3 gap-3">
+                {categoryItem.products?.length > 0 ? (
+                  categoryItem.products.map((product, index) => (
                     <div
                       key={product._id || index}
-                      className="flex flex-col items-center text-center group"
+                      className="flex flex-col items-center text-center group h-full"
                     >
-                      {/* Image */}
-                      <div className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
+                      {/* Image Container (equal height) */}
+                      <div className="w-full h-[110px] sm:h-[130px] flex justify-center items-center rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-gray-50 mb-1">
                         <Link href={`/ProductDetailPage/${product._id}`}>
                           <Image
                             src={product.images?.[0]?.url}
                             alt={product.name || "Product"}
-                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                            width={300}
-                            height={300}
+                            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                            width={150}
+                            height={150}
                             loading="lazy"
                           />
                         </Link>
                       </div>
 
+                      {/* Product Name */}
+                      <p className="text-xs text-gray-600 line-clamp-2 mt-1 leading-tight min-h-[32px]">
+                        {product.name || product.sku}
+                      </p>
+
                       {/* Price */}
-                      <p className="mt-2 text-sm sm:text-base font-semibold text-gray-900">
+                      <p className="text-sm font-bold text-gray-900 mt-1">
                         {product.salePrice
                           ? `${(
                               parseFloat(
                                 product.salePrice.toString().replace(/,/g, "")
                               ) * rate
                             ).toFixed(2)} ${currency}`
-                          : "Price not available"}
-                      </p>
-
-                      {/* Product Name */}
-                      <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mt-1">
-                        {product.name || product.sku}
+                          : "Price N/A"}
                       </p>
                     </div>
-                  ) : (
+                  ))
+                ) : (
+                  Array.from({ length: 3 }).map((_, index) => (
                     <div
                       key={index}
-                      className="flex flex-col items-center justify-center border border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-400 text-xs py-6"
+                      className="flex flex-col items-center justify-center border border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-400 text-xs py-6 h-full"
                     >
-                      Empty
+                      No Product
                     </div>
-                  );
-                })}
+                  ))
+                )}
               </div>
             </div>
           ))
@@ -126,6 +139,7 @@ const ProductGrid = () => {
             No categories found.
           </p>
         )}
+
       </div>
     </div>
   );

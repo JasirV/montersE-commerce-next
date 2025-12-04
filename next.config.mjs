@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+   i18n: {
+    locales: ['en-US','en-GB','fr-FR','de-DE','es-ES','zh-CN','ja-JP','ar-AE'],
+    defaultLocale: 'en-US',
+    localeDetection: true, // be careful: don't auto-redirect bots; handle with middleware
+  },
   images: {
     domains: [
       'montres.ae',

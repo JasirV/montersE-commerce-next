@@ -18,6 +18,7 @@ const PremiumBrands = () => {
   return (
     <section className="bg-gradient-to-b from-gray-50 to-white py-12 sm:py-16 lg:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
         {/* Section Header */}
         <div className="text-center mb-10 sm:mb-14">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
@@ -28,38 +29,50 @@ const PremiumBrands = () => {
           </p>
         </div>
 
-        {/* Brands Grid - Updated for 11 brands */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6 lg:gap-8">
+        {/* Brands Grid (Smaller & Equal Boxes) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-5">
+
           {premiumBrands.map((brand) => (
             <div
               key={brand.id}
-              className="group relative bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-2xl transition-all duration-500 p-4 sm:p-6 lg:p-6 flex items-center justify-center transform hover:-translate-y-2 hover:scale-[1.02] cursor-pointer min-h-[100px] sm:min-h-[120px] lg:min-h-[140px]"
+              className="group relative bg-white rounded-xl shadow-sm border border-gray-200
+                         hover:shadow-xl transition-all duration-400
+                         p-3 sm:p-4 flex items-center justify-center
+                         min-h-[80px] sm:min-h-[90px] lg:min-h-[100px]
+                         cursor-pointer"
             >
-              {/* Background gradient effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-gray-50 to-gray-100 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              {/* Brand name with elegant styling */}
+
+              {/* Hover background effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-gray-50 to-gray-100
+                              rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
+
+              {/* Brand name */}
               <div className="relative z-10 text-center w-full">
-                <h3 className="text-base sm:text-lg lg:text-xl font-light text-gray-800 group-hover:text-gray-900 transition-colors duration-300 tracking-wide px-2">
+                <h3 className="text-sm sm:text-base lg:text-lg font-light text-gray-800 
+                               group-hover:text-gray-900 tracking-wide transition-colors">
                   {brand.name}
                 </h3>
-                
-                {/* Subtle underline effect on hover */}
-                <div className="w-0 group-hover:w-10 sm:group-hover:w-12 lg:group-hover:w-14 h-0.5 bg-gradient-to-r from-[#1e518e] to-[#0061b0] mx-auto mt-2 sm:mt-3 transition-all duration-500" />
+
+                {/* Underline hover animation */}
+                <div className="w-0 group-hover:w-8 h-0.5 bg-gradient-to-r from-[#1e518e] to-[#0061b0]
+                                mx-auto mt-2 transition-all duration-400" />
               </div>
 
-              {/* Hover border effect */}
-              <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-[#1e518e]/10 transition-all duration-500" />
+              {/* Hover border */}
+              <div className="absolute inset-0 rounded-xl border-2 border-transparent 
+                              group-hover:border-[#1e518e]/10 transition-all duration-400" />
             </div>
           ))}
+
         </div>
 
-        {/* Optional: Add a subtle divider or additional text if needed */}
+        {/* Footer text */}
         <div className="text-center mt-12 sm:mt-16">
           <p className="text-gray-500 text-sm sm:text-base italic">
             Crafting timeless excellence since generations
           </p>
         </div>
+
       </div>
     </section>
   );

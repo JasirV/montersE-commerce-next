@@ -1,10 +1,13 @@
 "use client";
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 
 const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
+  const router = useRouter();
+  
   const categories = [
     "Handbags",
-    "Jewelry",
+    "Jewelry", 
     "Watches",
     "Leathers",
     "Gold",
@@ -12,32 +15,191 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
   ];
 
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-  
+
   const allBrands = [
-    "A. Lange & Sohne", "Adee Kaye", "Adidas", "Akribos Xxiv", "Alexander",
-    "Alfred Sung", "Alpina", "Audemars Piguet", "August Steiner", "Ball",
-    "Ballast", "Baume Et Mercier", "Bell And Ross", "Benrus", "Bertha",
-    "Blancpain", "Bovet", "Breed", "Breguet", "Breitling", "Brera Orologi",
+    "Aigner",
+    "Akribos Xxiv",
+    "Apogsum",
+    "AquaMarin",
+    "Aquaswiss",
+    "Armin Strom",
+    "Audemars Piguet",
+    "Balenciaga",
+    "Ball",
+    "Bernhard H. Mayer",
+    "Bertolucci",
+    "Blancpain",
+    "Borja",
+    "Boss By Hugo Boss",
+    "Boucheron",
+    "Breguet",
+    "Carl F. Bucherer",
+    "Cartier",
+    "Celine",
+    "Chanel",
+    "Charriol",
+    "Chaumet",
+    "Chopard",
+    "Chronoswiss",
+    "Citizen",
+    "Concord",
+    "Corum",
+    "CT Scuderia",
+    "De Grisogno",
+    "Dior",
+    "Dolce & Gabbana",
+    "Dubey & Schaldenbrand",
+    "Ebel",
+    "Edox",
+    "Elini",
+    "Emporio Armani",
+    "Erhard Junghans",
+    "Favre Leuba",
+    "Fendi",
+    "Ferre Milano",
+    "Franck Muller",
+    "Frederique Constant",
+    "Gerald Genta",
+    "Gianfranco Ferre",
+    "Giorgio Armani",
+    "Girard Perregaux",
+    "Giuseppe Zanotti",
+    "Givenchy",
+    "Glam Rock",
+    "Goyard",
+    "Graham",
+    "Grimoldi Milano",
+    "Gucci",
+    "Harry Winston",
+    "Hermes",
+    "Hublot",
+    "Hysek",
+    "Jacob & Co.",
+    "Jacques Lemans",
+    "Jaeger LeCoultre",
+    "Jean Marcel",
+    "JeanRichard",
+    "Jorg Hysek",
+    "Joseph",
+    "Junghans",
+    "Just Cavalli",
+    "Karl Lagerfeld",
+    "KC",
+    "Korloff",
+    "Lancaster",
+    "Locman",
+    "Longines",
+    "Louis Frard",
+    "Louis Moine",
+    "Louis Vuitton",
+    "Marc by Marc Jacobs",
+    "Marc Jacobs",
+    "Martin Braun",
+    "Mauboussin",
+    "Maurice Lacroix",
+    "Meyers",
+    "Michael Kors",
+    "MICHAEL Michael Kors",
+    "Mido",
+    "Montblanc",
+    "Montega",
+    "Montegrappa",
+    "Movado",
+    "Navitec",
+    "NB Yaeger",
+    "Nina Ricci",
+    "Nubeo",
+    "Officina Del Tempo",
+    "Omega",
+    "Oris",
+    "Panerai",
+    "Parmigiani",
+    "Patek Philippe",
+    "Paul Picot",
+    "Perrelet",
+    "Philip Stein",
+    "Piaget",
+    "Pierre Balmain",
+    "Porsche Design",
+    "Prada",
+    "Quinting",
+    "Rado",
+    "Rolex",
+    "Rama Swiss Watch",
+    "Raymond Weil",
+    "Richard Mille",
+    "Robergé",
+    "Roberto Cavalli",
+    "Rochas",
+    "Roger Dubuis",
+    "S.T. Dupont",
+    "Saint Laurent Paris",
+    "Salvatore Ferragamo",
+    "Seiko",
+    "Swarovski",
+    "Swatch",
+    "Tag Heuer",
+    "Techno Com",
+    "Technomarine",
+    "Tiffany & Co.",
+    "Tissot",
+    "Tonino Lamborghini",
+    "Trussardi",
+    "Tudor",
+    "Vacheron Constantin",
+    "Valentino",
+    "Van Cleef & Arpels",
+    "Versace",
+    "Yves Saint Laurent",
+    "Zenith",
+    "Ingersoll",
+    "IWC",
+    "U-Boat",
+    "Ulysse Nardin",
   ];
 
   const [selectedLetter, setSelectedLetter] = useState(null);
 
   const filteredBrands = useMemo(() => {
     if (!selectedLetter) return allBrands;
-    
-    return allBrands.filter(brand => 
+
+    return allBrands.filter((brand) =>
       brand.toLowerCase().startsWith(selectedLetter.toLowerCase())
     );
   }, [selectedLetter, allBrands]);
 
-  const handleLetterClick = (letter) => {
-    setSelectedLetter(selectedLetter === letter ? null : letter);
+  // Function to create URL-friendly brand slug
+  const createBrandSlug = (brandName) => {
+    return brandName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
   };
 
-  const handleBrandClick = () => {
-    if (isMobile && onItemClick) {
+  // Handle brand click - navigate to brand page
+  const handleBrandClick = (brandName) => {
+    const brandSlug = createBrandSlug(brandName);
+    
+    // Navigate to brand watches page
+    router.push(`/brand/${brandSlug}`);
+    
+    // Close the mega menu if onItemClick callback is provided
+    if (onItemClick) {
       onItemClick();
     }
+  };
+
+  // Handle category click
+  const handleCategoryClick = (category) => {
+    // You can implement category navigation here
+    console.log(`Category clicked: ${category}`);
+    if (onItemClick) {
+      onItemClick();
+    }
+  };
+
+  const handleLetterClick = (letter) => {
+    setSelectedLetter(selectedLetter === letter ? null : letter);
   };
 
   // Mobile Version
@@ -54,7 +216,7 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
               {categories.map((item, i) => (
                 <button
                   key={i}
-                  onClick={handleBrandClick}
+                  onClick={() => handleCategoryClick(item)}
                   className="text-left p-3 bg-white rounded-lg border border-gray-200 hover:border-amber-400 hover:text-amber-600 transition-colors text-sm"
                 >
                   {item}
@@ -75,19 +237,19 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
                   onClick={() => handleLetterClick(letter)}
                   className={`w-8 h-8 flex items-center justify-center rounded-full border text-xs font-medium transition-colors ${
                     selectedLetter === letter
-                      ? 'bg-amber-500 text-white border-amber-500'
-                      : 'border-gray-300 text-gray-700 hover:bg-amber-500 hover:text-white'
+                      ? "bg-amber-500 text-white border-amber-500"
+                      : "border-gray-300 text-gray-700 hover:bg-amber-500 hover:text-white"
                   }`}
                 >
                   {letter}
                 </button>
               ))}
-              <button 
-                onClick={() => handleLetterClick('#')}
+              <button
+                onClick={() => handleLetterClick("#")}
                 className={`w-8 h-8 flex items-center justify-center rounded-full border text-xs transition-colors ${
-                  selectedLetter === '#'
-                    ? 'bg-amber-500 text-white border-amber-500'
-                    : 'border-gray-300 text-gray-500 hover:bg-amber-500 hover:text-white'
+                  selectedLetter === "#"
+                    ? "bg-amber-500 text-white border-amber-500"
+                    : "border-gray-300 text-gray-500 hover:bg-amber-500 hover:text-white"
                 }`}
               >
                 #
@@ -97,8 +259,13 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
             {selectedLetter && (
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-gray-600">
-                  Brands starting with: <span className="font-semibold text-amber-600">{selectedLetter}</span>
-                  <span className="text-gray-500 text-xs ml-2">({filteredBrands.length})</span>
+                  Brands starting with:{" "}
+                  <span className="font-semibold text-amber-600">
+                    {selectedLetter}
+                  </span>
+                  <span className="text-gray-500 text-xs ml-2">
+                    ({filteredBrands.length})
+                  </span>
                 </span>
                 <button
                   onClick={() => setSelectedLetter(null)}
@@ -113,7 +280,9 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
           {/* Brands List */}
           <div className="mb-4">
             <h3 className="font-semibold text-gray-900 mb-3 text-base border-b pb-2">
-              {selectedLetter ? `Brands (${filteredBrands.length})` : 'All Brands'}
+              {selectedLetter
+                ? `Brands (${filteredBrands.length})`
+                : "All Brands"}
             </h3>
             <div className="max-h-60 overflow-y-auto bg-white rounded-lg border border-gray-200 p-3">
               <div className="grid grid-cols-1 gap-1 text-sm">
@@ -121,7 +290,7 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
                   filteredBrands.map((brand, index) => (
                     <button
                       key={index}
-                      onClick={handleBrandClick}
+                      onClick={() => handleBrandClick(brand)}
                       className="text-left p-2 hover:bg-amber-50 hover:text-amber-600 rounded transition-colors truncate"
                     >
                       {brand}
@@ -139,7 +308,7 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
           {/* Footer Link */}
           <div className="border-t border-gray-200 pt-3">
             <button
-              onClick={handleBrandClick}
+              onClick={() => handleBrandClick("All Brands")}
               className="text-amber-600 hover:underline font-semibold text-sm w-full text-left"
             >
               View All Watch Brands →
@@ -152,7 +321,7 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
 
   // Desktop Version
   return (
-    <div className="absolute left-0 lg:left-[350%] transform lg:-translate-x-[50%] top-full mt-2 w-screen lg:w-[90vw] md:w-[80vw] max-w-6xl bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+    <div className="absolute left-0 lg:left-[380%] transform lg:-translate-x-[50%] top-full mt-2 w-screen lg:w-[90vw] md:w-[80vw] max-w-6xl bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
       <div className="flex flex-col lg:flex-row h-auto max-h-[80vh] lg:max-h-none overflow-auto">
         {/* LEFT SIDEBAR */}
         <div className="lg:w-[30%] xl:w-[25%] bg-gray-50 p-4 lg:p-5 border-b lg:border-b-0 lg:border-r border-gray-200">
@@ -164,7 +333,7 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
               <li
                 key={i}
                 className="hover:text-amber-600 transition-colors cursor-pointer py-1 lg:py-0"
-                onClick={onItemClick}
+                onClick={() => handleCategoryClick(item)}
               >
                 {item}
               </li>
@@ -182,24 +351,24 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
                 onClick={() => handleLetterClick(letter)}
                 className={`w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center rounded-full border text-xs lg:text-sm font-medium transition-colors ${
                   selectedLetter === letter
-                    ? 'bg-amber-500 text-white border-amber-500'
-                    : 'border-gray-300 text-gray-700 hover:bg-amber-500 hover:text-white'
+                    ? "bg-amber-500 text-white border-amber-500"
+                    : "border-gray-300 text-gray-700 hover:bg-amber-500 hover:text-white"
                 }`}
               >
                 {letter}
               </button>
             ))}
-            <button 
-              onClick={() => handleLetterClick('#')}
+            <button
+              onClick={() => handleLetterClick("#")}
               className={`w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center rounded-full border text-xs lg:text-sm transition-colors ${
-                selectedLetter === '#'
-                  ? 'bg-amber-500 text-white border-amber-500'
-                  : 'border-gray-300 text-gray-500 hover:bg-amber-500 hover:text-white'
+                selectedLetter === "#"
+                  ? "bg-amber-500 text-white border-amber-500"
+                  : "border-gray-300 text-gray-500 hover:bg-amber-500 hover:text-white"
               }`}
             >
               #
             </button>
-            
+
             {selectedLetter && (
               <button
                 onClick={() => setSelectedLetter(null)}
@@ -214,7 +383,9 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
             <div className="mb-3 lg:mb-4">
               <span className="text-sm text-gray-600">
                 Showing brands starting with:{" "}
-                <span className="font-semibold text-amber-600">{selectedLetter}</span>
+                <span className="font-semibold text-amber-600">
+                  {selectedLetter}
+                </span>
                 <span className="text-gray-500 text-xs ml-2">
                   ({filteredBrands.length} brands)
                 </span>
@@ -226,13 +397,13 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 lg:gap-y-2 lg:gap-x-6 text-sm text-gray-700 max-h-[300px] lg:max-h-[260px] overflow-y-auto pr-2">
             {filteredBrands.length > 0 ? (
               filteredBrands.map((brand, index) => (
-                <p
+                <button
                   key={index}
-                  className="hover:text-amber-600 cursor-pointer transition-colors truncate py-1 lg:py-0"
-                  onClick={onItemClick}
+                  onClick={() => handleBrandClick(brand)}
+                  className="hover:text-amber-600 cursor-pointer transition-colors truncate py-1 lg:py-0 text-left"
                 >
                   {brand}
-                </p>
+                </button>
               ))
             ) : (
               <div className="col-span-full text-center py-4 text-gray-500">
@@ -243,13 +414,12 @@ const ShopBrandsMegaMenu = ({ isMobile = false, onItemClick }) => {
 
           {/* Footer link */}
           <div className="mt-4 lg:mt-5 border-t border-gray-200 pt-3">
-            <a
-              href="#"
+            <button
+              onClick={() => handleBrandClick("All Brands")}
               className="text-amber-600 hover:underline font-semibold text-sm lg:text-base"
-              onClick={onItemClick}
             >
               View All Watch Brands
-            </a>
+            </button>
           </div>
         </div>
       </div>

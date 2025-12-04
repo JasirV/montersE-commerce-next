@@ -166,18 +166,244 @@ export async function WatchBycategory(style, params = {}) {
 }
 
 
-export async function LeatherBycategory(
-  category,
-  { page = 1, limit = 15 } = {}
-) {
+
+
+// service/productService.js
+export async function LeatherBycategory(category, params = {}) {
   try {
-    const endpoint = `/leather/category/${category}?page=${page}&limit=${limit}`;
+    const { 
+      page = 1, 
+      limit = 16,
+      sortBy = "newest",
+      leatherType = "all",
+      ...filters 
+    } = params;
+
+    // Build URL query string
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    // Add sort parameter if not default
+    if (sortBy && sortBy !== "featured") {
+      queryParams.append("sortBy", sortBy);
+    }
+
+    // Add dynamic filter params
+    Object.entries(filters).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach(v => {
+          if (v !== undefined && v !== null && v !== '') {
+            queryParams.append(key, v);
+          }
+        });
+      } else if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value);
+      }
+    });
+
+    // Handle price range separately
+    if (filters.minPrice) {
+      queryParams.append("minPrice", filters.minPrice);
+    }
+    if (filters.maxPrice) {
+      queryParams.append("maxPrice", filters.maxPrice);
+    }
+
+    // safe encode category
+    const safeCategory = category || "All";
+    const endpoint = `/leather/category/${safeCategory}?${queryParams.toString()}`;
+
+    // console.log("Leather API Call:", endpoint);
+
     const response = await api.get(endpoint);
     return { data: response.data, error: null, isLoading: false };
+
   } catch (error) {
+    console.error("Leather API Error:", error);
     return { data: null, error, isLoading: false };
   }
 }
+
+// productService.js
+// service/productService.js
+export async function getBrandsBaeWatchs(brand, params = {}) {
+  try {
+    const {
+      page = 1,
+      limit = 16,
+      sortBy = "featured",
+      minPrice,
+      maxPrice,
+      ...filters
+    } = params;
+
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy: sortBy,
+    });
+
+    // Add price range
+    if (minPrice !== undefined) queryParams.append("minPrice", minPrice);
+    if (maxPrice !== undefined) queryParams.append("maxPrice", maxPrice);
+
+    // Add additional filters dynamically
+    Object.entries(filters).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach(v => {
+          if (v !== undefined && v !== null && v !== "") {
+            queryParams.append(key, v);
+          }
+        });
+      } else if (value !== undefined && value !== null && value !== "") {
+        queryParams.append(key, value);
+      }
+    });
+
+    // Encode brand to safely include in URL
+    const safeBrand = encodeURIComponent(brand);
+    const endpoint = `/products/brand/${safeBrand}/watches?${queryParams.toString()}`;
+
+    console.log("Brand Watches API:", endpoint);
+
+    const response = await api.get(endpoint);
+    
+    // Extract data based on backend response structure
+    const products = response.data.products || [];
+    const totalProducts = response.data.count || 0;
+    const itemsPerPage = limit;
+    const totalPages = Math.ceil(totalProducts / itemsPerPage);
+
+    return {
+      success: true,
+      data: {
+        products: products,
+        totalProducts: totalProducts,
+        totalPages: totalPages,
+        currentPage: parseInt(page),
+        productsPerPage: itemsPerPage
+      },
+      error: null,
+      isLoading: false,
+    };
+
+  } catch (error) {
+    console.error("Brand Watch API Error:", error);
+
+    return {
+      success: false,
+      data: {
+        products: [],
+        totalProducts: 0,
+        totalPages: 0,
+        currentPage: 1,
+        productsPerPage: 16
+      },
+      error: error.response?.data || error.message,
+      isLoading: false,
+    };
+  }
+}
+
+
+// * GET: /leather/getHandBags
+//  */
+export async function getHandBags(params = {}) {
+  try {
+    const {
+      page = 1,
+      limit = 16,
+      sortBy = "newest",
+      minPrice,
+      maxPrice,
+      brand = [],
+      color = [],
+      material = [],
+      leatherType = [],
+      size = [],
+      subCategory = [],
+      condition = [],
+      gender = [],
+      availability = [],
+      category = [],
+      ...otherFilters
+    } = params;
+
+    // Build query params
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy: sortBy.toString(),
+    });
+
+    // Add array filters
+    const arrayFields = {
+      brand,
+      color,
+      material,
+      leatherType,
+      size,
+      subCategory,
+      condition,
+      gender,
+      availability,
+      category
+    };
+
+    Object.entries(arrayFields).forEach(([key, values]) => {
+      if (Array.isArray(values) && values.length > 0) {
+        values.forEach((v) => {
+          if (v !== undefined && v !== null && v !== "") {
+            queryParams.append(key, v);
+          }
+        });
+      }
+    });
+
+    // Add price filters
+    if (minPrice !== undefined && minPrice !== null && minPrice !== '') {
+      queryParams.append("minPrice", minPrice.toString());
+    }
+    if (maxPrice !== undefined && maxPrice !== null && maxPrice !== '') {
+      queryParams.append("maxPrice", maxPrice.toString());
+    }
+
+    // Add any additional filters
+    Object.entries(otherFilters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        if (Array.isArray(value) && value.length > 0) {
+          value.forEach(v => queryParams.append(key, v));
+        } else {
+          queryParams.append(key, value.toString());
+        }
+      }
+    });
+
+    // Final request URL
+    const endpoint = `/leather/getHandBags?${queryParams.toString()}`;
+
+    // console.log("HandBag API Call:", endpoint);
+
+    const response = await api.get(endpoint);
+
+    return {
+      data: response.data.data, // Access the data property from response
+      error: null,
+      isLoading: false,
+    };
+  } catch (error) {
+    console.error("❌ HandBag API Error:", error);
+
+    return {
+      data: null,
+      error: error.response?.data || error.message,
+      isLoading: false,
+    };
+  }
+}
+
 export async function AccessoriesBycategory(
   category,
   { page = 1, limit = 15 } = {}
@@ -283,6 +509,8 @@ export async function fetchProductAll({ search = "" } = {}) {
     return { data: null, error, isLoading: false };
   }
 }
+
+
 export async function getHomeProductGrid() {
   try {
     let endpoint = `home`;
