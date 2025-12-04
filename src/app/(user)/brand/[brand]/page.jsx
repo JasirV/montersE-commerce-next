@@ -141,55 +141,54 @@ const PageContent = ({ searchParams }) => {
       // Use formatted brand name for API call to ensure case consistency
       const brandName = formattedBrandName;
       
-      console.log("Fetching brand watches for:", brandName);
+      // console.log("Fetching brand watches for:", brandName);
 
       const result = await getBrandsBaeWatchs(brandName, apiParams);
-
-      if (result.error) {
-        // Handle API errors gracefully - set totalProducts to 0
+        console.log("Fetching brand watches for:", result);
+      // Check if API call was successful
+      if (!result.success || result.error) {
         console.warn("API returned error:", result.error);
         setProducts({
           products: [],
           totalPages: 0,
           currentPage: 1,
-          totalProducts: 0, // Explicitly set to 0
+          totalProducts: 0,
         });
         return;
       }
 
-      if (result.data) {
-        // Ensure totalProducts is always a number, default to 0 if not provided
-        const totalProducts = result.data.totalProducts || 0;
-        const productsArray = result.data.products || [];
-        
+      // Extract data from the correct structure
+      const responseData = result.data;
+      
+      if (responseData && Array.isArray(responseData.products)) {
         setProducts({
-          products: productsArray,
-          totalPages: result.data.totalPages || Math.ceil(totalProducts / productsPerPage),
-          currentPage: result.data.currentPage || currentPage,
-          totalProducts: totalProducts,
+          products: responseData.products,
+          totalPages: responseData.totalPages || 1,
+          currentPage: responseData.currentPage || currentPage,
+          totalProducts: responseData.totalProducts || 0,
         });
       } else {
-        // Handle no data gracefully - set totalProducts to 0
+        // Handle invalid data structure
         setProducts({
           products: [],
           totalPages: 0,
           currentPage: 1,
-          totalProducts: 0, // Explicitly set to 0
+          totalProducts: 0,
         });
       }
     } catch (err) {
       console.error("Error fetching brand watches:", err);
-      // Don't set error state for network issues, just show empty state with 0 count
+      setError(err.message);
       setProducts({
         products: [],
         totalPages: 0,
         currentPage: 1,
-        totalProducts: 0, // Explicitly set to 0
+        totalProducts: 0,
       });
     } finally {
       setLoading(false);
     }
-  }, [buildApiParams, formattedBrandName, currentPage, productsPerPage]);
+  }, [buildApiParams, formattedBrandName, currentPage]);
 
   // Initialize filters from URL on component mount
   useEffect(() => {
@@ -241,7 +240,10 @@ const PageContent = ({ searchParams }) => {
     // Handle page
     const urlPage = searchParams.get("page");
     if (urlPage) {
-      setCurrentPage(parseInt(urlPage));
+      const pageNum = parseInt(urlPage);
+      if (!isNaN(pageNum) && pageNum > 0) {
+        setCurrentPage(pageNum);
+      }
     }
 
     setActiveFilters(initialFilters);
@@ -384,7 +386,7 @@ const PageContent = ({ searchParams }) => {
     return !loading && (!products.products || products.products.length === 0);
   }, [loading, products.products]);
 
-  // Get total products count - always ensure it's a number
+  // Get total products count
   const totalProductsCount = useMemo(() => {
     return products.totalProducts || 0;
   }, [products.totalProducts]);
@@ -442,7 +444,7 @@ const PageContent = ({ searchParams }) => {
             )}
           </button>
 
-          {/* Mobile Results Count - Always show even when 0 */}
+          {/* Mobile Results Count */}
           {!loading && (
             <div className="text-right">
               <p className="text-xs xs:text-sm font-semibold text-gray-700 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-200">
@@ -474,7 +476,7 @@ const PageContent = ({ searchParams }) => {
 
           {/* Products Section */}
           <main className="flex-1 min-w-0" ref={productsSectionRef}>
-            {/* Enhanced Header Section - Always show even when no products */}
+            {/* Enhanced Header Section */}
             {!loading && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 xs:p-4 sm:p-5 md:p-6 mb-4 xs:mb-5 sm:mb-6 md:mb-7">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 xs:gap-4">
@@ -483,15 +485,15 @@ const PageContent = ({ searchParams }) => {
                       <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
                         {formattedBrandName ? `${formattedBrandName} Watches` : 'Brand Watches'}
                       </h1>
-                      {/* Total Count Badge - Always show even when 0 */}
-                      <span className={`hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs xs:text-sm font-semibold ${
-                        totalProductsCount > 0 ? 'bg-[#8b6b4a] text-white' : 'bg-gray-300 text-gray-600'
-                      }`}>
-                        {totalProductsCount.toLocaleString()}
-                      </span>
+                      {/* Total Count Badge */}
+                      {totalProductsCount > 0 && (
+                        <span className="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs xs:text-sm font-semibold bg-[#8b6b4a] text-white">
+                          {totalProductsCount.toLocaleString()}
+                        </span>
+                      )}
                     </div>
                     
-                    {/* Mobile Total Count - Always show even when 0 */}
+                    {/* Mobile Total Count */}
                     <div className="sm:hidden bg-gray-50 px-3 py-1.5 rounded-lg">
                       <p className="text-sm font-semibold text-gray-700">
                         {totalProductsCount.toLocaleString()} {totalProductsCount === 1 ? "watch" : "watches"} found
@@ -499,8 +501,8 @@ const PageContent = ({ searchParams }) => {
                     </div>
                   </div>
                   
-                  {/* Enhanced Sort Filter - Only show when we have products or active filters */}
-                  {(totalProductsCount > 0 || getActiveFilterCount() > 0) && (
+                  {/* Enhanced Sort Filter */}
+                  {totalProductsCount > 0 && (
                     <div className="flex items-center justify-between sm:justify-end gap-2 xs:gap-3">
                       <label
                         htmlFor="sort"
@@ -546,7 +548,7 @@ const PageContent = ({ searchParams }) => {
                           return values.map((val) => (
                             <span
                               key={`${type}-${val}`}
-                              className="inline-flex items-center rounded-full bg-[#8b6b4a] bg-opacity-10 px-2 xs:px-3 py-1 xs:py-1.5 text-xs xs:text-sm font-medium text-[#8b6b4a]"
+                              className="inline-flex items-center rounded-full  bg-opacity-10 px-2 xs:px-3 py-1 xs:py-1.5 text-xs xs:text-sm font-medium text-[#8b6b4a]"
                             >
                               {val}
                               <button
@@ -566,7 +568,7 @@ const PageContent = ({ searchParams }) => {
                       {/* Display price range filter if active */}
                       {activeFilters.priceRange && 
                        (activeFilters.priceRange.min > 0 || activeFilters.priceRange.max < 10000) && (
-                        <span className="inline-flex items-center rounded-full bg-[#8b6b4a] bg-opacity-10 px-2 xs:px-3 py-1 xs:py-1.5 text-xs xs:text-sm font-medium text-[#8b6b4a]">
+                        <span className="inline-flex items-center rounded-full  bg-opacity-10 px-2 xs:px-3 py-1 xs:py-1.5 text-xs xs:text-sm font-medium text-[#8b6b4a]">
                           AED {activeFilters.priceRange.min.toLocaleString()} - AED {activeFilters.priceRange.max.toLocaleString()}
                           <button
                             type="button"
@@ -609,7 +611,7 @@ const PageContent = ({ searchParams }) => {
               </div>
             )}
 
-            {/* Enhanced Empty State - Shows when no products found */}
+            {/* Enhanced Empty State */}
             {showEmptyState && (
               <div className="text-center py-12 xs:py-16 sm:py-20 bg-white rounded-xl shadow-sm border border-gray-100">
                 <div className="max-w-md mx-auto px-4">
@@ -646,12 +648,13 @@ const PageContent = ({ searchParams }) => {
               </div>
             )}
 
-            {/* Enhanced Products Grid - Only show when we have products */}
+            {/* Enhanced Products Grid */}
             {!loading && !showEmptyState && products.products?.length > 0 && (
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 xs:gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-                  {products.products.map((product) => (
-                    <div key={product._id} className="flex justify-center">
+                  {products.products.map((product,index) => (
+                    <div key={product._id || product.id || `${product.brand}-${product.model}-${index}`} className="flex justify-center">
+
                       <ProductCard 
                         product={product} 
                         className="w-full max-w-[280px] mx-auto"

@@ -226,14 +226,14 @@ export async function LeatherBycategory(category, params = {}) {
   }
 }
 
-
-// * GET: /products/brand/:brand
+// productService.js
+// service/productService.js
 export async function getBrandsBaeWatchs(brand, params = {}) {
   try {
     const {
       page = 1,
       limit = 16,
-      sortBy = "newest",
+      sortBy = "featured",
       minPrice,
       maxPrice,
       ...filters
@@ -249,7 +249,7 @@ export async function getBrandsBaeWatchs(brand, params = {}) {
     if (minPrice !== undefined) queryParams.append("minPrice", minPrice);
     if (maxPrice !== undefined) queryParams.append("maxPrice", maxPrice);
 
-    // Add dynamic filters
+    // Add additional filters dynamically
     Object.entries(filters).forEach(([key, value]) => {
       if (Array.isArray(value)) {
         value.forEach(v => {
@@ -262,16 +262,29 @@ export async function getBrandsBaeWatchs(brand, params = {}) {
       }
     });
 
-    // Brand endpoint
+    // Encode brand to safely include in URL
     const safeBrand = encodeURIComponent(brand);
-    const endpoint = `/products/brand/${safeBrand}?${queryParams.toString()}`;
+    const endpoint = `/products/brand/${safeBrand}/watches?${queryParams.toString()}`;
 
     console.log("Brand Watches API:", endpoint);
 
     const response = await api.get(endpoint);
+    
+    // Extract data based on backend response structure
+    const products = response.data.products || [];
+    const totalProducts = response.data.count || 0;
+    const itemsPerPage = limit;
+    const totalPages = Math.ceil(totalProducts / itemsPerPage);
 
     return {
-      data: response.data,
+      success: true,
+      data: {
+        products: products,
+        totalProducts: totalProducts,
+        totalPages: totalPages,
+        currentPage: parseInt(page),
+        productsPerPage: itemsPerPage
+      },
       error: null,
       isLoading: false,
     };
@@ -280,7 +293,14 @@ export async function getBrandsBaeWatchs(brand, params = {}) {
     console.error("Brand Watch API Error:", error);
 
     return {
-      data: null,
+      success: false,
+      data: {
+        products: [],
+        totalProducts: 0,
+        totalPages: 0,
+        currentPage: 1,
+        productsPerPage: 16
+      },
       error: error.response?.data || error.message,
       isLoading: false,
     };
@@ -489,6 +509,8 @@ export async function fetchProductAll({ search = "" } = {}) {
     return { data: null, error, isLoading: false };
   }
 }
+
+
 export async function getHomeProductGrid() {
   try {
     let endpoint = `home`;
