@@ -99,7 +99,7 @@ export default function RootLayout({ children }) {
         {/* Performance hints */}
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preload" as="image" href={`${SITE_URL}/logo.png`} />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="https://www.montres.ae/favicon.ico" />
 
         {/* JSON-LD for Organization & WebSite (site-wide) */}
         <script
