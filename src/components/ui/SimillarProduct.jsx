@@ -3,7 +3,12 @@
 import Image from "next/image";
 import React, { useContext, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { FaHeart, FaShoppingCart, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import {
+  FaHeart,
+  FaShoppingCart,
+  FaChevronLeft,
+  FaChevronRight,
+} from "react-icons/fa";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
 import axios from "axios";
@@ -14,7 +19,8 @@ import newCurrency from "../../assets/newSymbole.png";
 // Single product card component
 const ProductCard = ({ product }) => {
   const router = useRouter();
-  const { decrementWishlist, incrementWishlist, incrementCart } = useContext(GlobalContext);
+  const { decrementWishlist, incrementWishlist, incrementCart } =
+    useContext(GlobalContext);
   const [isWishlisted, setIsWishlisted] = useState([]);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -324,19 +330,33 @@ const ProductCard = ({ product }) => {
 
   const isBagCategory = (product) => {
     // Check multiple ways a product might be categorized as a bag
-    const searchTerms = ['bag', 'handbag', 'backpack', 'purse', 'tote', 'satchel', 'clutch', 'duffel', 'messenger', 'briefcase', 'wallet', 'pouch'];
-    
+    const searchTerms = [
+      "bag",
+      "handbag",
+      "backpack",
+      "purse",
+      "tote",
+      "satchel",
+      "clutch",
+      "duffel",
+      "messenger",
+      "briefcase",
+      "wallet",
+      "pouch",
+    ];
+
     // Convert all relevant fields to lowercase for comparison
-    const leatherMainCategory = product.leatherMainCategory?.toLowerCase() || '';
-    const subCategory = product.subCategory?.toLowerCase() || '';
-    const category = product.category?.toLowerCase() || '';
-    const material = product.material?.toLowerCase() || '';
-    const name = product.name?.toLowerCase() || '';
-    const description = product.description?.toLowerCase() || '';
-    const tags = Array.isArray(product.tags) 
-      ? product.tags.map(tag => tag.toLowerCase()) 
+    const leatherMainCategory =
+      product.leatherMainCategory?.toLowerCase() || "";
+    const subCategory = product.subCategory?.toLowerCase() || "";
+    const category = product.category?.toLowerCase() || "";
+    const material = product.material?.toLowerCase() || "";
+    const name = product.name?.toLowerCase() || "";
+    const description = product.description?.toLowerCase() || "";
+    const tags = Array.isArray(product.tags)
+      ? product.tags.map((tag) => tag.toLowerCase())
       : [];
-    
+
     // Check if any search term appears in any relevant field
     for (const term of searchTerms) {
       if (
@@ -345,41 +365,49 @@ const ProductCard = ({ product }) => {
         category.includes(term) ||
         name.includes(term) ||
         description.includes(term) ||
-        tags.some(tag => tag.includes(term))
+        tags.some((tag) => tag.includes(term))
       ) {
         return true;
       }
     }
-    
+
     // Check for leather specifically
     if (
-      leatherMainCategory.includes('leather') ||
-      material.includes('leather') ||
-      category.includes('leather') ||
-      tags.some(tag => tag.includes('leather'))
+      leatherMainCategory.includes("leather") ||
+      material.includes("leather") ||
+      category.includes("leather") ||
+      tags.some((tag) => tag.includes("leather"))
     ) {
       // Additional check to ensure it's actually a bag, not just leather product
       // Check if name or description contains any bag-related terms
-      const bagRelatedTerms = ['bag', 'handbag', 'backpack', 'purse', 'tote', 'satchel', 'clutch'];
+      const bagRelatedTerms = [
+        "bag",
+        "handbag",
+        "backpack",
+        "purse",
+        "tote",
+        "satchel",
+        "clutch",
+      ];
       for (const term of bagRelatedTerms) {
         if (name.includes(term) || description.includes(term)) {
           return true;
         }
       }
     }
-    
+
     return false;
   };
 
   const handleProductClick = (product) => {
     // Get the product ID from all possible locations
     const productId = product._id || product.productId?._id || product.id;
-    
+
     if (!productId) {
-      console.warn('No product ID found: ', product);
+      console.warn("No product ID found: ", product);
       return;
     }
-    
+
     // Check if it's a bag category
     if (isBagCategory(product)) {
       // Route to LeatherBagsDetails for bags
@@ -400,11 +428,7 @@ const ProductCard = ({ product }) => {
   const formatPrice = (price) => {
     return (
       <div className="flex items-center">
-        <Image
-          src={newCurrency}
-          alt="Currency"
-          className="w-4 h-4 mr-1.5"
-        />
+        <Image src={newCurrency} alt="Currency" className="w-4 h-4 mr-1.5" />
         <span className="text-xl font-bold text-gray-900">
           {price?.toLocaleString() || "0"}
         </span>
@@ -416,7 +440,10 @@ const ProductCard = ({ product }) => {
     <div className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 mx-2 my-2 flex-shrink-0 w-full max-w-[280px] sm:w-[280px]">
       {/* Product Image Container */}
       <div className="relative h-52 bg-gray-50 cursor-pointer">
-        <div onClick={() => handleProductClick(product)} className="w-full h-full">
+        <div
+          onClick={() => handleProductClick(product)}
+          className="w-full h-full"
+        >
           <Image
             src={product.images?.[0]?.url || Dummy1}
             alt={product.name}
@@ -453,7 +480,7 @@ const ProductCard = ({ product }) => {
 
       {/* Product Details */}
       <div className="p-4 sm:p-5">
-        <h3 
+        <h3
           onClick={() => handleProductClick(product)}
           className="text-gray-800 font-semibold text-[15px] mb-3 line-clamp-2 leading-tight min-h-[2.8rem] cursor-pointer hover:text-blue-600 transition-colors"
         >
@@ -484,12 +511,12 @@ const ProductCard = ({ product }) => {
 };
 
 // Scrollable Products Container Component
-const ScrollableProductsContainer = ({ 
-  title, 
-  description, 
-  products, 
-  loading, 
-  error
+const ScrollableProductsContainer = ({
+  title,
+  description,
+  products,
+  loading,
+  error,
 }) => {
   const scrollContainerRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -497,7 +524,8 @@ const ScrollableProductsContainer = ({
 
   const checkScrollButtons = () => {
     if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      const { scrollLeft, scrollWidth, clientWidth } =
+        scrollContainerRef.current;
       setShowLeftArrow(scrollLeft > 0);
       setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
     }
@@ -505,13 +533,13 @@ const ScrollableProductsContainer = ({
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+      scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" });
     }
   };
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+      scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" });
     }
   };
 
@@ -519,8 +547,8 @@ const ScrollableProductsContainer = ({
     checkScrollButtons();
     const container = scrollContainerRef.current;
     if (container) {
-      container.addEventListener('scroll', checkScrollButtons);
-      return () => container.removeEventListener('scroll', checkScrollButtons);
+      container.addEventListener("scroll", checkScrollButtons);
+      return () => container.removeEventListener("scroll", checkScrollButtons);
     }
   }, [products]);
 
@@ -530,7 +558,9 @@ const ScrollableProductsContainer = ({
       <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+              {title}
+            </h2>
             <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
               Loading {title.toLowerCase()}...
             </p>
@@ -558,7 +588,9 @@ const ScrollableProductsContainer = ({
     return (
       <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+            {title}
+          </h2>
           <p className="text-gray-600 text-base sm:text-lg mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
@@ -576,7 +608,9 @@ const ScrollableProductsContainer = ({
     return (
       <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+            {title}
+          </h2>
           <p className="text-gray-600 text-base sm:text-lg">
             No {title.toLowerCase()} found at the moment.
           </p>
@@ -590,7 +624,9 @@ const ScrollableProductsContainer = ({
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+            {title}
+          </h2>
           <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-4">
             {description}
           </p>
@@ -613,10 +649,10 @@ const ScrollableProductsContainer = ({
           <div
             ref={scrollContainerRef}
             className="flex overflow-x-auto gap-4 sm:gap-6 pb-4 sm:pb-6 scrollbar-hide scroll-smooth px-2 sm:px-0"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
+            {products.map((product, index) => (
+              <ProductCard key={product._id ?? index} product={product} />
             ))}
           </div>
 
@@ -671,7 +707,8 @@ const SimilarProduct = ({ productId }) => {
         );
 
         if (response.data.success) {
-          const products = response.data.products || response.data.similarProducts || [];
+          const products =
+            response.data.products || response.data.similarProducts || [];
           console.log("Similar products found:", products.length);
           setSimilarProducts(products);
         } else {
@@ -716,7 +753,8 @@ const SimilarProduct = ({ productId }) => {
         );
 
         if (response.data.success) {
-          const products = response.data.products || response.data.youMayAlsoLike || [];
+          const products =
+            response.data.products || response.data.youMayAlsoLike || [];
           console.log("You May Also Like products found:", products.length);
           setYouMayAlsoLikeProducts(products);
         } else {
