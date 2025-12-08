@@ -446,7 +446,7 @@ const ProductCard = ({ product }) => {
         >
           <Image
             src={product.images?.[0]?.url || Dummy1}
-            alt={product.name}
+            alt={product.name || "Product image"} // Fallback alt text
             unoptimized
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"

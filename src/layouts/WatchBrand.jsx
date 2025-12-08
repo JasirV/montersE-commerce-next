@@ -17,9 +17,9 @@ const BrandNewAdded = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('https://api.montres.ae/api/products');
-        
-        console.log('API Response:', response.data);
+         const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/products`
+      );
         
         let productsArray = response.data;
         
