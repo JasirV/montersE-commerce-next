@@ -5,7 +5,7 @@ import Providers from "./Providers";
 import { GlobalProvider } from "@/components/shared/context/GlobalContext";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { Analytics } from "@vercel/analytics/next"; 
+import { Analytics } from "@vercel/analytics/next";
 // Optional: Speed Insights
 // import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -99,11 +99,34 @@ export default function RootLayout({ children }) {
 
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
         />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+
+        {/* Matomo Script */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+        var _paq = window._paq = window._paq || [];
+        _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
+        _paq.push(["setCookieDomain", "*.www.montres.ae"]);
+        _paq.push(["setDomains", ["*.www.montres.ae"]]);
+        _paq.push(['trackPageView']);
+        _paq.push(['enableLinkTracking']);
+        (function() {
+          var u="https://montresae.matomo.cloud/";
+          _paq.push(['setTrackerUrl', u+'matomo.php']);
+          _paq.push(['setSiteId', '1']);
+          var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+          g.async=true; g.src='https://cdn.matomo.cloud/montresae.matomo.cloud/matomo.js'; s.parentNode.insertBefore(g,s);
+        })();
+      `,
+          }}
         />
       </head>
 
