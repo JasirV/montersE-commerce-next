@@ -5,7 +5,6 @@ import Image from "next/image";
 import axios from "axios";
 import {
   FiHeart,
-  FiClock,
   FiBell,
   FiStar,
   FiChevronLeft,
@@ -327,6 +326,19 @@ const ImageSlider = ({ images, productName, isSoldOut, onImageClick }) => {
 };
 
 const ProductCard = ({ product }) => {
+  // EARLY VALIDATION - Check if product data is valid
+  if (!product || (!product.id && !product._id)) {
+    console.warn("Invalid product data received:", product);
+    return (
+      <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 p-4 text-center h-full flex items-center justify-center">
+        <div className="text-gray-400 text-sm">Product unavailable</div>
+      </div>
+    );
+  }
+
+  // Get product ID from either id or _id field
+  const productId = product.id || product._id;
+  
   const { decrementWishlist, incrementWishlist, user } =
     useContext(GlobalContext);
   const router = useRouter();
@@ -363,14 +375,11 @@ const ProductCard = ({ product }) => {
   // Check if product is a bag (category check)
   const isBagCategory = () => {
     // Check multiple ways a product might be categorized as a bag
-    if (product.leatherMainCategory?.toLowerCase().includes('Bag')) return true;
-    if (product.subCategory?.toLowerCase().includes('Bag')) return true;
-    if (product.tags?.some(tag => tag.toLowerCase().includes('Bag'))) return true;
-    if (product.name?.toLowerCase().includes('Bag')) return true;
-    
-    // Also check for leather bags specifically
+    if (product.leatherMainCategory?.toLowerCase().includes('bag')) return true;
+    if (product.subCategory?.toLowerCase().includes('bag')) return true;
     if (product.category?.toLowerCase().includes('leather')) return true;
     if (product.material?.toLowerCase().includes('leather')) return true;
+    if (product.name?.toLowerCase().includes('bag')) return true;
     
     return false;
   };
@@ -397,7 +406,7 @@ const ProductCard = ({ product }) => {
           const defaultWishlist =
             res.data.wishlists.find((w) => w.isDefault) ||
             res.data.wishlists[0];
-          setDefaultWishlistId(defaultWishlist._id || defaultWishlist.id);
+          setDefaultWishlistId(defaultWishlist.id || defaultWishlist._id);
         } else {
           console.log("No wishlists found or empty response");
           setDefaultWishlistId(null);
@@ -420,14 +429,28 @@ const ProductCard = ({ product }) => {
     }
   }, [user]);
 
-  // Handle click on product card - Now routes based on product category
+  // Handle click on product card
   const handleProductClick = () => {
+    if (!productId) {
+      Toastify({
+        text: "Product information is incomplete",
+        duration: 3000,
+        gravity: "bottom",
+        position: "center",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
+      return;
+    }
+
     if (isBagCategory()) {
       // Route to LeatherBagsDetails for bags
-      router.push(`/LeatherBagsDetails/${product._id}`);
+      router.push(`/LeatherBagsDetails/${productId}`);
     } else {
       // Route to regular ProductDetailPage for other products
-      router.push(`/ProductDetailPage/${product._id}`);
+      router.push(`/ProductDetailPage/${productId}`);
     }
   };
 
@@ -435,11 +458,41 @@ const ProductCard = ({ product }) => {
   const handleViewDetails = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (!productId) {
+      Toastify({
+        text: "Cannot view details - product information is incomplete",
+        duration: 3000,
+        gravity: "bottom",
+        position: "center",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
+      return;
+    }
+    
     handleProductClick();
   };
 
   // Subscribe to restock notifications
   const handleRestockSubscribe = async () => {
+    // Check if product ID exists
+    if (!productId) {
+      Toastify({
+        text: "Product information is incomplete",
+        duration: 3000,
+        gravity: "bottom",
+        position: "center",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
+      return;
+    }
+
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
@@ -475,7 +528,7 @@ const ProductCard = ({ product }) => {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/products/restock-notifications/subscribe`,
         {
-          productId: product._id,
+          productId: productId,
           email: email,
         },
         {
@@ -530,6 +583,22 @@ const ProductCard = ({ product }) => {
   const handleRestockNotify = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check if product ID exists
+    if (!productId) {
+      Toastify({
+        text: "Product information is incomplete",
+        duration: 3000,
+        gravity: "bottom",
+        position: "center",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
+      return;
+    }
+    
     setShowRestockModal(true);
   };
 
@@ -537,6 +606,21 @@ const ProductCard = ({ product }) => {
   const handleToggleWishlist = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Check if product ID exists
+    if (!productId) {
+      Toastify({
+        text: "Product information is incomplete",
+        duration: 3000,
+        gravity: "bottom",
+        position: "center",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
+      return;
+    }
 
     if (isSoldOut && !isWishlisted) {
       Toastify({
@@ -590,7 +674,7 @@ const ProductCard = ({ product }) => {
           {
             data: {
               wishlistId: defaultWishlistId,
-              productId: product._id,
+              productId: productId,
             },
             headers: {
               Authorization: `Bearer ${token}`,
@@ -607,7 +691,7 @@ const ProductCard = ({ product }) => {
           `${process.env.NEXT_PUBLIC_BASEURL}/wishlist/add`,
           {
             wishlistId: defaultWishlistId,
-            productId: product._id,
+            productId: productId,
           },
           {
             headers: {
@@ -623,6 +707,16 @@ const ProductCard = ({ product }) => {
       }
     } catch (error) {
       console.log("Error toggling wishlist:", error);
+      Toastify({
+        text: "Failed to update wishlist",
+        duration: 3000,
+        gravity: "bottom",
+        position: "center",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
     } finally {
       setIsLoading(false);
     }
@@ -650,7 +744,7 @@ const ProductCard = ({ product }) => {
         <div className="relative flex-shrink-0">
           <ImageSlider
             images={images()}
-            productName={product.name}
+            productName={product.name || "Product"}
             isSoldOut={isSoldOut}
             onImageClick={handleProductClick}
           />
@@ -692,7 +786,7 @@ const ProductCard = ({ product }) => {
                 isSoldOut ? "text-gray-500" : "text-[#1a1a1a]"
               }`}
             >
-              {product.name}
+              {product.name || "Unnamed Product"}
             </h3>
 
             {/* Rating */}
@@ -758,7 +852,7 @@ const ProductCard = ({ product }) => {
               </h3>
               <p className="text-gray-600 mb-4 text-sm text-center">
                 We'll notify you when{" "}
-                <strong className="text-blue-600">{product.name}</strong> is
+                <strong className="text-blue-600">{product.name || "this product"}</strong> is
                 back in stock.
               </p>
 

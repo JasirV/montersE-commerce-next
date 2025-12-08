@@ -383,7 +383,7 @@ const PriceWithCurrency = ({ amount, className = "" }) => (
       height={16}
       className="w-4 h-4"
     />
-    <span>{amount.toFixed(2)}</span>
+    <span>{amount?.toFixed(2)}</span>
   </span>
 );
 

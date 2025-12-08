@@ -66,9 +66,21 @@ const CheckoutPage = () => {
     return product.salePrice || product.price || 0;
   }, []);
 
+  
   // Safe product data checker
   const isValidProduct = useCallback((item) => {
-    return item && item.productId && typeof item.quantity === 'number';
+    if (!item) return false;
+    
+    // Check if we have a productId
+    const hasProductId = (
+      (item.productId && item.productId._id) || 
+      (typeof item.productId === 'string')
+    );
+    
+    // Check if we have quantity
+    const hasQuantity = typeof item.quantity === 'number' && item.quantity > 0;
+    
+    return hasProductId && hasQuantity;
   }, []);
 
   // Check if we have a valid address for calculation
@@ -99,8 +111,6 @@ const CheckoutPage = () => {
     }
   }, [selectedAddress]);
 
-
-
   const calculateTotals = async () => {
     try {
       setLoading(true);
@@ -120,10 +130,28 @@ const CheckoutPage = () => {
         return;
       }
 
-      const items = validItems.map((item) => ({
-        productId: item.productId._id || item.productId,
-        quantity: item.quantity,
-      }));
+      // FIX: Extract productId properly
+      const items = validItems.map((item) => {
+        let productId;
+        if (item.productId && item.productId._id) {
+          productId = item.productId._id;
+        } else if (typeof item.productId === 'string') {
+          productId = item.productId;
+        } else {
+          console.error("Invalid productId format:", item.productId);
+          return null;
+        }
+        
+        return {
+          productId: productId,
+          quantity: item.quantity,
+        };
+      }).filter(item => item !== null); // Remove null items
+
+      if (items.length === 0) {
+        calculateTotalsFallback();
+        return;
+      }
 
       // Prepare shipping address for calculation
       let shippingAddress = {};
@@ -158,11 +186,7 @@ const CheckoutPage = () => {
         return;
       }
 
-      console.log("Sending calculation request with:", {
-        items,
-        shippingAddress,
-        calculateOnly: true,
-      });
+      console.log("Sending calculation request with items:", items);
 
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/order/`,
@@ -214,9 +238,7 @@ const CheckoutPage = () => {
     }
   };
 
-
-
-  // Fixed fallback calculation - VAT is 0 since already included
+  // Fixed fallback calculation
   const calculateTotalsFallback = () => {
     const validItems = checkoutProducts.filter(isValidProduct);
     
@@ -226,21 +248,14 @@ const CheckoutPage = () => {
     }, 0);
 
     const subtotalValue = cartTotal;
-
-    // Calculate shipping based on subtotal (free over 100 AED as example)
     const shippingValue = subtotalValue > 100 ? 0 : 20;
-
-    // VAT is 0 since already included in product prices
     const vatValue = 0;
-
     const finalTotalValue = subtotalValue + shippingValue + vatValue;
 
     setSubtotal(subtotalValue);
     setShippingFee(shippingValue);
     setVatAmount(vatValue);
     setFinalTotal(finalTotalValue);
-
-
   };
 
   // Update totals when form fields are completed
@@ -265,170 +280,173 @@ const CheckoutPage = () => {
     shippingForm.country,
   ]);
 
-const createOrder = async () => {
-  setIsLoading(true);
+  const createOrder = async () => {
+    setIsLoading(true);
 
-  try {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      alert("Please login to continue");
-      setIsLoading(false);
-      return;
-    }
-
-    const validItems = checkoutProducts.filter(isValidProduct);
-    if (validItems.length === 0) {
-      alert("No valid products in cart");
-      setIsLoading(false);
-      return;
-    }
-
-    const items = validItems.map((item) => ({
-      productId: item.productId._id,
-      quantity: item.quantity,
-    }));
-
-    const shippingAddress = selectedAddress
-      ? {
-          firstName: selectedAddress.firstName,
-          lastName: selectedAddress.lastName,
-          email: selectedAddress.email,
-          phone: selectedAddress.phone,
-          address1: selectedAddress.street,
-          street: selectedAddress.street,
-          city: selectedAddress.city,
-          state: selectedAddress.state,
-          country: selectedAddress.country,
-          postalCode: selectedAddress.postalCode,
-        }
-      : {
-          firstName: shippingForm.firstName,
-          lastName: shippingForm.lastName,
-          email: shippingForm.email,
-          phone: shippingForm.phone,
-          address1: shippingForm.street,
-          street: shippingForm.street,
-          city: shippingForm.city,
-          state: shippingForm.state,
-          country: shippingForm.country,
-          postalCode: shippingForm.postalCode,
-        };
-
-    const billingAddress = billingSameAsShipping
-      ? { ...shippingAddress }
-      : {
-          firstName: billingForm.firstName,
-          lastName: billingForm.lastName,
-          email: billingForm.email,
-          phone: billingForm.phone,
-          address1: billingForm.street,
-          street: billingForm.street,
-          city: billingForm.city,
-          state: billingForm.state,
-          country: billingForm.country,
-          postalCode: billingForm.postalCode,
-        };
-
-    // Required field check
-    const requiredFields = [
-      "firstName",
-      "lastName",
-      "phone",
-      "email",
-      "street",
-      "city",
-      "state",
-      "country"
-    ];
-
-    for (let field of requiredFields) {
-      if (!shippingAddress[field]) {
-        alert("Please fill all required shipping fields");
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        alert("Please login to continue");
         setIsLoading(false);
         return;
       }
-    }
 
-    if (!billingSameAsShipping) {
+      const validItems = checkoutProducts.filter(isValidProduct);
+      if (validItems.length === 0) {
+        alert("No valid products in cart");
+        setIsLoading(false);
+        return;
+      }
+
+      // FIXED: Properly extract productId - THIS WAS THE MAIN ISSUE
+      const items = validItems.map((item) => {
+        let productId;
+        if (item.productId && item.productId._id) {
+          productId = item.productId._id;
+        } else if (typeof item.productId === 'string') {
+          productId = item.productId;
+        } else {
+          console.error("Invalid productId format:", item.productId);
+          throw new Error("Invalid product data in cart");
+        }
+        
+        return {
+          productId: productId,
+          quantity: item.quantity,
+        };
+      });
+
+      console.log("Order items being sent:", items);
+
+      const shippingAddress = selectedAddress
+        ? {
+            firstName: selectedAddress.firstName,
+            lastName: selectedAddress.lastName,
+            email: selectedAddress.email,
+            phone: selectedAddress.phone,
+            address1: selectedAddress.street,
+            street: selectedAddress.street,
+            city: selectedAddress.city,
+            state: selectedAddress.state,
+            country: selectedAddress.country,
+            postalCode: selectedAddress.postalCode,
+          }
+        : {
+            firstName: shippingForm.firstName,
+            lastName: shippingForm.lastName,
+            email: shippingForm.email,
+            phone: shippingForm.phone,
+            address1: shippingForm.street,
+            street: shippingForm.street,
+            city: shippingForm.city,
+            state: shippingForm.state,
+            country: shippingForm.country,
+            postalCode: shippingForm.postalCode,
+          };
+
+      const billingAddress = billingSameAsShipping
+        ? { ...shippingAddress }
+        : {
+            firstName: billingForm.firstName,
+            lastName: billingForm.lastName,
+            email: billingForm.email,
+            phone: billingForm.phone,
+            address1: billingForm.street,
+            street: billingForm.street,
+            city: billingForm.city,
+            state: billingForm.state,
+            country: billingForm.country,
+            postalCode: billingForm.postalCode,
+          };
+
+      // Required field check
+      const requiredFields = [
+        "firstName",
+        "lastName",
+        "phone",
+        "email",
+        "street",
+        "city",
+        "state",
+        "country"
+      ];
+
       for (let field of requiredFields) {
-        if (!billingAddress[field]) {
-          alert("Please fill all required billing fields");
+        if (!shippingAddress[field]) {
+          alert(`Please fill ${field} in shipping address`);
           setIsLoading(false);
           return;
         }
       }
-    }
 
-    const orderData = {
-      items,
-      shippingAddress,
-      billingAddress,
-      paymentMethod,
-      subtotal,
-      shippingFee,
-      total: finalTotal,
-      vatAmount,
-    };
-
-    if(paymentMethod=="stripe"){
-    const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_BASEURL}/order/create`,
-      orderData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      if (!billingSameAsShipping) {
+        for (let field of requiredFields) {
+          if (!billingAddress[field]) {
+            alert(`Please fill ${field} in billing address`);
+            setIsLoading(false);
+            return;
+          }
+        }
       }
-    );
 
-    const data = response.data;
+      const orderData = {
+        items,
+        shippingAddress,
+        billingAddress,
+        paymentMethod,
+        subtotal,
+        shippingFee,
+        total: finalTotal,
+        vatAmount,
+      };
 
-    if (!data.success) {
-      throw new Error(data.message || "Failed to create order");
-    }
+      console.log("Creating order with data:", orderData);
 
-    if (data.checkoutUrl) {
-      // Stripe or Tabby redirect
-      window.location.href = data.checkoutUrl;
-      return;
-    }
-
-    // If Order created without payment (ex: COD)
-    setStep("success");
-  }else if (paymentMethod=="tabby"){
-     const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_BASEURL}/order/tabby`,
-      orderData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      let endpoint;
+      if (paymentMethod === "stripe") {
+        endpoint = `${process.env.NEXT_PUBLIC_BASEURL}/order/create`;
+      } else if (paymentMethod === "tabby") {
+        endpoint = `${process.env.NEXT_PUBLIC_BASEURL}/order/tabby`;
+      } else {
+        alert("Invalid payment method");
+        setIsLoading(false);
+        return;
       }
-    );
 
-    const data = response.data;
+      const response = await axios.post(
+        endpoint,
+        orderData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    if (!data.success) {
-      throw new Error(data.message || "Failed to create order");
+      const data = response.data;
+      console.log("Order creation response:", data);
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to create order");
+      }
+
+      if (data.checkoutUrl) {
+        console.log("Redirecting to checkout URL:", data.checkoutUrl);
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+
+      setStep("success");
+
+    } catch (error) {
+      console.error("Order creation failed:", error);
+      console.error("Error details:", error.response?.data);
+      alert(error.response?.data?.message || error.message || "Failed to create order");
+    } finally {
+      setIsLoading(false);
     }
-
-    if (data.checkoutUrl) {
-      // Stripe or Tabby redirect
-      window.location.href = data.checkoutUrl;
-      return;
-    }
-  }
-
-  } catch (error) {
-    console.error("Order creation failed:", error);
-    alert(error.response?.data?.message || error.message);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   const handlePlaceOrder = () => {
     if (!privacyAccepted) {
@@ -455,8 +473,10 @@ const createOrder = async () => {
 
         // Get cart data
         const cartResult = await getCart(token);
+        console.log("Cart data received:", cartResult);
         setCheckoutProducts(cartResult.cart || []);
 
+        // Get shipping addresses
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BASEURL}/order/shipping-addresses`,
           {
@@ -465,7 +485,7 @@ const createOrder = async () => {
         );
 
         const data = res.data;
-        console.log(data, "addresses");
+        console.log("Addresses received:", data);
 
         if (data.success && data.addresses.length > 0) {
           setShippingAddresses(data.addresses);

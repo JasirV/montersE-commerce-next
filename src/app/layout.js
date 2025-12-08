@@ -5,6 +5,9 @@ import Providers from "./Providers";
 import { GlobalProvider } from "@/components/shared/context/GlobalContext";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { Analytics } from "@vercel/analytics/next"; 
+// Optional: Speed Insights
+// import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,12 +19,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// SITE URL — must be exactly correct
 const SITE_URL = "https://www.montres.ae";
 
-// ----------------------------
-// SITE-WIDE METADATA (Next.js)
-// ----------------------------
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Montres — Luxury Watches",
@@ -53,7 +52,6 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  // ORGANIZATION SCHEMA
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -76,7 +74,6 @@ export default function RootLayout({ children }) {
     ],
   };
 
-  // WEBSITE SCHEMA
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -92,18 +89,14 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        {/* Canonical */}
         <link rel="canonical" href={SITE_URL} />
 
-        {/* Hreflang */}
         <link rel="alternate" href={SITE_URL} hrefLang="en-US" />
         <link rel="alternate" href={SITE_URL} hrefLang="x-default" />
 
-        {/* Manifest & Icons */}
         <link rel="manifest" href="/site.webmanifest" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-        {/* JSON-LD */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
@@ -121,6 +114,12 @@ export default function RootLayout({ children }) {
         <Providers>
           <GlobalProvider>{children}</GlobalProvider>
         </Providers>
+
+        {/* Optional Speed Insights */}
+        {/* <SpeedInsights /> */}
+
+        {/* Vercel Analytics */}
+        <Analytics />
       </body>
     </html>
   );

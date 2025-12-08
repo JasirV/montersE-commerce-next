@@ -357,40 +357,41 @@ export default function JustForYou() {
     }
   }, []);
 
-  // 👉 Fetch API
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+// 👉 Fetch API
+useEffect(() => {
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const url = userId
-          ? `https://api.montres.ae/api/recommend/just-for-you/${userId}`
-          : `https://api.montres.ae/api/recommend/just-for-you`;
+      const BASE_URL = process.env.NEXT_PUBLIC_BASEURL;
 
-        const res = await axios.get(url);
+      const url = userId
+        ? `${BASE_URL}/recommend/just-for-you/${userId}`
+        : `${BASE_URL}/recommend/just-for-you`;
 
-        // Process products to ensure images are properly formatted
-        const processedProducts = (res.data || []).map((product) => ({
-          ...product,
-          // Ensure images array exists and is properly formatted
-          images: Array.isArray(product.images) ? product.images : [],
-          // Ensure productId exists
-          productId: product._id, // <-- FIXED
-        }));
-        console.log(processedProducts, "processedProducts");
+      const res = await axios.get(url);
 
-        setProducts(processedProducts);
-        setLoading(false);
-      } catch (error) {
-        console.error("API Error:", error);
-        setError("Failed to load products. Please try again later.");
-        setLoading(false);
-      }
-    };
+      // Process products to ensure images are properly formatted
+      const processedProducts = (res.data || []).map((product) => ({
+        ...product,
+        images: Array.isArray(product.images) ? product.images : [],
+        productId: product._id || product.id, // handles both
+      }));
 
-    fetchProducts();
-  }, [userId]);
+      console.log("processedProducts", processedProducts);
+
+      setProducts(processedProducts);
+      setLoading(false);
+    } catch (error) {
+      console.error("API Error:", error);
+      setError("Failed to load products. Please try again later.");
+      setLoading(false);
+    }
+  };
+
+  fetchProducts();
+}, [userId]);
 
   // 👉 Enhanced Add to cart with animation
   const handleAddToCart = async (product) => {

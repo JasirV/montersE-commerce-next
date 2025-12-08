@@ -5,6 +5,7 @@ import React, {
   Suspense,
   useEffect,
   useContext,
+  useRef,
 } from "react";
 import {
   FaHeart,
@@ -25,6 +26,10 @@ import {
   FaTag,
   FaCube,
   FaCheck,
+  FaSearchPlus,
+  FaSearchMinus,
+  FaCompress,
+  FaExpand,
 } from "react-icons/fa";
 import {
   FaFacebookF,
@@ -91,6 +96,15 @@ const LeatherBagsDetails = () => {
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
+  // Image zoom states
+  const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [showZoomModal, setShowZoomModal] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const imageContainerRef = useRef(null);
+  const imageRef = useRef(null);
+
   // Check if product is sold out
   const isSoldOut = product?.stockQuantity === 0;
 
@@ -130,8 +144,27 @@ const LeatherBagsDetails = () => {
   // Memoize images array to prevent unnecessary re-renders
   const images = useMemo(() => product?.images || [], [product]);
 
-  // Thumbnail navigation - Side layout specific
-  const visibleThumbnails = 4;
+  // Responsive thumbnail count
+  const getVisibleThumbnails = () => {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth < 640) return 4; // Mobile
+      if (window.innerWidth < 1024) return 5; // Tablet
+      return 4; // Desktop
+    }
+    return 4;
+  };
+
+  const [visibleThumbnails, setVisibleThumbnails] = useState(getVisibleThumbnails());
+
+  useEffect(() => {
+    const handleResize = () => {
+      setVisibleThumbnails(getVisibleThumbnails());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const maxThumbnailIndex = Math.max(0, images.length - visibleThumbnails);
 
   const handleThumbnailNavigate = (direction) => {
@@ -146,6 +179,94 @@ const LeatherBagsDetails = () => {
     thumbnailStartIndex,
     thumbnailStartIndex + visibleThumbnails
   );
+
+  // Image Zoom Functions
+  const handleImageClick = (e) => {
+    if (window.innerWidth < 768) {
+      // On mobile, open zoom modal
+      setShowZoomModal(true);
+    } else {
+      // On desktop, toggle zoom
+      if (!isZoomed) {
+        const rect = imageContainerRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setPosition({ x, y });
+        setZoom(2);
+        setIsZoomed(true);
+      } else {
+        resetZoom();
+      }
+    }
+  };
+
+  const resetZoom = () => {
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+    setIsZoomed(false);
+  };
+
+  const handleWheel = (e) => {
+    if (window.innerWidth >= 768) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.2 : 0.2;
+      const newZoom = Math.min(Math.max(zoom + delta, 1), 5);
+      setZoom(newZoom);
+      setIsZoomed(newZoom > 1);
+    }
+  };
+
+  const handleTouchStart = (e) => {
+    if (window.innerWidth < 768 && showZoomModal) {
+      setTouchStart({
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      });
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStart || !showZoomModal) return;
+    
+    const touchCurrent = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+    
+    const deltaX = touchStart.x - touchCurrent.x;
+    const deltaY = touchStart.y - touchCurrent.y;
+    
+    setPosition(prev => ({
+      x: prev.x - deltaX / 2,
+      y: prev.y - deltaY / 2,
+    }));
+    
+    setTouchStart(touchCurrent);
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStart(null);
+  };
+
+  const handleTouchPinch = (e) => {
+    if (e.touches.length === 2 && showZoomModal) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      
+      const distance = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) +
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      );
+      
+      if (touchStart && touchStart.distance) {
+        const scaleChange = distance / touchStart.distance;
+        const newZoom = Math.min(Math.max(zoom * scaleChange, 1), 5);
+        setZoom(newZoom);
+      }
+      
+      setTouchStart({ distance });
+    }
+  };
 
   // Fetch user's wishlists and check if product is in wishlist
   useEffect(() => {
@@ -367,6 +488,7 @@ const LeatherBagsDetails = () => {
   // Handle image selection
   const handleImageSelect = (image) => {
     setSelectedImage(image.url || image);
+    resetZoom();
   };
 
   // Subscribe to restock notifications
@@ -542,6 +664,112 @@ const LeatherBagsDetails = () => {
     if (!price) return "0";
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
+
+  // Zoom Modal Component
+  const ZoomModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-90 z-[9999] flex flex-col">
+      {/* Header */}
+      <div className="flex justify-between items-center p-4 bg-black bg-opacity-50">
+        <button
+          onClick={() => {
+            setShowZoomModal(false);
+            resetZoom();
+          }}
+          className="text-white text-lg p-2"
+        >
+          ✕
+        </button>
+        <div className="text-white text-sm">
+          Pinch to zoom • Drag to pan
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setZoom(prev => Math.max(1, prev - 0.5))}
+            className="text-white p-2 bg-black bg-opacity-50 rounded-full"
+          >
+            <FaSearchMinus />
+          </button>
+          <span className="text-white text-sm w-12 text-center">
+            {Math.round(zoom * 100)}%
+          </span>
+          <button
+            onClick={() => setZoom(prev => Math.min(5, prev + 0.5))}
+            className="text-white p-2 bg-black bg-opacity-50 rounded-full"
+          >
+            <FaSearchPlus />
+          </button>
+          <button
+            onClick={resetZoom}
+            className="text-white p-2 bg-black bg-opacity-50 rounded-full"
+          >
+            <FaCompress />
+          </button>
+        </div>
+      </div>
+
+      {/* Image Container */}
+      <div 
+        className="flex-1 flex items-center justify-center overflow-hidden touch-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={(e) => {
+          handleTouchMove(e);
+          handleTouchPinch(e);
+        }}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div
+          className="relative"
+          style={{
+            transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
+            transition: zoom === 1 ? 'transform 0.3s ease' : 'none',
+            maxWidth: '100%',
+            maxHeight: '100%',
+          }}
+        >
+          <Image
+            src={selectedImage || product.image || "/placeholder-image.jpg"}
+            alt={product?.name || "Leather Bag Image"}
+            unoptimized
+            width={800}
+            height={800}
+            className="object-contain max-w-full max-h-[80vh]"
+            priority
+          />
+        </div>
+      </div>
+
+      {/* Thumbnails */}
+      {images.length > 0 && (
+        <div className="p-4 bg-black bg-opacity-50 overflow-x-auto">
+          <div className="flex gap-2 justify-center min-w-max">
+            {images.map((image, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setSelectedImage(image.url || image);
+                  resetZoom();
+                }}
+                className={`flex-shrink-0 border-2 rounded-lg transition-all duration-200 ${
+                  selectedImage === (image.url || image)
+                    ? "border-red-500 shadow-lg scale-105"
+                    : "border-gray-600 hover:border-red-300"
+                }`}
+              >
+                <Image
+                  src={image.url || image}
+                  alt={`Thumbnail ${idx + 1}`}
+                  unoptimized
+                  width={60}
+                  height={60}
+                  className="w-14 h-14 object-cover rounded-md"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   // Product Specification Component based on ProductSpecification
   const ProductSpecification = () => {
@@ -869,6 +1097,8 @@ const LeatherBagsDetails = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen">
+      {showZoomModal && <ZoomModal />}
+      
       {/* Main Content */}
       <div className="max-w-7xl mx-auto py-3 sm:py-4 px-2 xs:px-3 sm:px-4">
         <div className="bg-white rounded-lg sm:rounded-xl shadow-sm overflow-hidden">
@@ -1013,32 +1243,123 @@ const LeatherBagsDetails = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 md:p-6">
-            {/* Left Column - Images with Side Thumbnails */}
-            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
-              {/* Thumbnails Column - Side Layout */}
-              {images.length > 0 && (
-                <div className="flex lg:flex-col order-2 lg:order-1 gap-2 lg:gap-3">
-                  {/* Navigation Arrows for Vertical Layout */}
-                  {images.length > visibleThumbnails && (
-                    <>
-                      <button
-                        onClick={() => handleThumbnailNavigate("prev")}
-                        disabled={thumbnailStartIndex === 0}
-                        className={`hidden lg:flex items-center justify-center w-7 h-7 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors mx-auto ${
-                          thumbnailStartIndex === 0
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                      >
-                        <FaChevronLeft size={12} className="text-gray-600" />
-                      </button>
+            {/* Left Column - Images */}
+            <div className="relative">
+              {/* Main Image Container with Zoom */}
+              <div 
+                ref={imageContainerRef}
+                className={`relative w-full h-64 xs:h-72 sm:h-80 md:h-96 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden border-2 border-gray-100 cursor-${window.innerWidth >= 768 ? (isZoomed ? 'zoom-out' : 'zoom-in') : 'pointer'}`}
+                onClick={handleImageClick}
+                onWheel={handleWheel}
+                onMouseLeave={resetZoom}
+              >
+                <div
+                  ref={imageRef}
+                  className="absolute inset-0 flex items-center justify-center"
+                  style={{
+                    transform: `scale(${zoom}) translate(${position.x}%, ${position.y}%)`,
+                    transformOrigin: `${position.x}% ${position.y}%`,
+                    transition: zoom === 1 ? 'transform 0.3s ease' : 'none',
+                  }}
+                >
+                  <Image
+                    src={selectedImage || product.image || "/placeholder-image.jpg"}
+                    alt={product.name || "Leather Bag Image"}
+                    unoptimized
+                    width={600}
+                    height={600}
+                    className="object-contain w-full h-full p-2 select-none"
+                    priority
+                    draggable="false"
+                  />
+                </div>
 
-                      {/* Mobile horizontal navigation */}
-                      <div className="flex lg:hidden gap-2 w-full justify-center">
+                {/* Zoom Controls for Desktop */}
+                {window.innerWidth >= 768 && (
+                  <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-white bg-opacity-80 backdrop-blur-sm rounded-full p-2 shadow-lg">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setZoom(prev => Math.max(1, prev - 0.5));
+                        setIsZoomed(true);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      disabled={zoom <= 1}
+                    >
+                      <FaSearchMinus className="text-gray-700" size={14} />
+                    </button>
+                    <span className="text-xs font-medium text-gray-700 min-w-[40px] text-center">
+                      {Math.round(zoom * 100)}%
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setZoom(prev => Math.min(5, prev + 0.5));
+                        setIsZoomed(true);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      disabled={zoom >= 5}
+                    >
+                      <FaSearchPlus className="text-gray-700" size={14} />
+                    </button>
+                    {isZoomed && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          resetZoom();
+                        }}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors ml-1"
+                      >
+                        <FaCompress className="text-gray-700" size={14} />
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Mobile Zoom Hint */}
+                {window.innerWidth < 768 && (
+                  <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
+                    Tap to zoom
+                  </div>
+                )}
+
+                {/* Image Counter */}
+                {images.length > 0 && (
+                  <div className="absolute top-3 right-3 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                    {images.findIndex(
+                      (img) => (img.url || img) === selectedImage
+                    ) + 1}{" "}
+                    / {images.length}
+                  </div>
+                )}
+              </div>
+
+              {/* Enhanced Thumbnails - Responsive */}
+              {images.length > 0 && (
+                <div className="mt-3 sm:mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-gray-700">
+                      More Views
+                    </div>
+                    {images.length > visibleThumbnails && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <span>
+                          {thumbnailStartIndex + 1}-{Math.min(thumbnailStartIndex + visibleThumbnails, images.length)}
+                        </span>
+                        <span className="text-gray-400">|</span>
+                        <span>Total: {images.length}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    {/* Navigation Arrows */}
+                    {images.length > visibleThumbnails && (
+                      <>
                         <button
                           onClick={() => handleThumbnailNavigate("prev")}
                           disabled={thumbnailStartIndex === 0}
-                          className={`flex items-center justify-center w-7 h-7 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors ${
+                          className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 z-10 w-8 h-8 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center justify-center ${
                             thumbnailStartIndex === 0
                               ? "opacity-50 cursor-not-allowed"
                               : ""
@@ -1049,7 +1370,7 @@ const LeatherBagsDetails = () => {
                         <button
                           onClick={() => handleThumbnailNavigate("next")}
                           disabled={thumbnailStartIndex >= maxThumbnailIndex}
-                          className={`flex items-center justify-center w-7 h-7 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors ${
+                          className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1 z-10 w-8 h-8 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center justify-center ${
                             thumbnailStartIndex >= maxThumbnailIndex
                               ? "opacity-50 cursor-not-allowed"
                               : ""
@@ -1057,97 +1378,57 @@ const LeatherBagsDetails = () => {
                         >
                           <FaChevronRight size={12} className="text-gray-600" />
                         </button>
-                      </div>
-                    </>
-                  )}
+                      </>
+                    )}
 
-                  {/* Thumbnails Container */}
-                  <div className="flex lg:flex-col gap-2 lg:gap-3 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto scrollbar-hide pb-1">
-                    {visibleImages.map((image, idx) => (
-                      <div
-                        key={thumbnailStartIndex + idx}
-                        className={`flex-shrink-0 cursor-pointer border-2 rounded-lg transition-all duration-200 ${
-                          selectedImage === (image.url || image)
-                            ? "border-red-500 shadow-lg scale-105"
-                            : "border-gray-200 hover:border-red-300"
-                        }`}
-                        onClick={() => handleImageSelect(image)}
-                      >
-                        <Image
-                          src={image.url || image}
-                          alt={`${product.name || "Leather Bag"} thumbnail ${
-                            thumbnailStartIndex + idx + 1
+                    {/* Thumbnails Grid - Responsive */}
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-4 gap-2 sm:gap-3 px-8 sm:px-0">
+                      {visibleImages.map((image, idx) => (
+                        <div
+                          key={thumbnailStartIndex + idx}
+                          className={`relative aspect-square cursor-pointer rounded-lg sm:rounded-xl border-2 transition-all duration-200 overflow-hidden ${
+                            selectedImage === (image.url || image)
+                              ? "border-red-500 shadow-lg scale-105"
+                              : "border-gray-200 hover:border-red-300"
                           }`}
-                          unoptimized
-                          width={70}
-                          height={70}
-                          className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 object-cover rounded-md"
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Bottom Arrow for Vertical Layout */}
-                  {images.length > visibleThumbnails && (
-                    <button
-                      onClick={() => handleThumbnailNavigate("next")}
-                      disabled={thumbnailStartIndex >= maxThumbnailIndex}
-                      className={`hidden lg:flex items-center justify-center w-7 h-7 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50 transition-colors mx-auto ${
-                        thumbnailStartIndex >= maxThumbnailIndex
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                      }`}
-                    >
-                      <FaChevronRight size={12} className="text-gray-600" />
-                    </button>
-                  )}
-
-                  {/* Thumbnail Counter */}
-                  {images.length > 0 && (
-                    <div className="hidden lg:block text-center mt-1">
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                        {thumbnailStartIndex + 1}-
-                        {Math.min(
-                          thumbnailStartIndex + visibleThumbnails,
-                          images.length
-                        )}{" "}
-                        of {images.length}
-                      </span>
+                          onClick={() => handleImageSelect(image)}
+                        >
+                          <Image
+                            src={image.url || image}
+                            alt={`Thumbnail ${thumbnailStartIndex + idx + 1}`}
+                            unoptimized
+                            width={100}
+                            height={100}
+                            className="object-cover w-full h-full hover:scale-110 transition-transform duration-200"
+                          />
+                          {/* Active indicator */}
+                          {selectedImage === (image.url || image) && (
+                            <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
+
+                    {/* View All Button for Mobile */}
+                    {images.length > visibleThumbnails && window.innerWidth < 768 && (
+                      <div className="text-center mt-3">
+                        <button
+                          onClick={() => {
+                            // Scroll to see all thumbnails
+                            const thumbnailsContainer = document.querySelector('.thumbnails-container');
+                            if (thumbnailsContainer) {
+                              thumbnailsContainer.scrollLeft = 0;
+                            }
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          View all {images.length} images
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-
-              {/* Main Image Container */}
-              <div className="flex-1 order-1 lg:order-2">
-                <div
-                  className={`w-full h-60 xs:h-72 sm:h-80 md:h-96 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center border-2 border-gray-100`}
-                >
-                  <Image
-                    src={
-                      selectedImage || product.image || "/placeholder-image.jpg"
-                    }
-                    alt={product.name || "Leather Bag Image"}
-                    unoptimized
-                    width={600}
-                    height={600}
-                    className="object-contain w-full h-full p-2"
-                    priority
-                  />
-                </div>
-
-                {/* Image Counter for Mobile */}
-                {images.length > 0 && (
-                  <div className="lg:hidden text-center mt-2">
-                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
-                      {images.findIndex(
-                        (img) => (img.url || img) === selectedImage
-                      ) + 1}{" "}
-                      / {images.length}
-                    </span>
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Right Column - Details */}
@@ -1577,7 +1858,7 @@ const ProductDescription = ({ description, shortDescription, additionalTitle }) 
   );
 };
 
-// Add custom CSS for slide-up animation
+// Add custom CSS for slide-up animation and zoom
 const style = `
   @keyframes slide-up {
     from {
@@ -1617,6 +1898,59 @@ const style = `
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  
+  /* Touch-friendly buttons */
+  button, 
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Prevent text selection on images */
+  .select-none {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+  
+  /* Smooth transitions for zoom */
+  .transition-transform {
+    transition: transform 0.2s ease;
+  }
+  
+  /* Zoom cursor */
+  .cursor-zoom-in {
+    cursor: zoom-in;
+  }
+  
+  .cursor-zoom-out {
+    cursor: zoom-out;
+  }
+  
+  /* Modal animations */
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .modal-enter {
+    animation: fade-in 0.2s ease-out;
+  }
+  
+  /* Thumbnail hover effects */
+  .thumbnail-hover {
+    transition: all 0.2s ease;
+  }
+  
+  .thumbnail-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  /* Touch-friendly scroll */
+  .touch-scroll {
+    -webkit-overflow-scrolling: touch;
   }
 `;
 

@@ -58,7 +58,7 @@ const LoginForm = () => {
       }).showToast();
 
       // Redirect to dashboard or home page after successful login
-      router.push("/dashboard");
+      router.push("/");
     } catch (err) {
       Toastify({
         text: err.response?.data?.message || "Login failed!",

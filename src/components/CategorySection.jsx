@@ -16,7 +16,7 @@ const CategorySectionWithImages = () => {
       id: 1,
       name: "BRANDS",
       image: BrandImg,
-      path: "/shop-by-brands"
+      path: "/shop"
 
     },
     {

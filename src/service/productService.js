@@ -404,6 +404,8 @@ export async function getHandBags(params = {}) {
   }
 }
 
+
+
 export async function AccessoriesBycategory(
   category,
   { page = 1, limit = 15 } = {}
@@ -416,6 +418,8 @@ export async function AccessoriesBycategory(
     return { data: null, error, isLoading: false };
   }
 }
+
+
 
 export const addToCart = async (token, productId, quantity = 1) => {
   console.log(productId);
@@ -447,6 +451,9 @@ export const getCart = async (token) => {
     throw error.response?.data || { message: "Something went wrong" };
   }
 };
+
+
+
 
 // Remove product from cart
 export const removeFromCart = async (token, productId) => {
@@ -484,6 +491,7 @@ export const updateCart = async (token, items) => {
   }
 };
 
+
 export const Recommendations = async (token) => {
   try {
     const res = await api.get("/cart/recommendations", {
@@ -509,6 +517,7 @@ export async function fetchProductAll({ search = "" } = {}) {
     return { data: null, error, isLoading: false };
   }
 }
+
 
 
 export async function getHomeProductGrid() {
