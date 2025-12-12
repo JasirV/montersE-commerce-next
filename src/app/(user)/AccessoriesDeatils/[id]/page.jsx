@@ -433,6 +433,7 @@ const RestockNotification = ({
                   }
                   alt={product.name}
                   width={48}
+                  unoptimized
                   height={48}
                   className="object-cover w-full h-full"
                 />
@@ -742,6 +743,7 @@ const ZoomModal = ({
                   src={image.url || image}
                   alt={`Thumbnail ${idx + 1}`}
                   width={60}
+                  unoptimized
                   height={60}
                   className="w-14 h-14 object-cover rounded-md"
                 />
@@ -1751,6 +1753,7 @@ const AccessoriesDetails = () => {
                     alt={product.name || "Accessory Image"}
                     width={600}
                     height={600}
+                    unoptimized
                     className="object-contain w-full h-full p-2 select-none"
                     priority
                     draggable="false"
@@ -1899,6 +1902,7 @@ const AccessoriesDetails = () => {
                             src={image.url || image}
                             alt={`Thumbnail ${thumbnailStartIndex + idx + 1}`}
                             width={100}
+                            unoptimized
                             height={100}
                             className="object-cover w-full h-full hover:scale-110 transition-transform duration-200"
                           />
@@ -1956,6 +1960,7 @@ const AccessoriesDetails = () => {
                         src={newCurrency}
                         alt="Currency"
                         width={24}
+                        unoptimized
                         height={24}
                         className="mr-1 sm:mr-2 w-5 h-5 sm:w-7 sm:h-7"
                       />
@@ -1970,6 +1975,7 @@ const AccessoriesDetails = () => {
                             <Image
                               src={newCurrency}
                               alt="Currency"
+                              unoptimized
                               width={18}
                               height={18}
                               className="mr-1 w-4 h-4 sm:w-5 sm:h-5"
