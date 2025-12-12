@@ -372,109 +372,97 @@ const ProductCard = ({ product }) => {
         )
       : null;
 
-  // Check if product is a bag (category check)
-  const isBagCategory = () => {
-    // Check multiple ways a product might be categorized as a bag
-    if (product.leatherMainCategory?.toLowerCase().includes('bag')) return true;
-    if (product.subCategory?.toLowerCase().includes('bag')) return true;
-    if (product.category?.toLowerCase().includes('leather')) return true;
-    if (product.material?.toLowerCase().includes('leather')) return true;
-    if (product.name?.toLowerCase().includes('bag')) return true;
-    
-    return false;
-  };
+ // ==============================================
+// CATEGORY CHECK HELPERS
+// ==============================================
 
-  // Fetch user's wishlists
-  useEffect(() => {
-    const fetchWishlists = async () => {
-      try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-          console.log("No token found");
-          return;
-        }
+// Check if product belongs to BAG category
+const isBagCategory = () => {
+  const p = product;
 
-        setIsLoading(true);
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASEURL}/wishlists`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+  if (p.leatherMainCategory?.toLowerCase().includes("bag")) return true;
+  if (p.subCategory?.toLowerCase().includes("bag")) return true;
+  if (p.category?.toLowerCase().includes("bag")) return true;
+  if (p.material?.toLowerCase().includes("leather")) return true;
+  if (p.name?.toLowerCase().includes("bag")) return true;
 
-        if (res.data && res.data.wishlists?.length > 0) {
-          const defaultWishlist =
-            res.data.wishlists.find((w) => w.isDefault) ||
-            res.data.wishlists[0];
-          setDefaultWishlistId(defaultWishlist.id || defaultWishlist._id);
-        } else {
-          console.log("No wishlists found or empty response");
-          setDefaultWishlistId(null);
-        }
-      } catch (error) {
-        console.error("Error fetching wishlists:", error);
-        setDefaultWishlistId(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  return false;
+};
 
-    fetchWishlists();
-  }, []);
+// Check if product belongs to ACCESSORIES category
+const isAccessoriesCategory = () => {
+  const category = product.category?.toLowerCase();
+  const subCategory = product.subCategory?.toLowerCase();
+  const main = product.leatherMainCategory?.toLowerCase();
 
-  // Set user email if available
-  useEffect(() => {
-    if (user?.email) {
-      setEmail(user.email);
-    }
-  }, [user]);
+  if (category === "accessories") return true;
+  if (subCategory === "accessories") return true;
+  if (main === "accessories") return true;
 
-  // Handle click on product card
-  const handleProductClick = () => {
-    if (!productId) {
-      Toastify({
-        text: "Product information is incomplete",
-        duration: 3000,
-        gravity: "bottom",
-        position: "center",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
-      return;
-    }
+  return false;
+};
 
-    if (isBagCategory()) {
-      // Route to LeatherBagsDetails for bags
-      router.push(`/LeatherBagsDetails/${productId}`);
-    } else {
-      // Route to regular ProductDetailPage for other products
-      router.push(`/ProductDetailPage/${productId}`);
-    }
-  };
 
-  // Handle view details button click
-  const handleViewDetails = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!productId) {
-      Toastify({
-        text: "Cannot view details - product information is incomplete",
-        duration: 3000,
-        gravity: "bottom",
-        position: "center",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
-      return;
-    }
-    
-    handleProductClick();
-  };
+// ==============================================
+// PRODUCT CLICK HANDLER
+// ==============================================
+
+const handleProductClick = () => {
+  if (!productId) {
+    Toastify({
+      text: "Product information is incomplete",
+      duration: 3000,
+      gravity: "bottom",
+      position: "center",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+      },
+    }).showToast();
+    return;
+  }
+
+  // Priority 1: BAG CATEGORY
+  if (isBagCategory()) {
+    router.push(`/LeatherBagsDetails/${productId}`);
+    return;
+  }
+
+  // Priority 2: ACCESSORIES
+  if (isAccessoriesCategory()) {
+    router.push(`/AccessoriesDeatils/${productId}`);
+    return;
+  }
+
+  // Default: Normal product
+  router.push(`/ProductDetailPage/${productId}`);
+};
+
+
+// ==============================================
+// VIEW DETAILS BUTTON HANDLER
+// ==============================================
+
+const handleViewDetails = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (!productId) {
+    Toastify({
+      text: "Cannot view details - product information is incomplete",
+      duration: 3000,
+      gravity: "bottom",
+      position: "center",
+      close: true,
+      style: {
+        background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+      },
+    }).showToast();
+    return;
+  }
+
+  handleProductClick();
+};
 
   // Subscribe to restock notifications
   const handleRestockSubscribe = async () => {

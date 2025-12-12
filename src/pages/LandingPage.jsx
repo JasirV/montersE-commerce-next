@@ -5,7 +5,6 @@ import Landing from "@/components/shared/BannerPage";
 import Home from "@/pages/Home";
 import WatchBrand from "@/layouts/WatchBrand";
 import Form from "@/components/ui/WatheForm";
-import JustforyouWatch from "@/components/ui/JustforyouWatch";
 import PremiumBrands from "@/layouts/PremiumBrands";
 import Services from "@/components/ui/Services";
 import Footer from "@/components/shared/Footer";
@@ -13,7 +12,6 @@ import ChatRobot from "@/components/ui/ChatRobot";
 import Watch from "@/layouts/Watch";
 import "../Mobile/responsive.css";
 import NewsletterModal from "@/components/modals/newsletterModal";
-import CategorySectionWithImages from "@/components/CategorySection";
 
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -53,13 +51,9 @@ export default function IndexPage() {
         onClose={() => setIsModalOpen(false)} 
       />
       <Landing />
-      <div className="flex md:hidden justify-center">
-      <CategorySectionWithImages/>
-      </div>
       <Home />
       <WatchBrand />
       <Form id="watch-form" />
-      <JustforyouWatch />
       <PremiumBrands />
       <Watch />
       <Services />

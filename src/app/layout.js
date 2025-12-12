@@ -6,8 +6,6 @@ import { GlobalProvider } from "@/components/shared/context/GlobalContext";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { Analytics } from "@vercel/analytics/next";
-// Optional: Speed Insights
-// import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,14 +21,29 @@ const SITE_URL = "https://www.montres.ae";
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
+
   title: "Montres — Luxury Watches",
   description:
     "Montres — curated selection of authentic luxury watches. Worldwide shipping. Authenticity guaranteed.",
 
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: [
+      { url: "/my-app/public/favicon.ico", sizes: "any" },
+      {
+        url: "/my-app/public/favicon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
+      {
+        url: "/my-app/public/favicon-16x16.png",
+        sizes: "16x16",
+        type: "image/png",
+      },
+    ],
+    apple: "/my-app/public/apple-touch-icon.png",
   },
+
+  manifest: "/site.webmanifest",
 
   openGraph: {
     type: "website",
@@ -52,80 +65,52 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  const organizationJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "Montres",
-    url: SITE_URL,
-    logo: `${SITE_URL}/logo.png`,
-    sameAs: [
-      "https://www.facebook.com/Montres.ae",
-      "https://www.instagram.com/montres.ae",
-      "https://www.tiktok.com/@montres.ae",
-    ],
-    contactPoint: [
-      {
-        "@type": "ContactPoint",
-        telephone: "+97142671124",
-        contactType: "customer service",
-        areaServed: "Worldwide",
-        availableLanguage: ["English", "Arabic"],
-      },
-    ],
-  };
-
-  const websiteJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    url: SITE_URL,
-    name: "Montres",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${SITE_URL}/search?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
-  };
-
   return (
     <html lang="en">
       <head>
+        {/* Canonical URL */}
         <link rel="canonical" href={SITE_URL} />
 
-        <link rel="alternate" href={SITE_URL} hrefLang="en-US" />
-        <link rel="alternate" href={SITE_URL} hrefLang="x-default" />
+        {/* Apple touch icon */}
+        <link
+          rel="apple-touch-icon"
+          href="/my-app/public/apple-touch-icon.png"
+          sizes="180x180"
+        />
 
+        {/* Favicon PNGs */}
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/my-app/public/favicon-32x32.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/my-app/public/favicon-16x16.png"
+        />
+
+        {/* Manifest */}
         <link rel="manifest" href="/site.webmanifest" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
+        {/* JSON-LD */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-        />
-
-        {/* Matomo Script */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-        var _paq = window._paq = window._paq || [];
-        _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
-        _paq.push(["setCookieDomain", "*.www.montres.ae"]);
-        _paq.push(["setDomains", ["*.www.montres.ae"]]);
-        _paq.push(['trackPageView']);
-        _paq.push(['enableLinkTracking']);
-        (function() {
-          var u="https://montresae.matomo.cloud/";
-          _paq.push(['setTrackerUrl', u+'matomo.php']);
-          _paq.push(['setSiteId', '1']);
-          var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-          g.async=true; g.src='https://cdn.matomo.cloud/montresae.matomo.cloud/matomo.js'; s.parentNode.insertBefore(g,s);
-        })();
-      `,
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Montres",
+              url: SITE_URL,
+              logo: `${SITE_URL}/logo.png`,
+              sameAs: [
+                "https://www.facebook.com/Montres.ae",
+                "https://www.instagram.com/montres.ae",
+                "https://www.tiktok.com/@montres.ae",
+              ],
+            }),
           }}
         />
       </head>
@@ -134,14 +119,11 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen overflow-x-hidden overflow-y-auto`}
       >
         <ToastContainer />
+
         <Providers>
           <GlobalProvider>{children}</GlobalProvider>
         </Providers>
 
-        {/* Optional Speed Insights */}
-        {/* <SpeedInsights /> */}
-
-        {/* Vercel Analytics */}
         <Analytics />
       </body>
     </html>

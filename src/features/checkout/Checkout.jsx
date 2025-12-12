@@ -14,7 +14,9 @@ import Image from "next/image";
 import { getCart } from "@/service/productService";
 import axios from "axios";
 import ShippingTermsModal from "./ShippingTermsModal";
-import TabbyLogo from '../../assets/Tabby logo.png'
+import TabbyLogo from "../../assets/Tabby logo.png"
+import TamaraLogo from "../../assets/Tamara.jpeg"; 
+
 
 const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("stripe");
@@ -66,20 +68,18 @@ const CheckoutPage = () => {
     return product.salePrice || product.price || 0;
   }, []);
 
-  
   // Safe product data checker
   const isValidProduct = useCallback((item) => {
     if (!item) return false;
-    
+
     // Check if we have a productId
-    const hasProductId = (
-      (item.productId && item.productId._id) || 
-      (typeof item.productId === 'string')
-    );
-    
+    const hasProductId =
+      (item.productId && item.productId._id) ||
+      typeof item.productId === "string";
+
     // Check if we have quantity
-    const hasQuantity = typeof item.quantity === 'number' && item.quantity > 0;
-    
+    const hasQuantity = typeof item.quantity === "number" && item.quantity > 0;
+
     return hasProductId && hasQuantity;
   }, []);
 
@@ -124,29 +124,31 @@ const CheckoutPage = () => {
 
       // Filter valid items only
       const validItems = checkoutProducts.filter(isValidProduct);
-      
+
       if (validItems.length === 0) {
         calculateTotalsFallback();
         return;
       }
 
       // FIX: Extract productId properly
-      const items = validItems.map((item) => {
-        let productId;
-        if (item.productId && item.productId._id) {
-          productId = item.productId._id;
-        } else if (typeof item.productId === 'string') {
-          productId = item.productId;
-        } else {
-          console.error("Invalid productId format:", item.productId);
-          return null;
-        }
-        
-        return {
-          productId: productId,
-          quantity: item.quantity,
-        };
-      }).filter(item => item !== null); // Remove null items
+      const items = validItems
+        .map((item) => {
+          let productId;
+          if (item.productId && item.productId._id) {
+            productId = item.productId._id;
+          } else if (typeof item.productId === "string") {
+            productId = item.productId;
+          } else {
+            console.error("Invalid productId format:", item.productId);
+            return null;
+          }
+
+          return {
+            productId: productId,
+            quantity: item.quantity,
+          };
+        })
+        .filter((item) => item !== null); // Remove null items
 
       if (items.length === 0) {
         calculateTotalsFallback();
@@ -241,7 +243,7 @@ const CheckoutPage = () => {
   // Fixed fallback calculation
   const calculateTotalsFallback = () => {
     const validItems = checkoutProducts.filter(isValidProduct);
-    
+
     const cartTotal = validItems.reduce((total, item) => {
       const price = getProductPrice(item.productId);
       return total + price * item.quantity;
@@ -303,13 +305,13 @@ const CheckoutPage = () => {
         let productId;
         if (item.productId && item.productId._id) {
           productId = item.productId._id;
-        } else if (typeof item.productId === 'string') {
+        } else if (typeof item.productId === "string") {
           productId = item.productId;
         } else {
           console.error("Invalid productId format:", item.productId);
           throw new Error("Invalid product data in cart");
         }
-        
+
         return {
           productId: productId,
           quantity: item.quantity,
@@ -368,7 +370,7 @@ const CheckoutPage = () => {
         "street",
         "city",
         "state",
-        "country"
+        "country",
       ];
 
       for (let field of requiredFields) {
@@ -413,16 +415,12 @@ const CheckoutPage = () => {
         return;
       }
 
-      const response = await axios.post(
-        endpoint,
-        orderData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await axios.post(endpoint, orderData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       const data = response.data;
       console.log("Order creation response:", data);
@@ -438,11 +436,14 @@ const CheckoutPage = () => {
       }
 
       setStep("success");
-
     } catch (error) {
       console.error("Order creation failed:", error);
       console.error("Error details:", error.response?.data);
-      alert(error.response?.data?.message || error.message || "Failed to create order");
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to create order"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -1015,7 +1016,8 @@ const CheckoutPage = () => {
                             <div className="text-right flex-shrink-0 ml-3">
                               <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
                                 {(
-                                  getProductPrice(item.productId) * item.quantity
+                                  getProductPrice(item.productId) *
+                                  item.quantity
                                 ).toFixed(2)}{" "}
                                 AED
                               </p>
@@ -1120,7 +1122,9 @@ const CheckoutPage = () => {
                       />
                       <div>
                         <p className="font-medium">Pay later with Tabby</p>
-                        <p className="text-sm text-gray-600 mt-1">Use any card.</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Use any card.
+                        </p>
                       </div>
                     </div>
 
@@ -1128,6 +1132,41 @@ const CheckoutPage = () => {
                       <Image
                         src={TabbyLogo}
                         alt="Tabby"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                      paymentMethod === "tamara"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center flex-1">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value="tamara"
+                        checked={paymentMethod === "tamara"}
+                        onChange={() => setPaymentMethod("tamara")}
+                        className="mr-3 text-blue-600"
+                      />
+
+                      <div>
+                        <p className="font-medium">Pay later with Tamara</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Split payments with 0% fees.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="w-12 h-8 relative ml-4">
+                      <Image
+                        src={TamaraLogo}
+                        alt="Tamara"
                         fill
                         className="object-contain"
                       />
