@@ -1,5 +1,5 @@
 "use client";
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/shared/Navbar";
 import Landing from "@/components/shared/BannerPage";
 import Home from "@/pages/Home";
@@ -16,22 +16,20 @@ import NewsletterModal from "@/components/modals/newsletterModal";
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [authAction, setAuthAction] = useState("login");
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAuthAction = (action) => {
     setAuthAction(action);
     setModalIsOpen(true);
   };
 
-  //   // Auto-open modal after 3 seconds (optional)
+  // // Auto-open modal after 3 seconds (optional)
   // useEffect(() => {
   //   const timer = setTimeout(() => {
-  //     setIsModalOpen(true)
-  //   }, 6000)
-  //   return () => clearTimeout(timer)
-  // }, [])
-
-
+  //     setIsModalOpen(true);
+  //   }, 6000);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   return (
     <div>
@@ -39,20 +37,14 @@ export default function IndexPage() {
         onSignUpClick={() => handleAuthAction("register")}
         onLoginClick={() => handleAuthAction("login")}
       />
-{/* 
-      <AuthModal
-        isOpen={modalIsOpen}
-        onRequestClose={() => setModalIsOpen(false)}
-        defaultAction={authAction}
-      /> */}
 
-     <NewsletterModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
+      {/* <NewsletterModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      /> */}
       <Landing />
       <Home />
-      {/* <WatchBrand /> */}
+      <WatchBrand />
       <Form id="watch-form" />
       <PremiumBrands />
       <Watch />
