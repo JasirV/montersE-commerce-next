@@ -52,11 +52,17 @@ import ShopByCategory from "@/features/product/ShopeByCatgeory";
 
 // Toastify configuration function
 const showToast = (message, type = "success") => {
-  const backgroundColor = type === "success" ? "#4CAF50" : 
-                         type === "error" ? "#F44336" : 
-                         type === "info" ? "#2196F3" : 
-                         type === "warning" ? "#FF9800" : "#333";
-  
+  const backgroundColor =
+    type === "success"
+      ? "#4CAF50"
+      : type === "error"
+      ? "#F44336"
+      : type === "info"
+      ? "#2196F3"
+      : type === "warning"
+      ? "#FF9800"
+      : "#333";
+
   Toastify({
     text: message,
     duration: 3000,
@@ -146,7 +152,7 @@ const LeatherBagsDetails = () => {
 
   // Responsive thumbnail count
   const getVisibleThumbnails = () => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       if (window.innerWidth < 640) return 4; // Mobile
       if (window.innerWidth < 1024) return 5; // Tablet
       return 4; // Desktop
@@ -154,15 +160,17 @@ const LeatherBagsDetails = () => {
     return 4;
   };
 
-  const [visibleThumbnails, setVisibleThumbnails] = useState(getVisibleThumbnails());
+  const [visibleThumbnails, setVisibleThumbnails] = useState(
+    getVisibleThumbnails()
+  );
 
   useEffect(() => {
     const handleResize = () => {
       setVisibleThumbnails(getVisibleThumbnails());
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const maxThumbnailIndex = Math.max(0, images.length - visibleThumbnails);
@@ -227,20 +235,20 @@ const LeatherBagsDetails = () => {
 
   const handleTouchMove = (e) => {
     if (!touchStart || !showZoomModal) return;
-    
+
     const touchCurrent = {
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
     };
-    
+
     const deltaX = touchStart.x - touchCurrent.x;
     const deltaY = touchStart.y - touchCurrent.y;
-    
-    setPosition(prev => ({
+
+    setPosition((prev) => ({
       x: prev.x - deltaX / 2,
       y: prev.y - deltaY / 2,
     }));
-    
+
     setTouchStart(touchCurrent);
   };
 
@@ -252,18 +260,18 @@ const LeatherBagsDetails = () => {
     if (e.touches.length === 2 && showZoomModal) {
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
-      
+
       const distance = Math.sqrt(
         Math.pow(touch2.clientX - touch1.clientX, 2) +
-        Math.pow(touch2.clientY - touch1.clientY, 2)
+          Math.pow(touch2.clientY - touch1.clientY, 2)
       );
-      
+
       if (touchStart && touchStart.distance) {
         const scaleChange = distance / touchStart.distance;
         const newZoom = Math.min(Math.max(zoom * scaleChange, 1), 5);
         setZoom(newZoom);
       }
-      
+
       setTouchStart({ distance });
     }
   };
@@ -482,7 +490,10 @@ const LeatherBagsDetails = () => {
 
     window.open(shareUrl, "_blank");
     setShowShareOptions(false);
-    showToast(`Shared on ${platform.charAt(0).toUpperCase() + platform.slice(1)}`, "success");
+    showToast(
+      `Shared on ${platform.charAt(0).toUpperCase() + platform.slice(1)}`,
+      "success"
+    );
   };
 
   // Handle image selection
@@ -534,7 +545,10 @@ const LeatherBagsDetails = () => {
       ) {
         setIsSubscribed(true);
         setShowRestockInput(false);
-        showToast("You'll be notified when this bag is back in stock!", "success");
+        showToast(
+          "You'll be notified when this bag is back in stock!",
+          "success"
+        );
       } else {
         throw new Error("Subscription failed");
       }
@@ -592,7 +606,10 @@ const LeatherBagsDetails = () => {
 
       if (response.data.success || response.status === 200) {
         setIsSubscribed(false);
-        showToast("You've been unsubscribed from restock notifications", "success");
+        showToast(
+          "You've been unsubscribed from restock notifications",
+          "success"
+        );
       }
     } catch (error) {
       console.error("Unsubscribe error:", error);
@@ -679,12 +696,10 @@ const LeatherBagsDetails = () => {
         >
           ✕
         </button>
-        <div className="text-white text-sm">
-          Pinch to zoom • Drag to pan
-        </div>
+        <div className="text-white text-sm">Pinch to zoom • Drag to pan</div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setZoom(prev => Math.max(1, prev - 0.5))}
+            onClick={() => setZoom((prev) => Math.max(1, prev - 0.5))}
             className="text-white p-2 bg-black bg-opacity-50 rounded-full"
           >
             <FaSearchMinus />
@@ -693,7 +708,7 @@ const LeatherBagsDetails = () => {
             {Math.round(zoom * 100)}%
           </span>
           <button
-            onClick={() => setZoom(prev => Math.min(5, prev + 0.5))}
+            onClick={() => setZoom((prev) => Math.min(5, prev + 0.5))}
             className="text-white p-2 bg-black bg-opacity-50 rounded-full"
           >
             <FaSearchPlus />
@@ -708,7 +723,7 @@ const LeatherBagsDetails = () => {
       </div>
 
       {/* Image Container */}
-      <div 
+      <div
         className="flex-1 flex items-center justify-center overflow-hidden touch-none"
         onTouchStart={handleTouchStart}
         onTouchMove={(e) => {
@@ -721,9 +736,9 @@ const LeatherBagsDetails = () => {
           className="relative"
           style={{
             transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
-            transition: zoom === 1 ? 'transform 0.3s ease' : 'none',
-            maxWidth: '100%',
-            maxHeight: '100%',
+            transition: zoom === 1 ? "transform 0.3s ease" : "none",
+            maxWidth: "100%",
+            maxHeight: "100%",
           }}
         >
           <Image
@@ -787,32 +802,68 @@ const LeatherBagsDetails = () => {
       { label: "Interior Material", value: product?.interiorMaterial },
       { label: "Hardware Color", value: product?.hardwareColor },
       { label: "Model Code", value: product?.modelCode },
-      { label: "Width", value: product?.leatherSize?.width ? `${product.leatherSize.width} cm` : null },
-      { label: "Height", value: product?.leatherSize?.height ? `${product.leatherSize.height} cm` : null },
-      { label: "Depth", value: product?.leatherSize?.depth ? `${product.leatherSize.depth} cm` : null },
-      { label: "Strap Length", value: product?.strapLength ? `${product.strapLength} cm` : null },
+      {
+        label: "Width",
+        value: product?.leatherSize?.width
+          ? `${product.leatherSize.width} cm`
+          : null,
+      },
+      {
+        label: "Height",
+        value: product?.leatherSize?.height
+          ? `${product.leatherSize.height} cm`
+          : null,
+      },
+      {
+        label: "Depth",
+        value: product?.leatherSize?.depth
+          ? `${product.leatherSize.depth} cm`
+          : null,
+      },
+      {
+        label: "Strap Length",
+        value: product?.strapLength ? `${product.strapLength} cm` : null,
+      },
       { label: "Overall Condition", value: product?.condition },
       { label: "Item Condition", value: product?.itemCondition },
       { label: "Production Year", value: product?.productionYear },
-      { label: "Year is Approximate", value: product?.approximateYear ? "Yes" : null },
+      {
+        label: "Year is Approximate",
+        value: product?.approximateYear ? "Yes" : null,
+      },
       { label: "Year Unknown", value: product?.unknownYear ? "Yes" : null },
       { label: "Color", value: product?.color },
       { label: "Pattern", value: product?.pattern },
       { label: "Closure Type", value: product?.closureType },
       { label: "Number of Compartments", value: product?.numberOfCompartments },
-      { label: "Water Resistant", value: product?.waterResistant ? "Yes" : "No" },
+      {
+        label: "Water Resistant",
+        value: product?.waterResistant ? "Yes" : "No",
+      },
       { label: "Lining Material", value: product?.liningMaterial },
-    ].filter(spec => spec.value);
+    ].filter((spec) => spec.value);
 
     // Key specs for cards
     const keySpecs = [
       { label: "Brand", value: product?.brand, icon: FaTag },
-      { label: "Leather Type", value: product?.leatherMaterial, icon: FaPalette },
+      {
+        label: "Leather Type",
+        value: product?.leatherMaterial,
+        icon: FaPalette,
+      },
       { label: "Condition", value: product?.condition, icon: FaCheck },
-      { label: "Dimensions", value: product?.leatherSize ? `${product.leatherSize.width || 'N/A'} x ${product.leatherSize.height || 'N/A'} x ${product.leatherSize.depth || 'N/A'} cm` : null, icon: FaRuler },
+      {
+        label: "Dimensions",
+        value: product?.leatherSize
+          ? `${product.leatherSize.width || "N/A"} x ${
+              product.leatherSize.height || "N/A"
+            } x ${product.leatherSize.depth || "N/A"} cm`
+          : null,
+        icon: FaRuler,
+      },
       { label: "Year", value: product?.productionYear, icon: FaCalendar },
       { label: "Closure", value: product?.closureType, icon: FaCube },
-    ].filter(spec => spec.value);
+    ].filter((spec) => spec.value);
 
     return (
       <div className="max-w-5xl mx-auto px-2 sm:px-4 pb-6 sm:pb-10">
@@ -849,13 +900,20 @@ const LeatherBagsDetails = () => {
             {/* Key Specs Cards */}
             <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {keySpecs.slice(0, 3).map((spec, index) => (
-                <div key={index} className="bg-gray-50 p-3 sm:p-4 rounded-lg shadow-sm border border-gray-100">
+                <div
+                  key={index}
+                  className="bg-gray-50 p-3 sm:p-4 rounded-lg shadow-sm border border-gray-100"
+                >
                   <div className="flex items-center gap-2 mb-2 sm:mb-3">
                     <spec.icon className="text-blue-600 text-sm sm:text-base" />
-                    <h3 className="font-semibold text-xs sm:text-sm">{spec.label}</h3>
+                    <h3 className="font-semibold text-xs sm:text-sm">
+                      {spec.label}
+                    </h3>
                   </div>
                   <div className="space-y-1 text-xs sm:text-sm">
-                    <p className="text-gray-900 font-medium truncate">{spec.value}</p>
+                    <p className="text-gray-900 font-medium truncate">
+                      {spec.value}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -869,9 +927,16 @@ const LeatherBagsDetails = () => {
 
               <div className="divide-y max-h-80 sm:max-h-none overflow-y-auto">
                 {specifications.map((spec, i) => (
-                  <div key={i} className="px-3 sm:px-4 py-2 sm:py-3 flex justify-between text-xs sm:text-sm">
-                    <span className="font-medium text-gray-700 pr-2">{spec.label}</span>
-                    <span className="text-gray-600 text-right break-words max-w-[50%]">{spec.value}</span>
+                  <div
+                    key={i}
+                    className="px-3 sm:px-4 py-2 sm:py-3 flex justify-between text-xs sm:text-sm"
+                  >
+                    <span className="font-medium text-gray-700 pr-2">
+                      {spec.label}
+                    </span>
+                    <span className="text-gray-600 text-right break-words max-w-[50%]">
+                      {spec.value}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -882,7 +947,9 @@ const LeatherBagsDetails = () => {
         {/* DESCRIPTION TAB */}
         {activeTab === "description" && (
           <div className="space-y-4 sm:space-y-6">
-            <h2 className="text-lg sm:text-xl font-bold">About this leather bag</h2>
+            <h2 className="text-lg sm:text-xl font-bold">
+              About this leather bag
+            </h2>
 
             <ProductDescription
               description={product?.description}
@@ -893,12 +960,22 @@ const LeatherBagsDetails = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {/* Features */}
               <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
-                <h4 className="font-semibold mb-2 text-blue-800 text-sm sm:text-base">Key Features</h4>
+                <h4 className="font-semibold mb-2 text-blue-800 text-sm sm:text-base">
+                  Key Features
+                </h4>
                 <ul className="text-xs sm:text-sm text-gray-700 space-y-1">
-                  {product?.leatherMaterial && <li>• {product.leatherMaterial} leather</li>}
-                  {product?.interiorMaterial && <li>• {product.interiorMaterial} interior</li>}
-                  {product?.hardwareColor && <li>• {product.hardwareColor} hardware</li>}
-                  {product?.strapLength && <li>• {product.strapLength} cm strap length</li>}
+                  {product?.leatherMaterial && (
+                    <li>• {product.leatherMaterial} leather</li>
+                  )}
+                  {product?.interiorMaterial && (
+                    <li>• {product.interiorMaterial} interior</li>
+                  )}
+                  {product?.hardwareColor && (
+                    <li>• {product.hardwareColor} hardware</li>
+                  )}
+                  {product?.strapLength && (
+                    <li>• {product.strapLength} cm strap length</li>
+                  )}
                   <li>• Durable construction</li>
                   <li>• Functional compartments</li>
                 </ul>
@@ -906,7 +983,9 @@ const LeatherBagsDetails = () => {
 
               {/* What's Included */}
               <div className="bg-green-50 p-3 sm:p-4 rounded-lg border border-green-100">
-                <h4 className="font-semibold mb-2 text-green-800 text-sm sm:text-base">What's Included</h4>
+                <h4 className="font-semibold mb-2 text-green-800 text-sm sm:text-base">
+                  What's Included
+                </h4>
                 <ul className="text-xs sm:text-sm text-gray-700 space-y-1">
                   {product?.leatherAccessories ? (
                     <li>• {product.leatherAccessories}</li>
@@ -948,18 +1027,25 @@ const LeatherBagsDetails = () => {
             <FaBell className="text-white text-base sm:text-lg" />
           </div>
           <div>
-            <h3 className="font-bold text-white text-base sm:text-lg">Restock Alert</h3>
-            <p className="text-blue-100 text-xs sm:text-sm">Don't miss out when it's back!</p>
+            <h3 className="font-bold text-white text-base sm:text-lg">
+              Restock Alert
+            </h3>
+            <p className="text-blue-100 text-xs sm:text-sm">
+              Don't miss out when it's back!
+            </p>
           </div>
         </div>
       </div>
-      
+
       <div className="p-4 sm:p-6">
         <p className="text-gray-600 text-xs sm:text-sm mb-4 leading-relaxed">
-          We'll instantly notify you at <strong className="text-gray-900">{email || 'your email'}</strong> when 
-          <strong className="text-gray-900"> {product?.name}</strong> is available again.
+          We'll instantly notify you at{" "}
+          <strong className="text-gray-900">{email || "your email"}</strong>{" "}
+          when
+          <strong className="text-gray-900"> {product?.name}</strong> is
+          available again.
         </p>
-        
+
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
@@ -971,7 +1057,7 @@ const LeatherBagsDetails = () => {
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base transition-all duration-200 bg-gray-50"
               />
             </div>
-            
+
             <div className="flex gap-2">
               <button
                 onClick={() => setShowRestockInput(false)}
@@ -981,7 +1067,9 @@ const LeatherBagsDetails = () => {
               </button>
               <button
                 onClick={handleRestockSubscribe}
-                disabled={isSubscribing || !email || !/\S+@\S+\.\S+/.test(email)}
+                disabled={
+                  isSubscribing || !email || !/\S+@\S+\.\S+/.test(email)
+                }
                 className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium text-xs sm:text-sm flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isSubscribing ? (
@@ -998,34 +1086,66 @@ const LeatherBagsDetails = () => {
               </button>
             </div>
           </div>
-          
+
           {email && !/\S+@\S+\.\S+/.test(email) && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-2 sm:p-3">
               <div className="flex items-center gap-2 text-red-700 text-xs sm:text-sm">
-                <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                <svg
+                  className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Please enter a valid email address
               </div>
             </div>
           )}
-          
+
           <div className="flex items-center justify-center gap-2 sm:gap-4 text-xs text-gray-500 pt-2">
             <span className="flex items-center gap-1 text-xs">
-              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="w-3 h-3 sm:w-4 sm:h-4 text-green-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               No spam
             </span>
             <span className="flex items-center gap-1 text-xs">
-              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="w-3 h-3 sm:w-4 sm:h-4 text-green-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               Instant alert
             </span>
             <span className="flex items-center gap-1 text-xs">
-              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="w-3 h-3 sm:w-4 sm:h-4 text-green-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               1-click stop
             </span>
@@ -1098,7 +1218,7 @@ const LeatherBagsDetails = () => {
   return (
     <div className="bg-gray-100 min-h-screen">
       {showZoomModal && <ZoomModal />}
-      
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto py-3 sm:py-4 px-2 xs:px-3 sm:px-4">
         <div className="bg-white rounded-lg sm:rounded-xl shadow-sm overflow-hidden">
@@ -1110,12 +1230,18 @@ const LeatherBagsDetails = () => {
                   {product.name || "Premium Leather Bag"}
                 </h1>
                 <div className="flex items-center gap-1 sm:gap-2 mt-1 flex-wrap">
-                  <span className="text-xs sm:text-sm text-gray-500 truncate">{product.brand}</span>
+                  <span className="text-xs sm:text-sm text-gray-500 truncate">
+                    {product.brand}
+                  </span>
                   {product.model && (
-                    <span className="text-xs sm:text-sm text-gray-500 hidden xs:inline">• {product.model}</span>
+                    <span className="text-xs sm:text-sm text-gray-500 hidden xs:inline">
+                      • {product.model}
+                    </span>
                   )}
                   {product.leatherSubCategory && (
-                    <span className="text-xs sm:text-sm text-gray-500 truncate">• {product.leatherSubCategory}</span>
+                    <span className="text-xs sm:text-sm text-gray-500 truncate">
+                      • {product.leatherSubCategory}
+                    </span>
                   )}
                 </div>
               </div>
@@ -1127,9 +1253,7 @@ const LeatherBagsDetails = () => {
                   disabled={wishlistLoading}
                   className={`p-2 sm:p-3 rounded-lg sm:rounded-xl border transition-colors ${
                     wishlistLoading ? "opacity-50 cursor-not-allowed" : ""
-                  } ${
-                    "bg-white border-gray-200 hover:bg-gray-50"
-                  }`}
+                  } ${"bg-white border-gray-200 hover:bg-gray-50"}`}
                 >
                   {wishlistLoading ? (
                     <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
@@ -1159,8 +1283,10 @@ const LeatherBagsDetails = () => {
                       <div className="sm:hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-center">
                         <div className="bg-white w-full rounded-t-2xl animate-slide-up">
                           <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                            <h3 className="font-semibold text-gray-800">Share this bag</h3>
-                            <button 
+                            <h3 className="font-semibold text-gray-800">
+                              Share this bag
+                            </h3>
+                            <button
                               onClick={() => setShowShareOptions(false)}
                               className="text-gray-500 hover:text-gray-700"
                             >
@@ -1169,18 +1295,42 @@ const LeatherBagsDetails = () => {
                           </div>
                           <div className="grid grid-cols-2 gap-2 p-4">
                             {[
-                              { platform: "facebook", icon: FaFacebookF, color: "text-blue-600", label: "Facebook" },
-                              { platform: "twitter", icon: FaTwitter, color: "text-blue-400", label: "Twitter" },
-                              { platform: "pinterest", icon: FaPinterest, color: "text-red-600", label: "Pinterest" },
-                              { platform: "whatsapp", icon: FaWhatsapp, color: "text-green-500", label: "WhatsApp" },
+                              {
+                                platform: "facebook",
+                                icon: FaFacebookF,
+                                color: "text-blue-600",
+                                label: "Facebook",
+                              },
+                              {
+                                platform: "twitter",
+                                icon: FaTwitter,
+                                color: "text-blue-400",
+                                label: "Twitter",
+                              },
+                              {
+                                platform: "pinterest",
+                                icon: FaPinterest,
+                                color: "text-red-600",
+                                label: "Pinterest",
+                              },
+                              {
+                                platform: "whatsapp",
+                                icon: FaWhatsapp,
+                                color: "text-green-500",
+                                label: "WhatsApp",
+                              },
                             ].map((item) => (
                               <button
                                 key={item.platform}
                                 onClick={() => handleSocialShare(item.platform)}
                                 className="flex flex-col items-center gap-2 p-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
                               >
-                                <item.icon className={`text-2xl ${item.color}`} />
-                                <span className="text-sm font-medium">{item.label}</span>
+                                <item.icon
+                                  className={`text-2xl ${item.color}`}
+                                />
+                                <span className="text-sm font-medium">
+                                  {item.label}
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -1246,9 +1396,15 @@ const LeatherBagsDetails = () => {
             {/* Left Column - Images */}
             <div className="relative">
               {/* Main Image Container with Zoom */}
-              <div 
+              <div
                 ref={imageContainerRef}
-                className={`relative w-full h-64 xs:h-72 sm:h-80 md:h-96 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden border-2 border-gray-100 cursor-${window.innerWidth >= 768 ? (isZoomed ? 'zoom-out' : 'zoom-in') : 'pointer'}`}
+                className={`relative w-full h-64 xs:h-72 sm:h-80 md:h-96 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden border-2 border-gray-100 cursor-${
+                  window.innerWidth >= 768
+                    ? isZoomed
+                      ? "zoom-out"
+                      : "zoom-in"
+                    : "pointer"
+                }`}
                 onClick={handleImageClick}
                 onWheel={handleWheel}
                 onMouseLeave={resetZoom}
@@ -1259,11 +1415,13 @@ const LeatherBagsDetails = () => {
                   style={{
                     transform: `scale(${zoom}) translate(${position.x}%, ${position.y}%)`,
                     transformOrigin: `${position.x}% ${position.y}%`,
-                    transition: zoom === 1 ? 'transform 0.3s ease' : 'none',
+                    transition: zoom === 1 ? "transform 0.3s ease" : "none",
                   }}
                 >
                   <Image
-                    src={selectedImage || product.image || "/placeholder-image.jpg"}
+                    src={
+                      selectedImage || product.image || "/placeholder-image.jpg"
+                    }
                     alt={product.name || "Leather Bag Image"}
                     unoptimized
                     width={600}
@@ -1280,7 +1438,7 @@ const LeatherBagsDetails = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setZoom(prev => Math.max(1, prev - 0.5));
+                        setZoom((prev) => Math.max(1, prev - 0.5));
                         setIsZoomed(true);
                       }}
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -1294,7 +1452,7 @@ const LeatherBagsDetails = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setZoom(prev => Math.min(5, prev + 0.5));
+                        setZoom((prev) => Math.min(5, prev + 0.5));
                         setIsZoomed(true);
                       }}
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -1344,7 +1502,11 @@ const LeatherBagsDetails = () => {
                     {images.length > visibleThumbnails && (
                       <div className="flex items-center gap-1 text-xs text-gray-500">
                         <span>
-                          {thumbnailStartIndex + 1}-{Math.min(thumbnailStartIndex + visibleThumbnails, images.length)}
+                          {thumbnailStartIndex + 1}-
+                          {Math.min(
+                            thumbnailStartIndex + visibleThumbnails,
+                            images.length
+                          )}
                         </span>
                         <span className="text-gray-400">|</span>
                         <span>Total: {images.length}</span>
@@ -1410,22 +1572,24 @@ const LeatherBagsDetails = () => {
                     </div>
 
                     {/* View All Button for Mobile */}
-                    {images.length > visibleThumbnails && window.innerWidth < 768 && (
-                      <div className="text-center mt-3">
-                        <button
-                          onClick={() => {
-                            // Scroll to see all thumbnails
-                            const thumbnailsContainer = document.querySelector('.thumbnails-container');
-                            if (thumbnailsContainer) {
-                              thumbnailsContainer.scrollLeft = 0;
-                            }
-                          }}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          View all {images.length} images
-                        </button>
-                      </div>
-                    )}
+                    {images.length > visibleThumbnails &&
+                      window.innerWidth < 768 && (
+                        <div className="text-center mt-3">
+                          <button
+                            onClick={() => {
+                              // Scroll to see all thumbnails
+                              const thumbnailsContainer =
+                                document.querySelector(".thumbnails-container");
+                              if (thumbnailsContainer) {
+                                thumbnailsContainer.scrollLeft = 0;
+                              }
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            View all {images.length} images
+                          </button>
+                        </div>
+                      )}
                   </div>
                 </div>
               )}
@@ -1434,16 +1598,20 @@ const LeatherBagsDetails = () => {
             {/* Right Column - Details */}
             <div className="space-y-4 sm:space-y-6">
               {/* Price Section */}
-              <div className={`rounded-lg sm:rounded-xl p-4 sm:p-6 border ${
-                isSoldOut 
-                  ? "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200" 
-                  : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100"
-              }`}>
+              <div
+                className={`rounded-lg sm:rounded-xl p-4 sm:p-6 border ${
+                  isSoldOut
+                    ? "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200"
+                    : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100"
+                }`}
+              >
                 <div className="space-y-2 sm:space-y-3">
                   <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                    <div className={`text-2xl xs:text-3xl sm:text-4xl font-bold flex items-center ${
-                      isSoldOut ? "text-gray-600" : "text-gray-900"
-                    }`}>
+                    <div
+                      className={`text-2xl xs:text-3xl sm:text-4xl font-bold flex items-center ${
+                        isSoldOut ? "text-gray-600" : "text-gray-900"
+                      }`}
+                    >
                       <Image
                         src={newCurrency}
                         alt="Currency"
@@ -1451,10 +1619,12 @@ const LeatherBagsDetails = () => {
                         height={24}
                         className="mr-1 sm:mr-2 w-5 h-5 sm:w-7 sm:h-7"
                       />
-                      {formatPrice(product.salePrice || product.sellingPrice) || "65,000"}
+                      {formatPrice(product.salePrice || product.sellingPrice) ||
+                        "65,000"}
                     </div>
                     {product.regularPrice &&
-                      product.regularPrice > (product.salePrice || product.sellingPrice) && (
+                      product.regularPrice >
+                        (product.salePrice || product.sellingPrice) && (
                         <>
                           <div className="text-lg sm:text-xl text-gray-500 line-through flex items-center">
                             <Image
@@ -1543,7 +1713,9 @@ const LeatherBagsDetails = () => {
               </div>
 
               {/* Restock Notification Input */}
-              {showRestockInput && !isSubscribed && <RestockNotificationInput />}
+              {showRestockInput && !isSubscribed && (
+                <RestockNotificationInput />
+              )}
 
               {/* Quick Info Cards */}
               <div className="grid grid-cols-2 xs:grid-cols-4 gap-2 sm:gap-3 py-3 sm:py-4">
@@ -1553,7 +1725,9 @@ const LeatherBagsDetails = () => {
                     <h3 className="font-semibold text-xs xs:text-sm text-gray-900 truncate">
                       LEATHER
                     </h3>
-                    <p className="text-xs text-gray-600 mt-1 truncate">{product.leatherMaterial}</p>
+                    <p className="text-xs text-gray-600 mt-1 truncate">
+                      {product.leatherMaterial}
+                    </p>
                   </div>
                 )}
                 {product.hardwareColor && (
@@ -1562,7 +1736,9 @@ const LeatherBagsDetails = () => {
                     <h3 className="font-semibold text-xs xs:text-sm text-gray-900 truncate">
                       HARDWARE
                     </h3>
-                    <p className="text-xs text-gray-600 mt-1 truncate">{product.hardwareColor}</p>
+                    <p className="text-xs text-gray-600 mt-1 truncate">
+                      {product.hardwareColor}
+                    </p>
                   </div>
                 )}
                 {product.productionYear && (
@@ -1571,7 +1747,9 @@ const LeatherBagsDetails = () => {
                     <h3 className="font-semibold text-xs xs:text-sm text-gray-900 truncate">
                       YEAR
                     </h3>
-                    <p className="text-xs text-gray-600 mt-1 truncate">{product.productionYear}</p>
+                    <p className="text-xs text-gray-600 mt-1 truncate">
+                      {product.productionYear}
+                    </p>
                   </div>
                 )}
                 <div className="text-center p-2 sm:p-3 xs:p-4 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-200">
@@ -1579,9 +1757,7 @@ const LeatherBagsDetails = () => {
                   <h3 className="font-semibold text-xs xs:text-sm text-gray-900 truncate">
                     AUTHENTIC
                   </h3>
-                  <p className="text-xs text-gray-600 mt-1 truncate">
-                    Genuine
-                  </p>
+                  <p className="text-xs text-gray-600 mt-1 truncate">Genuine</p>
                 </div>
               </div>
 
@@ -1592,8 +1768,8 @@ const LeatherBagsDetails = () => {
                 </h2>
                 <div className="text-gray-700">
                   <p className="text-xs sm:text-sm leading-relaxed">
-                    {product.conditionNotes || 
-                     "Premium leather bag crafted with exceptional attention to detail. This timeless piece combines luxury craftsmanship with practical functionality for everyday use."}
+                    {product.conditionNotes ||
+                      "Premium leather bag crafted with exceptional attention to detail. This timeless piece combines luxury craftsmanship with practical functionality for everyday use."}
                   </p>
                 </div>
               </div>
@@ -1679,7 +1855,11 @@ const LeatherBagsDetails = () => {
 };
 
 // ProductDescription Component with improvements for leather bags
-const ProductDescription = ({ description, shortDescription, additionalTitle }) => {
+const ProductDescription = ({
+  description,
+  shortDescription,
+  additionalTitle,
+}) => {
   const [showAll, setShowAll] = useState(false);
 
   let content = description || shortDescription;
@@ -1688,13 +1868,16 @@ const ProductDescription = ({ description, shortDescription, additionalTitle }) 
     return (
       <div className="space-y-4">
         <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
-          This premium leather bag is crafted with exceptional attention to detail, 
-          combining luxury craftsmanship with practical functionality for everyday use.
+          This premium leather bag is crafted with exceptional attention to
+          detail, combining luxury craftsmanship with practical functionality
+          for everyday use.
         </p>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Key Features:</h4>
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
+              Key Features:
+            </h4>
             <ul className="space-y-2">
               {[
                 "Premium quality genuine leather",
@@ -1702,39 +1885,49 @@ const ProductDescription = ({ description, shortDescription, additionalTitle }) 
                 "Durable construction with reinforced stitching",
                 "High-quality hardware and zippers",
                 "Spacious and well-organized interior",
-                "Adjustable and comfortable straps"
+                "Adjustable and comfortable straps",
               ].map((feature, index) => (
                 <li key={index} className="flex items-start gap-2">
                   <FaCheck className="text-green-500 mt-1 flex-shrink-0 text-xs sm:text-sm" />
-                  <span className="text-xs sm:text-sm text-gray-700">{feature}</span>
+                  <span className="text-xs sm:text-sm text-gray-700">
+                    {feature}
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
-          
+
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Care Instructions:</h4>
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
+              Care Instructions:
+            </h4>
             <ul className="space-y-2">
               {[
                 "Clean with a soft, dry cloth",
                 "Avoid exposure to direct sunlight",
                 "Store in a cool, dry place",
                 "Use leather conditioner periodically",
-                "Keep away from water and moisture"
+                "Keep away from water and moisture",
               ].map((instruction, index) => (
                 <li key={index} className="flex items-start gap-2">
                   <FaCheck className="text-blue-500 mt-1 flex-shrink-0 text-xs sm:text-sm" />
-                  <span className="text-xs sm:text-sm text-gray-700">{instruction}</span>
+                  <span className="text-xs sm:text-sm text-gray-700">
+                    {instruction}
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
         </div>
-        
+
         {additionalTitle && (
           <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mt-4">
-            <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Additional Information:</h4>
-            <p className="text-xs sm:text-sm text-gray-700">{additionalTitle}</p>
+            <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">
+              Additional Information:
+            </h4>
+            <p className="text-xs sm:text-sm text-gray-700">
+              {additionalTitle}
+            </p>
           </div>
         )}
       </div>
@@ -1755,25 +1948,32 @@ const ProductDescription = ({ description, shortDescription, additionalTitle }) 
           {paragraphs.length > 0 && (
             <div className="space-y-3">
               {paragraphs.map((p, idx) => (
-                <p key={idx} className="text-gray-700 leading-relaxed text-sm sm:text-base">
+                <p
+                  key={idx}
+                  className="text-gray-700 leading-relaxed text-sm sm:text-base"
+                >
                   {p.textContent}
                 </p>
               ))}
             </div>
           )}
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Features:</h4>
+              <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">
+                Features:
+              </h4>
               <ul className="space-y-2">
                 {visibleItems.map((li, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <FaCheck className="text-green-500 mt-1 flex-shrink-0 text-xs sm:text-sm" />
-                    <span className="text-xs sm:text-sm text-gray-700">{li.textContent}</span>
+                    <span className="text-xs sm:text-sm text-gray-700">
+                      {li.textContent}
+                    </span>
                   </li>
                 ))}
               </ul>
-              
+
               {listItems.length > 8 && (
                 <button
                   onClick={() => setShowAll(!showAll)}
@@ -1793,19 +1993,23 @@ const ProductDescription = ({ description, shortDescription, additionalTitle }) 
                 </button>
               )}
             </div>
-            
+
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Care Instructions:</h4>
+              <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
+                Care Instructions:
+              </h4>
               <ul className="space-y-2">
                 {[
                   "Clean with a soft, dry cloth",
                   "Avoid exposure to direct sunlight",
                   "Store in a cool, dry place",
-                  "Use leather conditioner periodically"
+                  "Use leather conditioner periodically",
                 ].map((instruction, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <FaCheck className="text-blue-500 mt-1 flex-shrink-0 text-xs sm:text-sm" />
-                    <span className="text-xs sm:text-sm text-gray-700">{instruction}</span>
+                    <span className="text-xs sm:text-sm text-gray-700">
+                      {instruction}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -1823,12 +2027,15 @@ const ProductDescription = ({ description, shortDescription, additionalTitle }) 
     <div className="space-y-4">
       <div className="space-y-3">
         {visibleLines.map((line, idx) => (
-          <p key={idx} className="text-gray-700 leading-relaxed text-sm sm:text-base">
+          <p
+            key={idx}
+            className="text-gray-700 leading-relaxed text-sm sm:text-base"
+          >
             {line}
           </p>
         ))}
       </div>
-      
+
       {lines.length > 8 && (
         <button
           onClick={() => setShowAll(!showAll)}
@@ -1847,10 +2054,12 @@ const ProductDescription = ({ description, shortDescription, additionalTitle }) 
           )}
         </button>
       )}
-      
+
       {additionalTitle && (
         <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mt-4">
-          <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Additional Information:</h4>
+          <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">
+            Additional Information:
+          </h4>
           <p className="text-xs sm:text-sm text-gray-700">{additionalTitle}</p>
         </div>
       )}
@@ -1955,8 +2164,8 @@ const style = `
 `;
 
 // Add the style to the document head
-if (typeof document !== 'undefined') {
-  const styleElement = document.createElement('style');
+if (typeof document !== "undefined") {
+  const styleElement = document.createElement("style");
   styleElement.textContent = style;
   document.head.appendChild(styleElement);
 }
