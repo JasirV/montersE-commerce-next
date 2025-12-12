@@ -357,6 +357,7 @@ const NewArrivals = () => {
                         sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 15vw"
                         className="object-contain p-2 sm:p-3 lg:p-4"
                         quality={80}
+                        unoptimized
                         loading="lazy"
                         onError={(e) => {
                           console.error("Image failed to load:", e.target.src);
