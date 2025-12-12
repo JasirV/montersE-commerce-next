@@ -52,7 +52,7 @@ export default function IndexPage() {
       />
       <Landing />
       <Home />
-      <WatchBrand />
+      {/* <WatchBrand /> */}
       <Form id="watch-form" />
       <PremiumBrands />
       <Watch />
