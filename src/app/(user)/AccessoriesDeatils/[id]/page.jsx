@@ -1906,7 +1906,7 @@ const AccessoriesDetails = () => {
                             height={100}
                             className="object-cover w-full h-full hover:scale-110 transition-transform duration-200"
                           />
-                          {/* Active indicator */}
+                       
                           {selectedImage === (image.url || image) && (
                             <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></div>
                           )}
