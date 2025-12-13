@@ -671,9 +671,7 @@ const ProductDetailPage = () => {
               <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
                 <div className="w-12 h-12 relative rounded-md overflow-hidden">
                   <Image
-                    src={
-                      selectedImage || product.image || "/placeholder-image.jpg"
-                    }
+                    src={selectedImage || product.image}
                     alt={product.name}
                     unoptimized
                     width={48}

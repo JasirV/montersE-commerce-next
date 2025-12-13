@@ -174,6 +174,7 @@ const ProductCard = ({
     return null;
   };
 
+
   const conditionBadge = getConditionBadge();
 
   return (
