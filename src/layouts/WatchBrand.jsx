@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FaArrowRight, FaClock, FaShoppingBag, FaWatch, FaGem, FaShoePrints, FaTshirt } from "react-icons/fa";
+import { FaArrowRight, FaClock } from "react-icons/fa";
 import Image from "next/image";
-import { useCurrency } from "@/app/CurrencyContext";
+import { useCurrency } from "../../src/app/CurrencyContext.js";
 import axios from "axios";
 import Link from "next/link";
-import Bag from "../assets/beautiful-elegance-luxury-fashion-green-handbag.jpg";
+import Bag from "@/assets/beautiful-elegance-luxury-fashion-green-handbag.jpg";
+
+// Import icons separately to avoid issues
+import {
+  FaShoppingBag,
+  FaWatch,
+  FaGem,
+  FaShoePrints,
+  FaTshirt,
+} from "react-icons/fa";
 
 const NewArrivals = () => {
   const [products, setProducts] = useState([]);
@@ -107,49 +116,198 @@ const NewArrivals = () => {
   // Show skeleton only when loading
   const skeletonArray = Array(6).fill(null);
 
+  // CATEGORY CHECK HELPERS
+  // ==============================================
+
+  // Check if product belongs to BAG category
+  const isBagCategory = (product) => {
+    if (!product) return false;
+
+    const p = product;
+    const name = p.name?.toLowerCase() || "";
+    const category = p.category?.toLowerCase() || "";
+    const subCategory = p.subCategory?.toLowerCase() || "";
+    const mainCategory = p.leatherMainCategory?.toLowerCase() || "";
+    const material = p.material?.toLowerCase() || "";
+
+    if (mainCategory.includes("bag")) return true;
+    if (subCategory.includes("bag")) return true;
+    if (category.includes("bag")) return true;
+    if (name.includes("bag")) return true;
+    if (name.includes("handbag")) return true;
+    if (name.includes("purse")) return true;
+    if (name.includes("tote")) return true;
+    if (material.includes("leather")) return true;
+
+    return false;
+  };
+
+  // Check if product belongs to ACCESSORIES category
+  const isAccessoriesCategory = (product) => {
+    if (!product) return false;
+
+    const p = product;
+    const category = p.category?.toLowerCase() || "";
+    const subCategory = p.subCategory?.toLowerCase() || "";
+    const main = p.leatherMainCategory?.toLowerCase() || "";
+    const name = p.name?.toLowerCase() || "";
+
+    if (category === "accessories") return true;
+    if (subCategory === "accessories") return true;
+    if (main === "accessories") return true;
+    if (name.includes("accessory")) return true;
+    if (name.includes("belt")) return true;
+    if (name.includes("wallet")) return true;
+    if (name.includes("glove")) return true;
+    if (name.includes("scarf")) return true;
+
+    return false;
+  };
+
+  // Check if product belongs to WATCH category
+  const isWatchCategory = (product) => {
+    if (!product) return false;
+
+    const p = product;
+    const category = p.category?.toLowerCase() || "";
+    const subCategory = p.subCategory?.toLowerCase() || "";
+    const main = p.leatherMainCategory?.toLowerCase() || "";
+    const name = p.name?.toLowerCase() || "";
+
+    if (category.includes("watch")) return true;
+    if (subCategory.includes("watch")) return true;
+    if (main.includes("watch")) return true;
+    if (name.includes("watch")) return true;
+    if (name.includes("timepiece")) return true;
+    if (name.includes("chronograph")) return true;
+
+    return false;
+  };
+
+  // Check if product belongs to JEWELRY category
+  const isJewelryCategory = (product) => {
+    if (!product) return false;
+
+    const p = product;
+    const category = p.category?.toLowerCase() || "";
+    const subCategory = p.subCategory?.toLowerCase() || "";
+    const main = p.leatherMainCategory?.toLowerCase() || "";
+    const name = p.name?.toLowerCase() || "";
+
+    if (category.includes("jewelry")) return true;
+    if (category.includes("jewellery")) return true;
+    if (subCategory.includes("jewelry")) return true;
+    if (main.includes("jewelry")) return true;
+    if (name.includes("jewelry")) return true;
+    if (name.includes("ring")) return true;
+    if (name.includes("necklace")) return true;
+    if (name.includes("bracelet")) return true;
+    if (name.includes("earring")) return true;
+    if (name.includes("pendant")) return true;
+
+    return false;
+  };
+
+  // Check if product belongs to SHOE category
+  const isShoeCategory = (product) => {
+    if (!product) return false;
+
+    const p = product;
+    const category = p.category?.toLowerCase() || "";
+    const subCategory = p.subCategory?.toLowerCase() || "";
+    const main = p.leatherMainCategory?.toLowerCase() || "";
+    const name = p.name?.toLowerCase() || "";
+
+    if (category.includes("shoe")) return true;
+    if (category.includes("footwear")) return true;
+    if (subCategory.includes("shoe")) return true;
+    if (main.includes("shoe")) return true;
+    if (name.includes("shoe")) return true;
+    if (name.includes("sneaker")) return true;
+    if (name.includes("boot")) return true;
+    if (name.includes("loafer")) return true;
+    if (name.includes("oxford")) return true;
+
+    return false;
+  };
+
+  // Check if product belongs to CLOTHING category
+  const isClothingCategory = (product) => {
+    if (!product) return false;
+
+    const p = product;
+    const category = p.category?.toLowerCase() || "";
+    const subCategory = p.subCategory?.toLowerCase() || "";
+    const main = p.leatherMainCategory?.toLowerCase() || "";
+    const name = p.name?.toLowerCase() || "";
+
+    if (category.includes("clothing")) return true;
+    if (category.includes("apparel")) return true;
+    if (subCategory.includes("clothing")) return true;
+    if (main.includes("clothing")) return true;
+    if (name.includes("shirt")) return true;
+    if (name.includes("dress")) return true;
+    if (name.includes("pant")) return true;
+    if (name.includes("jacket")) return true;
+    if (name.includes("t-shirt")) return true;
+    if (name.includes("hoodie")) return true;
+    if (name.includes("sweater")) return true;
+    if (name.includes("blouse")) return true;
+
+    return false;
+  };
+
   // Generate product detail page URL based on product category/type
   const getProductDetailUrl = (product) => {
     if (!product._id) return "#";
-    
-    // Determine product type from category, tags, or name
-    const productName = product.name?.toLowerCase() || "";
-    const category = product.category?.toLowerCase() || "";
-    const tags = product.tags?.map(tag => tag.toLowerCase()) || [];
-    
-    // Define category routes
-    if (category.includes('watch') || productName.includes('watch') || tags.includes('watch')) {
-      return `/watch-details/${product._id}`;
-    } else if (category.includes('bag') || productName.includes('bag') || productName.includes('handbag') || productName.includes('purse') || tags.includes('bag')) {
-      return `/leather-bag-details/${product._id}`;
-    } else if (category.includes('accessory') || productName.includes('accessory') || tags.includes('accessory')) {
-      return `/accessory-details/${product._id}`;
-    } else if (category.includes('jewelry') || productName.includes('jewelry') || productName.includes('ring') || productName.includes('necklace') || productName.includes('bracelet') || tags.includes('jewelry')) {
-      return `/jewelry-details/${product._id}`;
-    } else if (category.includes('shoe') || productName.includes('shoe') || productName.includes('footwear') || productName.includes('sneaker') || tags.includes('shoe')) {
-      return `/shoe-details/${product._id}`;
-    } else if (category.includes('clothing') || productName.includes('shirt') || productName.includes('dress') || productName.includes('pant') || productName.includes('jacket') || tags.includes('clothing')) {
-      return `/clothing-details/${product._id}`;
+
+    // Priority 1: BAG CATEGORY
+    if (isBagCategory(product)) {
+      return `/LeatherBagsDetails/${product._id}`;
     }
-    
-    // Default product detail route
-    return `/product-details/${product._id}`;
+
+    // Priority 2: ACCESSORIES
+    if (isAccessoriesCategory(product)) {
+      return `/AccessoriesDeatils/${product._id}`;
+    }
+
+    // Priority 3: WATCH
+    if (isWatchCategory(product)) {
+      return `/ProductDetailPage/${product._id}`;
+    }
+
+    // Priority 4: JEWELRY
+    if (isJewelryCategory(product)) {
+      return `/JewelryDetails/${product._id}`;
+    }
+
+    // Priority 5: SHOES
+    if (isShoeCategory(product)) {
+      return `/ShoeDetails/${product._id}`;
+    }
+
+    // Priority 6: CLOTHING
+    if (isClothingCategory(product)) {
+      return `/ClothingDetails/${product._id}`;
+    }
+
+    // Default: Normal product
+    return `/ProductDetailPage/${product._id}`;
   };
 
   // Get appropriate icon for product category
   const getProductIcon = (product) => {
-    const productName = product.name?.toLowerCase() || "";
-    const category = product.category?.toLowerCase() || "";
-    
-    if (category.includes('watch') || productName.includes('watch')) {
-      return <FaWatch className="text-white" />;
-    } else if (category.includes('bag') || productName.includes('bag') || productName.includes('handbag')) {
+    if (isWatchCategory(product)) {
+    } else if (isBagCategory(product)) {
       return <FaShoppingBag className="text-white" />;
-    } else if (category.includes('jewelry') || productName.includes('jewelry') || productName.includes('ring') || productName.includes('necklace')) {
+    } else if (isJewelryCategory(product)) {
       return <FaGem className="text-white" />;
-    } else if (category.includes('shoe') || productName.includes('shoe') || productName.includes('footwear')) {
+    } else if (isShoeCategory(product)) {
       return <FaShoePrints className="text-white" />;
-    } else if (category.includes('clothing') || productName.includes('shirt') || productName.includes('dress')) {
+    } else if (isClothingCategory(product)) {
       return <FaTshirt className="text-white" />;
+    } else if (isAccessoriesCategory(product)) {
+      return <FaShoppingBag className="text-white" />;
     }
     return <FaShoppingBag className="text-white" />;
   };
@@ -158,9 +316,13 @@ const NewArrivals = () => {
   const getProductImage = (product) => {
     // First, try to get image from various possible locations
     let imageUrl = "";
-    
+
     // Check images array
-    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+    if (
+      product.images &&
+      Array.isArray(product.images) &&
+      product.images.length > 0
+    ) {
       const firstImage = product.images[0];
       imageUrl = firstImage.url || firstImage;
     }
@@ -184,24 +346,28 @@ const NewArrivals = () => {
     // Validate the URL
     if (imageUrl) {
       // Ensure URL is valid
-      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('/')) {
+      if (
+        imageUrl.startsWith("http://") ||
+        imageUrl.startsWith("https://") ||
+        imageUrl.startsWith("/")
+      ) {
         return imageUrl;
       }
       // If relative path without leading slash, add it
-      if (imageUrl.startsWith('uploads/') || imageUrl.startsWith('images/')) {
+      if (imageUrl.startsWith("uploads/") || imageUrl.startsWith("images/")) {
         return `/${imageUrl}`;
       }
     }
 
     // Return fallback image
-    return Bag;
+    return Bag.src || Bag;
   };
 
   const getProductName = (product) => {
     return (
       product.name ||
       product.title ||
-      `${product.brand} ${product.model || ""}`.trim() ||
+      `${product.brand || ""} ${product.model || ""}`.trim() ||
       "New Arrival Product"
     );
   };
@@ -212,7 +378,10 @@ const NewArrivals = () => {
         product.salePrice || product.price || product.regularPrice || 0;
       const convertedPrice = convertPrice(basePrice);
       // Ensure convertedPrice is a number before calling toFixed
-      const priceNumber = typeof convertedPrice === 'number' ? convertedPrice : parseFloat(convertedPrice);
+      const priceNumber =
+        typeof convertedPrice === "number"
+          ? convertedPrice
+          : parseFloat(convertedPrice);
       return isNaN(priceNumber) ? "0.00" : priceNumber.toFixed(2);
     } catch (error) {
       console.error("Error converting price:", error);
@@ -228,7 +397,10 @@ const NewArrivals = () => {
         product.regularPrice > product.salePrice
       ) {
         const convertedPrice = convertPrice(product.regularPrice);
-        const priceNumber = typeof convertedPrice === 'number' ? convertedPrice : parseFloat(convertedPrice);
+        const priceNumber =
+          typeof convertedPrice === "number"
+            ? convertedPrice
+            : parseFloat(convertedPrice);
         return isNaN(priceNumber) ? null : priceNumber.toFixed(2);
       }
       return null;
@@ -253,26 +425,28 @@ const NewArrivals = () => {
 
   // Get product category label
   const getProductCategory = (product) => {
-    const productName = product.name?.toLowerCase() || "";
-    const category = product.category?.toLowerCase() || "";
-    
-    if (category.includes('watch') || productName.includes('watch')) {
+    if (isWatchCategory(product)) {
       return "Watch";
-    } else if (category.includes('bag') || productName.includes('bag') || productName.includes('handbag')) {
+    } else if (isBagCategory(product)) {
       return "Bag";
-    } else if (category.includes('jewelry') || productName.includes('jewelry') || productName.includes('ring') || productName.includes('necklace')) {
+    } else if (isJewelryCategory(product)) {
       return "Jewelry";
-    } else if (category.includes('shoe') || productName.includes('shoe') || productName.includes('footwear')) {
+    } else if (isShoeCategory(product)) {
       return "Shoes";
-    } else if (category.includes('clothing') || productName.includes('shirt') || productName.includes('dress')) {
+    } else if (isClothingCategory(product)) {
       return "Clothing";
-    } else if (category.includes('accessory')) {
+    } else if (isAccessoriesCategory(product)) {
       return "Accessory";
     }
     return product.category || "Product";
   };
 
-
+  // Get product image alt text
+  const getProductAltText = (product) => {
+    const name = getProductName(product);
+    const category = getProductCategory(product);
+    return `${name} - ${category}`;
+  };
 
   return (
     <section className="w-full bg-gradient-to-b from-white to-gray-50">
@@ -283,16 +457,16 @@ const NewArrivals = () => {
             <FaClock className="text-white text-xs sm:text-sm" />
             <span className="truncate">Fresh Arrivals</span>
           </div>
-          
+
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">
             Discover New Arrivals
           </h2>
-          
+
           {/* Sub Header Text - Mobile Friendly */}
           <p className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto mb-4 px-2">
             Fresh picks just for you • Curated daily • Limited stock
           </p>
-          
+
           <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-gray-500 px-2">
             <FaClock className="text-[#1e518e] text-xs sm:text-sm" />
             <span className="truncate">{getTimeDisplayText()}</span>
@@ -313,7 +487,7 @@ const NewArrivals = () => {
           {loading
             ? skeletonArray.map((_, i) => (
                 <div
-                  key={i}
+                  key={`skeleton-${i}`}
                   className="bg-white rounded-lg sm:rounded-xl overflow-hidden shadow-sm flex flex-col animate-pulse border border-gray-200"
                 >
                   <div className="aspect-square p-3 sm:p-4 bg-gray-100">
@@ -334,7 +508,13 @@ const NewArrivals = () => {
                   key={product._id}
                   className="group bg-white rounded-lg sm:rounded-xl overflow-hidden shadow-sm hover:shadow-lg sm:hover:shadow-xl transition-all duration-300 flex flex-col border border-gray-200 hover:border-[#1e518e] relative h-full"
                 >
-              
+                  {/* Category Badge */}
+                  <div className="absolute top-2 sm:top-3 left-2 sm:left-3 z-10">
+                    <div className="flex items-center gap-1 bg-black/70 text-white text-[10px] sm:text-xs font-medium px-2 py-1 rounded-full backdrop-blur-sm">
+                      {getProductIcon(product)}
+                      <span>{getProductCategory(product)}</span>
+                    </div>
+                  </div>
 
                   {/* New Badge */}
                   <div className="absolute top-2 sm:top-3 right-2 sm:right-3 z-10">
@@ -344,7 +524,7 @@ const NewArrivals = () => {
                   </div>
 
                   {/* Product Image Container */}
-                  <Link 
+                  <Link
                     href={getProductDetailUrl(product)}
                     className="relative aspect-square p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-white block overflow-hidden"
                   >
@@ -352,7 +532,7 @@ const NewArrivals = () => {
                     <div className="relative w-full h-full flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
                       <Image
                         src={getProductImage(product)}
-                        alt={getProductName(product)}
+                        alt={getProductAltText(product)}
                         fill
                         sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 15vw"
                         className="object-contain p-2 sm:p-3 lg:p-4"
@@ -361,12 +541,12 @@ const NewArrivals = () => {
                         loading="lazy"
                         onError={(e) => {
                           console.error("Image failed to load:", e.target.src);
-                          e.target.src = Bag.src;
+                          e.target.src = Bag.src || Bag;
                         }}
                         priority={false}
                       />
                     </div>
-                    
+
                     {/* Hover Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#1e518e]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </Link>
@@ -376,7 +556,7 @@ const NewArrivals = () => {
                     <h3 className="text-xs sm:text-sm font-medium text-gray-800 leading-tight line-clamp-2 mb-1.5 sm:mb-2 group-hover:text-[#1e518e] transition-colors duration-300 min-h-[40px] sm:min-h-[44px]">
                       {getProductName(product)}
                     </h3>
-                    
+
                     {/* Brand/Model Info if available */}
                     {(product.brand || product.model) && (
                       <p className="text-xs text-gray-500 mb-2 truncate">
@@ -392,11 +572,13 @@ const NewArrivals = () => {
                     <div className="mb-2 sm:mb-3">
                       <div className="flex items-baseline gap-1 sm:gap-2">
                         <p className="text-base sm:text-lg font-bold text-gray-900">
-                          {getCurrencySymbol()}{getProductPrice(product)}
+                          {getCurrencySymbol()}
+                          {getProductPrice(product)}
                         </p>
                         {getRegularPrice(product) && (
                           <p className="text-xs sm:text-sm text-gray-500 line-through">
-                            {getCurrencySymbol()}{getRegularPrice(product)}
+                            {getCurrencySymbol()}
+                            {getRegularPrice(product)}
                           </p>
                         )}
                       </div>
@@ -405,7 +587,7 @@ const NewArrivals = () => {
                           <span className="bg-red-50 text-red-600 text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                             Save {getCurrencySymbol()}
                             {(
-                              parseFloat(getRegularPrice(product) || 0) - 
+                              parseFloat(getRegularPrice(product) || 0) -
                               parseFloat(getProductPrice(product) || 0)
                             ).toFixed(2)}
                           </span>
@@ -417,15 +599,13 @@ const NewArrivals = () => {
                       href={getProductDetailUrl(product)}
                       className="flex items-center justify-center w-full bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#1a4780] hover:to-[#0057a0] text-white font-medium text-xs sm:text-sm py-2 sm:py-2.5 rounded-lg transition-all duration-300 group/cta shadow-sm hover:shadow"
                     >
-                      <span>View Details</span>
+                      <span>Discover Arrivals</span>
                       <FaArrowRight className="ml-1.5 sm:ml-2 text-xs group-hover/cta:translate-x-0.5 sm:group-hover/cta:translate-x-1 transition-transform duration-300" />
                     </Link>
                   </div>
                 </div>
               ))}
         </div>
-
-      
       </div>
     </section>
   );

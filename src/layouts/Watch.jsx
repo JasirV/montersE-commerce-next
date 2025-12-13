@@ -117,14 +117,14 @@ const ProductCard = ({
   const getRatingData = () => {
     const rating = product.rating || product.averageRating || 0;
     const reviewCount = product.reviewCount || product.ratingCount || 0;
-    
+
     const numericRating = Number(rating) || 0;
     const numericReviewCount = Number(reviewCount) || 0;
-    
+
     return {
       rating: numericRating,
       reviewCount: numericReviewCount,
-      ratingText: numericRating > 0 ? numericRating.toFixed(1) : "0.0"
+      ratingText: numericRating > 0 ? numericRating.toFixed(1) : "0.0",
     };
   };
 
@@ -140,37 +140,37 @@ const ProductCard = ({
     if (!showConditionBadge) return null;
 
     const condition = (product.condition || "").toLowerCase();
-    
+
     // For Brand New section: Only show "Brand New" badge
     if (sectionType === "brand-new") {
       return {
         text: "Brand New",
         className: "bg-green-500 text-white",
-        icon: "🆕"
+        icon: "🆕",
       };
     }
-    
+
     // For Just For You section: Show condition-based badges
     if (condition.includes("used") || condition.includes("pre-owned")) {
       return {
         text: "Pre-Owned",
         className: "bg-amber-500 text-white",
-        icon: "🔄"
+        icon: "🔄",
       };
     } else if (condition.includes("like-new")) {
       return {
         text: "Like New",
         className: "bg-blue-500 text-white",
-        icon: "✨"
+        icon: "✨",
       };
     } else if (condition.includes("brand") || condition.includes("new")) {
       return {
         text: "Brand New",
         className: "bg-green-500 text-white",
-        icon: "🆕"
+        icon: "🆕",
       };
     }
-    
+
     return null;
   };
 
@@ -189,7 +189,9 @@ const ProductCard = ({
       {/* Condition Badge */}
       {conditionBadge && (
         <div className="absolute top-2 left-2 z-10">
-          <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${conditionBadge.className}`}>
+          <span
+            className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${conditionBadge.className}`}
+          >
             <span className="hidden sm:inline">{conditionBadge.icon} </span>
             {conditionBadge.text}
           </span>
@@ -232,6 +234,7 @@ const ProductCard = ({
             src={processedImages[currentImageIndex]?.url || "/placeholder.png"}
             alt={processedImages[currentImageIndex]?.alt || product.name}
             width={400}
+            unoptimized
             height={400}
             className={`w-full h-full object-cover transition-all duration-300 ${
               loaded ? "opacity-100 group-hover:scale-105" : "opacity-0"
@@ -250,7 +253,9 @@ const ProductCard = ({
                   handlePrevImage();
                 }}
                 className={`absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-1.5 sm:p-2 shadow transition-all duration-200 ${
-                  isHovered || window.innerWidth <= 768 ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                  isHovered || window.innerWidth <= 768
+                    ? "opacity-100 scale-100"
+                    : "opacity-0 scale-90"
                 } active:scale-95 backdrop-blur-sm z-20`}
                 aria-label="Previous image"
               >
@@ -262,7 +267,9 @@ const ProductCard = ({
                   handleNextImage();
                 }}
                 className={`absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-1.5 sm:p-2 shadow transition-all duration-200 ${
-                  isHovered || window.innerWidth <= 768 ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                  isHovered || window.innerWidth <= 768
+                    ? "opacity-100 scale-100"
+                    : "opacity-0 scale-90"
                 } active:scale-95 backdrop-blur-sm z-20`}
                 aria-label="Next image"
               >
@@ -440,31 +447,31 @@ export default function EnhancedProductSections() {
         setErrorBrandNew(null);
 
         const BASE_URL = process.env.NEXT_PUBLIC_BASEURL;
-        
+
         const endpoints = [
           `${BASE_URL}/products/new-arrivals`,
           `${BASE_URL}/products/latest`,
           `${BASE_URL}/products?sort=newest&limit=20`,
-          `${BASE_URL}/products`
+          `${BASE_URL}/products`,
         ];
-        
+
         let apiData = [];
-        
+
         // Try each endpoint until one succeeds
         for (const endpoint of endpoints) {
           try {
             const res = await axios.get(endpoint);
-            
+
             // Extract data based on response structure
             let extractedData = [];
-            
+
             if (Array.isArray(res.data)) {
               extractedData = res.data;
             } else if (res.data && Array.isArray(res.data.products)) {
               extractedData = res.data.products;
             } else if (res.data && Array.isArray(res.data.data)) {
               extractedData = res.data.data;
-            } else if (res.data && typeof res.data === 'object') {
+            } else if (res.data && typeof res.data === "object") {
               const values = Object.values(res.data);
               for (const value of values) {
                 if (Array.isArray(value)) {
@@ -473,7 +480,7 @@ export default function EnhancedProductSections() {
                 }
               }
             }
-            
+
             if (extractedData.length > 0) {
               apiData = extractedData;
               break;
@@ -482,10 +489,10 @@ export default function EnhancedProductSections() {
             console.warn("Failed to fetch from:", endpoint, err.message);
           }
         }
-        
+
         // Process ONLY brand-new products
         const processedProducts = (apiData || [])
-          .filter(product => {
+          .filter((product) => {
             // Only include products with brand-new condition
             const condition = (product.condition || "").toLowerCase();
             return condition.includes("brand") || condition.includes("new");
@@ -495,10 +502,12 @@ export default function EnhancedProductSections() {
             images: Array.isArray(product.images) ? product.images : [],
             productId: product._id || product.id || `new-${index}`,
             rating: Number(product.rating || product.averageRating || 0),
-            reviewCount: Number(product.reviewCount || product.ratingCount || 0),
+            reviewCount: Number(
+              product.reviewCount || product.ratingCount || 0
+            ),
             condition: "brand-new", // Force brand-new for this section
           }));
-        
+
         // Check if we have any brand-new products
         if (processedProducts.length > 0) {
           setBrandNewProducts(processedProducts);
@@ -507,7 +516,7 @@ export default function EnhancedProductSections() {
           setBrandNewProducts([]);
           setShowBrandNewSection(false);
         }
-        
+
         setLoadingBrandNew(false);
       } catch (error) {
         console.error("Brand New Products Error:", error);
@@ -537,7 +546,7 @@ export default function EnhancedProductSections() {
 
         // Process products
         let productsData = [];
-        
+
         // Handle different response structures
         if (Array.isArray(res.data)) {
           productsData = res.data;
@@ -545,7 +554,7 @@ export default function EnhancedProductSections() {
           productsData = res.data.products;
         } else if (res.data && Array.isArray(res.data.data)) {
           productsData = res.data.data;
-        } else if (res.data && typeof res.data === 'object') {
+        } else if (res.data && typeof res.data === "object") {
           const values = Object.values(res.data);
           for (const value of values) {
             if (Array.isArray(value)) {
@@ -562,7 +571,7 @@ export default function EnhancedProductSections() {
           rating: Number(product.rating || product.averageRating || 0),
           reviewCount: Number(product.reviewCount || product.ratingCount || 0),
           // Preserve original condition for badge display
-          condition: product.condition || "brand-new"
+          condition: product.condition || "brand-new",
         }));
 
         setJustForYouProducts(processedProducts);
@@ -632,17 +641,18 @@ export default function EnhancedProductSections() {
             subtitle="Latest Collections"
             icon={FaFire}
           />
-          
+
           {/* Section Info Badge */}
           <div className="text-center mb-3 sm:mb-5">
             <div className="inline-flex items-center bg-green-50 border border-green-200 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 mb-2">
               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-1 sm:mr-1.5"></div>
               <span className="text-[10px] sm:text-xs text-green-700 font-medium">
-                Showing only <strong className="font-bold">Brand New</strong> items
+                Showing only <strong className="font-bold">Brand New</strong>{" "}
+                items
               </span>
             </div>
           </div>
-          
+
           {/* Error State */}
           {errorBrandNew && (
             <div className="mb-4 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg sm:rounded-xl text-red-700 text-center">
@@ -650,7 +660,9 @@ export default function EnhancedProductSections() {
                 <div className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 rounded-full flex items-center justify-center mr-1 sm:mr-1.5">
                   <span className="text-white text-[10px] sm:text-xs">!</span>
                 </div>
-                <span className="font-semibold text-xs sm:text-sm">Unable to Load</span>
+                <span className="font-semibold text-xs sm:text-sm">
+                  Unable to Load
+                </span>
               </div>
               <p className="text-[10px] sm:text-xs">{errorBrandNew}</p>
               <button
@@ -687,7 +699,9 @@ export default function EnhancedProductSections() {
                       product={product}
                       onAddToCart={handleAddToCart}
                       onToggleWishlist={handleToggleWishlist}
-                      isInWishlist={wishlist.has(product._id || product.productId)}
+                      isInWishlist={wishlist.has(
+                        product._id || product.productId
+                      )}
                       onProductClick={handleProductClick}
                       sectionType="brand-new"
                       showConditionBadge={true}
@@ -707,7 +721,7 @@ export default function EnhancedProductSections() {
           subtitle="Personalized Selection"
           icon={FaUserTag}
         />
-        
+
         {/* Section Info - Mixed Conditions */}
         <div className="text-center mb-3 sm:mb-5">
           <div className="inline-flex flex-wrap justify-center gap-1 sm:gap-2 mb-2">
@@ -725,7 +739,7 @@ export default function EnhancedProductSections() {
             Personalized recommendations based on your preferences
           </p>
         </div>
-        
+
         {/* Error State */}
         {errorJustForYou && (
           <div className="mb-4 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg sm:rounded-xl text-red-700 text-center">
@@ -733,7 +747,9 @@ export default function EnhancedProductSections() {
               <div className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 rounded-full flex items-center justify-center mr-1 sm:mr-1.5">
                 <span className="text-white text-[10px] sm:text-xs">!</span>
               </div>
-              <span className="font-semibold text-xs sm:text-sm">Unable to Load</span>
+              <span className="font-semibold text-xs sm:text-sm">
+                Unable to Load
+              </span>
             </div>
             <p className="text-[10px] sm:text-xs">{errorJustForYou}</p>
             <button
@@ -772,7 +788,9 @@ export default function EnhancedProductSections() {
                     product={product}
                     onAddToCart={handleAddToCart}
                     onToggleWishlist={handleToggleWishlist}
-                    isInWishlist={wishlist.has(product._id || product.productId)}
+                    isInWishlist={wishlist.has(
+                      product._id || product.productId
+                    )}
                     onProductClick={handleProductClick}
                     sectionType="just-for-you"
                     showConditionBadge={true}
@@ -815,7 +833,9 @@ export default function EnhancedProductSections() {
               {cartCount}
             </span>
           </div>
-          <span className="ml-1 font-semibold text-[10px] sm:text-xs hidden sm:inline">Cart</span>
+          <span className="ml-1 font-semibold text-[10px] sm:text-xs hidden sm:inline">
+            Cart
+          </span>
         </button>
       )}
     </div>

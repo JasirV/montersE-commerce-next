@@ -89,27 +89,52 @@ const ProductSpecifications = ({ product, activeTab, setActiveTab }) => {
     { label: "Model", value: product.model },
     { label: "SKU", value: product.sku },
     { label: "Category", value: product.accessoryCategory || product.category },
-    { label: "Subcategory", value: product.accessorySubCategory || product.subCategory },
+    {
+      label: "Subcategory",
+      value: product.accessorySubCategory || product.subCategory,
+    },
     { label: "Gender", value: product.gender },
-    { label: "Material", value: product.accessoryMaterial?.join(", ") || product.material },
-    { label: "Color", value: product.accessoryColor?.join(", ") || product.color },
+    {
+      label: "Material",
+      value: product.accessoryMaterial?.join(", ") || product.material,
+    },
+    {
+      label: "Color",
+      value: product.accessoryColor?.join(", ") || product.color,
+    },
     { label: "Condition", value: product.condition },
     { label: "Item Condition", value: product.itemCondition },
     { label: "Production Year", value: product.productionYear },
-    { label: "Approximate Year", value: product.approximateYear ? "Yes" : null },
+    {
+      label: "Approximate Year",
+      value: product.approximateYear ? "Yes" : null,
+    },
     { label: "Year Unknown", value: product.unknownYear ? "Yes" : null },
     { label: "Serial Number", value: product.serialNumber },
     { label: "Reference Number", value: product.referenceNumber },
-    { label: "What's Included", value: product.accessoryScopeOfDelivery?.join(", ") || product.scopeOfDelivery },
-    { label: "Delivery Includes", value: product.accessoryDelivery?.join(", ") || product.delivery },
+    {
+      label: "What's Included",
+      value:
+        product.accessoryScopeOfDelivery?.join(", ") || product.scopeOfDelivery,
+    },
+    {
+      label: "Delivery Includes",
+      value: product.accessoryDelivery?.join(", ") || product.delivery,
+    },
     { label: "Length", value: product.length },
     { label: "Width", value: product.width },
     { label: "Height", value: product.height },
     { label: "Weight", value: product.weight },
     { label: "Origin", value: product.origin },
     { label: "Warranty", value: product.warranty },
-    { label: "Warranty Period", value: product.warrantyPeriod }
-  ].filter((spec) => spec.value && spec.value !== "" && spec.value !== null && spec.value !== undefined);
+    { label: "Warranty Period", value: product.warrantyPeriod },
+  ].filter(
+    (spec) =>
+      spec.value &&
+      spec.value !== "" &&
+      spec.value !== null &&
+      spec.value !== undefined
+  );
 
   const keyDetails = [
     { label: "Brand", value: product.brand },
@@ -224,7 +249,9 @@ const ProductSpecifications = ({ product, activeTab, setActiveTab }) => {
                     key={i}
                     className="px-4 py-3 grid grid-cols-2 gap-2 text-sm"
                   >
-                    <span className="font-medium text-gray-700">{spec.label}</span>
+                    <span className="font-medium text-gray-700">
+                      {spec.label}
+                    </span>
                     <span className="text-gray-900 text-right break-words">
                       {spec.value}
                     </span>
@@ -251,7 +278,10 @@ const ProductSpecifications = ({ product, activeTab, setActiveTab }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Features */}
-            {(product.accessoryMaterial || product.accessoryColor || product.accessoryCategory || product.accessorySubCategory) && (
+            {(product.accessoryMaterial ||
+              product.accessoryColor ||
+              product.accessoryCategory ||
+              product.accessorySubCategory) && (
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h4 className="font-semibold mb-2 text-blue-800">Features</h4>
                 <ul className="text-sm text-gray-700 space-y-1">
@@ -273,11 +303,11 @@ const ProductSpecifications = ({ product, activeTab, setActiveTab }) => {
 
             {/* Condition */}
             <div className="bg-green-50 p-4 rounded-lg">
-              <h4 className="font-semibold mb-2 text-green-800">Condition Details</h4>
+              <h4 className="font-semibold mb-2 text-green-800">
+                Condition Details
+              </h4>
               <ul className="text-sm text-gray-700 space-y-1">
-                {product.itemCondition && (
-                  <li>• {product.itemCondition}</li>
-                )}
+                {product.itemCondition && <li>• {product.itemCondition}</li>}
                 <li>• Authentic Product</li>
                 <li>• Fast Delivery</li>
                 <li>• Quality Checked</li>
@@ -313,16 +343,16 @@ const ProductSpecifications = ({ product, activeTab, setActiveTab }) => {
 // ===========================
 // RestockNotification Component (Separated from main component)
 // ===========================
-const RestockNotification = ({ 
-  product, 
-  selectedImage, 
-  email, 
-  setEmail, 
-  isSubscribing, 
+const RestockNotification = ({
+  product,
+  selectedImage,
+  email,
+  setEmail,
+  isSubscribing,
   isSubscribed,
   handleRestockSubscribe,
   handleRestockUnsubscribe,
-  setShowRestockInput 
+  setShowRestockInput,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -402,8 +432,8 @@ const RestockNotification = ({
                     selectedImage || product.image || "/placeholder-image.jpg"
                   }
                   alt={product.name}
-                  unoptimized
                   width={48}
+                  unoptimized
                   height={48}
                   className="object-cover w-full h-full"
                 />
@@ -560,9 +590,7 @@ const RestockNotification = ({
                   Privacy Policy
                 </button>{" "}
                 and{" "}
-                <button className="text-blue-600 hover:underline">
-                  Terms
-                </button>
+                <button className="text-blue-600 hover:underline">Terms</button>
               </p>
             </div>
           </div>
@@ -605,22 +633,22 @@ const RestockNotification = ({
 // ===========================
 // ZoomModal Component (Separated from main component)
 // ===========================
-const ZoomModal = ({ 
-  showZoomModal, 
-  setShowZoomModal, 
-  selectedImage, 
-  product, 
-  images, 
-  zoom, 
-  setZoom, 
-  position, 
-  setPosition, 
-  handleTouchStart, 
-  handleTouchMove, 
-  handleTouchPinch, 
-  handleTouchEnd, 
-  resetZoom, 
-  handleImageSelect 
+const ZoomModal = ({
+  showZoomModal,
+  setShowZoomModal,
+  selectedImage,
+  product,
+  images,
+  zoom,
+  setZoom,
+  position,
+  setPosition,
+  handleTouchStart,
+  handleTouchMove,
+  handleTouchPinch,
+  handleTouchEnd,
+  resetZoom,
+  handleImageSelect,
 }) => {
   if (!showZoomModal) return null;
 
@@ -714,8 +742,8 @@ const ZoomModal = ({
                 <Image
                   src={image.url || image}
                   alt={`Thumbnail ${idx + 1}`}
-                  unoptimized
                   width={60}
+                  unoptimized
                   height={60}
                   className="w-14 h-14 object-cover rounded-md"
                 />
@@ -849,7 +877,7 @@ const AccessoriesDetails = () => {
     useContext(GlobalContext);
   const router = useRouter();
   const { id } = useParams();
-  
+
   const [product, setProducts] = useState(null);
   const [isLoading, setLoading] = useState(true);
   const [isInCart, setIsInCart] = useState(false);
@@ -902,13 +930,16 @@ const AccessoriesDetails = () => {
 
   const maxThumbnailIndex = Math.max(0, images.length - visibleThumbnails);
 
-  const handleThumbnailNavigate = useCallback((direction) => {
-    if (direction === "prev") {
-      setThumbnailStartIndex((prev) => Math.max(0, prev - 1));
-    } else {
-      setThumbnailStartIndex((prev) => Math.min(maxThumbnailIndex, prev + 1));
-    }
-  }, [maxThumbnailIndex]);
+  const handleThumbnailNavigate = useCallback(
+    (direction) => {
+      if (direction === "prev") {
+        setThumbnailStartIndex((prev) => Math.max(0, prev - 1));
+      } else {
+        setThumbnailStartIndex((prev) => Math.min(maxThumbnailIndex, prev + 1));
+      }
+    },
+    [maxThumbnailIndex]
+  );
 
   const visibleImages = images.slice(
     thumbnailStartIndex,
@@ -919,7 +950,7 @@ const AccessoriesDetails = () => {
   useEffect(() => {
     const loadProducts = async () => {
       if (!id) return;
-      
+
       setLoading(true);
       setError(null);
       try {
@@ -1175,8 +1206,8 @@ const AccessoriesDetails = () => {
 
   // Enhanced Handle share button click for mobile
   const handleShareClick = () => {
-    if (typeof navigator === 'undefined') return;
-    
+    if (typeof navigator === "undefined") return;
+
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile && navigator.share) {
@@ -1366,7 +1397,7 @@ const AccessoriesDetails = () => {
 
       await addToCart(token, id, 1);
       incrementCart();
-      
+
       // store in localStorage for quick UI update
       const cart = JSON.parse(localStorage.getItem("cart")) || [];
       cart.push({ productId: id, quantity: 1 });
@@ -1533,7 +1564,9 @@ const AccessoriesDetails = () => {
                   className={`p-2 sm:p-3 rounded-lg sm:rounded-xl border transition-colors ${
                     wishlistLoading ? "opacity-50 cursor-not-allowed" : ""
                   } ${"bg-white border-gray-200 hover:bg-gray-50"}`}
-                  aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-label={
+                    isWishlisted ? "Remove from wishlist" : "Add to wishlist"
+                  }
                 >
                   {wishlistLoading ? (
                     <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
@@ -1686,7 +1719,7 @@ const AccessoriesDetails = () => {
               <div
                 ref={imageContainerRef}
                 className={`relative w-full h-64 sm:h-72 md:h-80 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden border-2 border-gray-100 cursor-${
-                  typeof window !== 'undefined' && window.innerWidth >= 768
+                  typeof window !== "undefined" && window.innerWidth >= 768
                     ? isZoomed
                       ? "zoom-out"
                       : "zoom-in"
@@ -1698,7 +1731,7 @@ const AccessoriesDetails = () => {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
+                  if (e.key === "Enter" || e.key === " ") {
                     handleImageClick(e);
                   }
                 }}
@@ -1720,6 +1753,7 @@ const AccessoriesDetails = () => {
                     alt={product.name || "Accessory Image"}
                     width={600}
                     height={600}
+                    unoptimized
                     className="object-contain w-full h-full p-2 select-none"
                     priority
                     draggable="false"
@@ -1727,7 +1761,7 @@ const AccessoriesDetails = () => {
                 </div>
 
                 {/* Zoom Controls for Desktop */}
-                {typeof window !== 'undefined' && window.innerWidth >= 768 && (
+                {typeof window !== "undefined" && window.innerWidth >= 768 && (
                   <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-white bg-opacity-80 backdrop-blur-sm rounded-full p-2 shadow-lg">
                     <button
                       onClick={(e) => {
@@ -1772,7 +1806,7 @@ const AccessoriesDetails = () => {
                 )}
 
                 {/* Mobile Zoom Hint */}
-                {typeof window !== 'undefined' && window.innerWidth < 768 && (
+                {typeof window !== "undefined" && window.innerWidth < 768 && (
                   <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
                     Tap to zoom
                   </div>
@@ -1856,20 +1890,23 @@ const AccessoriesDetails = () => {
                           role="button"
                           tabIndex={0}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
+                            if (e.key === "Enter" || e.key === " ") {
                               handleImageSelect(image);
                             }
                           }}
-                          aria-label={`View image ${thumbnailStartIndex + idx + 1}`}
+                          aria-label={`View image ${
+                            thumbnailStartIndex + idx + 1
+                          }`}
                         >
                           <Image
                             src={image.url || image}
                             alt={`Thumbnail ${thumbnailStartIndex + idx + 1}`}
                             width={100}
+                            unoptimized
                             height={100}
                             className="object-cover w-full h-full hover:scale-110 transition-transform duration-200"
                           />
-                          {/* Active indicator */}
+                       
                           {selectedImage === (image.url || image) && (
                             <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></div>
                           )}
@@ -1879,7 +1916,8 @@ const AccessoriesDetails = () => {
 
                     {/* View All Button for Mobile */}
                     {images.length > visibleThumbnails &&
-                      typeof window !== 'undefined' && window.innerWidth < 768 && (
+                      typeof window !== "undefined" &&
+                      window.innerWidth < 768 && (
                         <div className="text-center mt-3">
                           <button
                             onClick={() => {
@@ -1922,6 +1960,7 @@ const AccessoriesDetails = () => {
                         src={newCurrency}
                         alt="Currency"
                         width={24}
+                        unoptimized
                         height={24}
                         className="mr-1 sm:mr-2 w-5 h-5 sm:w-7 sm:h-7"
                       />
@@ -1936,6 +1975,7 @@ const AccessoriesDetails = () => {
                             <Image
                               src={newCurrency}
                               alt="Currency"
+                              unoptimized
                               width={18}
                               height={18}
                               className="mr-1 w-4 h-4 sm:w-5 sm:h-5"
@@ -2067,10 +2107,10 @@ const AccessoriesDetails = () => {
 
               {/* Product Description - Now moved to tabs */}
               <div className="border-t border-gray-200 pt-4 sm:pt-6">
-                <ProductSpecifications 
-                  product={product} 
-                  activeTab={activeTab} 
-                  setActiveTab={setActiveTab} 
+                <ProductSpecifications
+                  product={product}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
                 />
               </div>
 
