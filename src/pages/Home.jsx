@@ -81,7 +81,7 @@ const ProductGrid = () => {
 const fetchLimitedEdition = useCallback(async () => {
   try {
     const res = await axios.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/admin/product/getLimited`
+      `${process.env.NEXT_PUBLIC_BASEURL}/admin/product/getLimited`
     );
     return res?.data?.products || [];
   } catch (error) {
@@ -215,7 +215,7 @@ const fetchLimitedEdition = useCallback(async () => {
               <Image
                 src={imageUrl}
                 alt={productName}
-                className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"            unoptimized
                 width={120}
                 height={120}
                 loading="lazy"
