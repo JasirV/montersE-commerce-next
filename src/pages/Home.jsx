@@ -78,18 +78,18 @@ const ProductGrid = () => {
   // ==============================================
   // API CALLS (Optimized)
   // ==============================================
+const fetchLimitedEdition = useCallback(async () => {
+  try {
+    const res = await axios.get(
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/product/getLimited`
+    );
+    return res?.data?.products || [];
+  } catch (error) {
+    console.error("Error fetching limited edition products:", error);
+    return [];
+  }
+}, []);
 
-  const fetchLimitedEdition = useCallback(async () => {
-    try {
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000"}/api/admin/product/getLimited`
-      );
-      return res?.data?.products || [];
-    } catch (error) {
-      console.error("Error fetching limited edition products:", error);
-      return [];
-    }
-  }, []);
 
   // ==============================================
   // DATA FETCHING (Optimized)

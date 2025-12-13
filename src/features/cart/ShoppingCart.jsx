@@ -442,7 +442,7 @@ const PriceWithCurrency = ({ amount, className = "" }) => (
                 Add some items to get started
               </p>
               <button
-                onClick={() => router.push("/products")}
+                onClick={() => router.push("/shop")}
                 className="mt-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity"
               >
                 Continue Shopping
