@@ -55,7 +55,7 @@ export default function IndexPage() {
       />
       <Landing />
       <div className="flex md:hidden justify-center">
-        {/* <CategorySectionWithImages/> */}
+        <CategorySectionWithImages/>
       </div>
       <Home />
       <WatchBrand />

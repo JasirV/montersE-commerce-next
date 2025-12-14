@@ -1,8 +1,11 @@
 "use client";
 import { CurrencyProvider } from "./CurrencyContext";
+import AuthProvider from "../components/AuthProvider";
 
 export default function Providers({ children }) {
   return (
-    <CurrencyProvider>{children}</CurrencyProvider>
+    <AuthProvider>
+      <CurrencyProvider>{children}</CurrencyProvider>
+    </AuthProvider>
   );
 }

@@ -3,7 +3,7 @@ import axios from 'axios';
 export default function CheckoutButton({ order }) {
 const handleCheckout = async () => {
 try {
-const res = await axios.post('http://localhost:4000/api/create-tabbycheckout', {
+const res = await axios.post('http://localhost:9000/api/tabby/create-tabbycheckout', {
 amount: order.total,
 currency: 'AED',
 customer: {

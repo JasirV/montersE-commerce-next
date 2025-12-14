@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Slider from "react-slick";
-import LuxuryWatchCollection from "../../assets/Banners/LuxuryWatchCollection.jpg";
+import LuxuryWatchCollection from "../../assets/Banners/Luxury.png";
 import NewArrivals2025 from "../../assets/Banners/repair.png";
 import ExclusiveLimited from "../../assets/Banners/Join the World of Montres.png";
 import WorldWideShipping from "../../assets/Banners/World.png";

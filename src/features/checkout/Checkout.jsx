@@ -14,7 +14,8 @@ import Image from "next/image";
 import { getCart } from "@/service/productService";
 import axios from "axios";
 import ShippingTermsModal from "./ShippingTermsModal";
-import TabbyLogo from '../../assets/Tabby logo.png'
+import TabbyLogo from "../../assets/Tabby logo.png";
+import CheckoutButton from "@/components/tabbyButton/CheckoutButton";
 
 const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("stripe");
@@ -59,6 +60,19 @@ const CheckoutPage = () => {
     street: "",
     postalCode: "",
   });
+  const order = {
+    id: 1234,
+    total: 39900, // smallest currency unit? Tabby expects amount in minor
+    name: "John Doe",
+    email: "john@example.com",
+    phone: "+971500000000",
+    address: {
+      line1: "123 Street",
+      city: "Dubai",
+      country: "AE",
+    },
+    items: [{ id: "sku_1", name: "Product 1", qty: 1, price: 39900 }],
+  };
 
   // Safe product price getter
   const getProductPrice = useCallback((product) => {
@@ -68,7 +82,7 @@ const CheckoutPage = () => {
 
   // Safe product data checker
   const isValidProduct = useCallback((item) => {
-    return item && item.productId && typeof item.quantity === 'number';
+    return item && item.productId && typeof item.quantity === "number";
   }, []);
 
   // Check if we have a valid address for calculation
@@ -99,8 +113,6 @@ const CheckoutPage = () => {
     }
   }, [selectedAddress]);
 
-
-
   const calculateTotals = async () => {
     try {
       setLoading(true);
@@ -114,7 +126,7 @@ const CheckoutPage = () => {
 
       // Filter valid items only
       const validItems = checkoutProducts.filter(isValidProduct);
-      
+
       if (validItems.length === 0) {
         calculateTotalsFallback();
         return;
@@ -214,12 +226,10 @@ const CheckoutPage = () => {
     }
   };
 
-
-
   // Fixed fallback calculation - VAT is 0 since already included
   const calculateTotalsFallback = () => {
     const validItems = checkoutProducts.filter(isValidProduct);
-    
+
     const cartTotal = validItems.reduce((total, item) => {
       const price = getProductPrice(item.productId);
       return total + price * item.quantity;
@@ -239,8 +249,6 @@ const CheckoutPage = () => {
     setShippingFee(shippingValue);
     setVatAmount(vatValue);
     setFinalTotal(finalTotalValue);
-
-
   };
 
   // Update totals when form fields are completed
@@ -265,170 +273,168 @@ const CheckoutPage = () => {
     shippingForm.country,
   ]);
 
-const createOrder = async () => {
-  setIsLoading(true);
+  const createOrder = async () => {
+    setIsLoading(true);
 
-  try {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      alert("Please login to continue");
-      setIsLoading(false);
-      return;
-    }
-
-    const validItems = checkoutProducts.filter(isValidProduct);
-    if (validItems.length === 0) {
-      alert("No valid products in cart");
-      setIsLoading(false);
-      return;
-    }
-
-    const items = validItems.map((item) => ({
-      productId: item.productId._id,
-      quantity: item.quantity,
-    }));
-
-    const shippingAddress = selectedAddress
-      ? {
-          firstName: selectedAddress.firstName,
-          lastName: selectedAddress.lastName,
-          email: selectedAddress.email,
-          phone: selectedAddress.phone,
-          address1: selectedAddress.street,
-          street: selectedAddress.street,
-          city: selectedAddress.city,
-          state: selectedAddress.state,
-          country: selectedAddress.country,
-          postalCode: selectedAddress.postalCode,
-        }
-      : {
-          firstName: shippingForm.firstName,
-          lastName: shippingForm.lastName,
-          email: shippingForm.email,
-          phone: shippingForm.phone,
-          address1: shippingForm.street,
-          street: shippingForm.street,
-          city: shippingForm.city,
-          state: shippingForm.state,
-          country: shippingForm.country,
-          postalCode: shippingForm.postalCode,
-        };
-
-    const billingAddress = billingSameAsShipping
-      ? { ...shippingAddress }
-      : {
-          firstName: billingForm.firstName,
-          lastName: billingForm.lastName,
-          email: billingForm.email,
-          phone: billingForm.phone,
-          address1: billingForm.street,
-          street: billingForm.street,
-          city: billingForm.city,
-          state: billingForm.state,
-          country: billingForm.country,
-          postalCode: billingForm.postalCode,
-        };
-
-    // Required field check
-    const requiredFields = [
-      "firstName",
-      "lastName",
-      "phone",
-      "email",
-      "street",
-      "city",
-      "state",
-      "country"
-    ];
-
-    for (let field of requiredFields) {
-      if (!shippingAddress[field]) {
-        alert("Please fill all required shipping fields");
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        alert("Please login to continue");
         setIsLoading(false);
         return;
       }
-    }
 
-    if (!billingSameAsShipping) {
+      const validItems = checkoutProducts.filter(isValidProduct);
+      if (validItems.length === 0) {
+        alert("No valid products in cart");
+        setIsLoading(false);
+        return;
+      }
+
+      const items = validItems.map((item) => ({
+        productId: item.productId._id,
+        quantity: item.quantity,
+      }));
+
+      const shippingAddress = selectedAddress
+        ? {
+            firstName: selectedAddress.firstName,
+            lastName: selectedAddress.lastName,
+            email: selectedAddress.email,
+            phone: selectedAddress.phone,
+            address1: selectedAddress.street,
+            street: selectedAddress.street,
+            city: selectedAddress.city,
+            state: selectedAddress.state,
+            country: selectedAddress.country,
+            postalCode: selectedAddress.postalCode,
+          }
+        : {
+            firstName: shippingForm.firstName,
+            lastName: shippingForm.lastName,
+            email: shippingForm.email,
+            phone: shippingForm.phone,
+            address1: shippingForm.street,
+            street: shippingForm.street,
+            city: shippingForm.city,
+            state: shippingForm.state,
+            country: shippingForm.country,
+            postalCode: shippingForm.postalCode,
+          };
+
+      const billingAddress = billingSameAsShipping
+        ? { ...shippingAddress }
+        : {
+            firstName: billingForm.firstName,
+            lastName: billingForm.lastName,
+            email: billingForm.email,
+            phone: billingForm.phone,
+            address1: billingForm.street,
+            street: billingForm.street,
+            city: billingForm.city,
+            state: billingForm.state,
+            country: billingForm.country,
+            postalCode: billingForm.postalCode,
+          };
+
+      // Required field check
+      const requiredFields = [
+        "firstName",
+        "lastName",
+        "phone",
+        "email",
+        "street",
+        "city",
+        "state",
+        "country",
+      ];
+
       for (let field of requiredFields) {
-        if (!billingAddress[field]) {
-          alert("Please fill all required billing fields");
+        if (!shippingAddress[field]) {
+          alert("Please fill all required shipping fields");
           setIsLoading(false);
           return;
         }
       }
-    }
 
-    const orderData = {
-      items,
-      shippingAddress,
-      billingAddress,
-      paymentMethod,
-      subtotal,
-      shippingFee,
-      total: finalTotal,
-      vatAmount,
-    };
-
-    if(paymentMethod=="stripe"){
-    const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_BASEURL}/order/create`,
-      orderData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      if (!billingSameAsShipping) {
+        for (let field of requiredFields) {
+          if (!billingAddress[field]) {
+            alert("Please fill all required billing fields");
+            setIsLoading(false);
+            return;
+          }
+        }
       }
-    );
 
-    const data = response.data;
+      const orderData = {
+        items,
+        shippingAddress,
+        billingAddress,
+        paymentMethod,
+        subtotal,
+        shippingFee,
+        total: finalTotal,
+        vatAmount,
+      };
 
-    if (!data.success) {
-      throw new Error(data.message || "Failed to create order");
-    }
+      if (paymentMethod == "stripe") {
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_BASEURL}/order/create`,
+          orderData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-    if (data.checkoutUrl) {
-      // Stripe or Tabby redirect
-      window.location.href = data.checkoutUrl;
-      return;
-    }
+        const data = response.data;
 
-    // If Order created without payment (ex: COD)
-    setStep("success");
-  }else if (paymentMethod=="tabby"){
-     const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_BASEURL}/order/tabby`,
-      orderData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        if (!data.success) {
+          throw new Error(data.message || "Failed to create order");
+        }
+
+        if (data.checkoutUrl) {
+          // Stripe or Tabby redirect
+          window.location.href = data.checkoutUrl;
+          return;
+        }
+
+        // If Order created without payment (ex: COD)
+        setStep("success");
+      } else if (paymentMethod == "tabby") {
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_BASEURL}/order/tabby`,
+          orderData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = response.data;
+
+        if (!data.success) {
+          throw new Error(data.message || "Failed to create order");
+        }
+
+        if (data.checkoutUrl) {
+          // Stripe or Tabby redirect
+          window.location.href = data.checkoutUrl;
+          return;
+        }
       }
-    );
-
-    const data = response.data;
-
-    if (!data.success) {
-      throw new Error(data.message || "Failed to create order");
+    } catch (error) {
+      console.error("Order creation failed:", error);
+      alert(error.response?.data?.message || error.message);
+    } finally {
+      setIsLoading(false);
     }
-
-    if (data.checkoutUrl) {
-      // Stripe or Tabby redirect
-      window.location.href = data.checkoutUrl;
-      return;
-    }
-  }
-
-  } catch (error) {
-    console.error("Order creation failed:", error);
-    alert(error.response?.data?.message || error.message);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   const handlePlaceOrder = () => {
     if (!privacyAccepted) {
@@ -995,7 +1001,8 @@ const createOrder = async () => {
                             <div className="text-right flex-shrink-0 ml-3">
                               <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
                                 {(
-                                  getProductPrice(item.productId) * item.quantity
+                                  getProductPrice(item.productId) *
+                                  item.quantity
                                 ).toFixed(2)}{" "}
                                 AED
                               </p>
@@ -1090,17 +1097,41 @@ const createOrder = async () => {
                     }`}
                   >
                     <div className="flex items-center flex-1">
-                      <input
+                      {/* <input
                         type="radio"
                         name="payment"
                         value="tabby"
                         checked={paymentMethod === "tabby"}
                         onChange={() => setPaymentMethod("tabby")}
                         className="mr-3 text-blue-600"
-                      />
+                      /> */}
                       <div>
+                        <CheckoutButton order={order} />
+                        <div style={{ marginTop: 24 }}>
+                          <p>Promo widget example (script tag):</p>
+                          <div id="tabby-promo-container" />
+                          <script
+                            src="https://checkout.tabby.ai/tabby-promo.js"
+                            data-pk="pk_test_0194a887-5d2c-c408-94f4-65ee1ca745e8"
+                            data-amount="39900"
+                            data-currency="AED"
+                            async
+                          ></script>
+                        </div>
                         <p className="font-medium">Pay later with Tabby</p>
-                        <p className="text-sm text-gray-600 mt-1">Use any card.</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Use any card.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentMethod("tabby");
+                            handlePlaceOrder();
+                          }}
+                          className="mt-3 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                        >
+                          Checkout with Tabby
+                        </button>
                       </div>
                     </div>
 
