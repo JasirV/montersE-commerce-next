@@ -8,7 +8,7 @@ import { useCurrency } from "@/app/CurrencyContext";
 import { getHomeProductGrid } from "@/service/productService";
 
 /* ==============================================
-   CATEGORY TITLE FORMATTER (Luxury Typography)
+   CATEGORY TITLE FORMATTER
    ============================================== */
 const formatCategoryTitle = (title = "") => {
   return title
@@ -23,10 +23,11 @@ const ProductGrid = () => {
   const [limitedProducts, setLimitedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const { currency, rate } = useCurrency();
+  // ✅ Currency Context
+  const { currency, convertPrice, getCurrencySymbol } = useCurrency();
 
   /* ==============================================
-     CATEGORY CHECK HELPERS
+     CATEGORY HELPERS
      ============================================== */
   const isBagCategory = useCallback((product) => {
     if (!product) return false;
@@ -90,7 +91,7 @@ const ProductGrid = () => {
       );
       return res?.data?.products || [];
     } catch (error) {
-      console.error("Error fetching limited edition products:", error);
+      console.error("Limited edition error:", error);
       return [];
     }
   }, []);
@@ -158,24 +159,18 @@ const ProductGrid = () => {
   }, [fetchLimitedEdition]);
 
   /* ==============================================
-     SKELETON UI
+     LOADING UI
      ============================================== */
   if (loading) {
     return (
-      <div className="bg-gray-50 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
+      <div className="bg-gray-50 p-6 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-xl p-4 shadow border"
-            >
+            <div key={i} className="bg-white rounded-xl p-4 border">
               <div className="h-5 w-1/3 bg-gray-200 rounded mb-4" />
               <div className="grid grid-cols-3 gap-2">
                 {Array.from({ length: 3 }).map((_, j) => (
-                  <div
-                    key={j}
-                    className="aspect-square bg-gray-200 rounded"
-                  />
+                  <div key={j} className="aspect-square bg-gray-200 rounded" />
                 ))}
               </div>
             </div>
@@ -193,9 +188,9 @@ const ProductGrid = () => {
     const imageUrl = product.images?.[0]?.url;
 
     const price = product.salePrice
-      ? `${(Number(product.salePrice) * rate).toFixed(
-          2
-        )} ${currency}`
+      ? `${getCurrencySymbol(currency)} ${convertPrice(
+          product.salePrice
+        )}`
       : "Price N/A";
 
     return (

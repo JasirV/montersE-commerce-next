@@ -7,13 +7,7 @@ import Link from "next/link";
 import Bag from "@/assets/beautiful-elegance-luxury-fashion-green-handbag.jpg";
 
 // Import icons separately to avoid issues
-import {
-  FaShoppingBag,
-  FaWatch,
-  FaGem,
-  FaShoePrints,
-  FaTshirt,
-} from "react-icons/fa";
+import { FaShoppingBag, FaGem, FaShoePrints, FaTshirt } from "react-icons/fa";
 
 const NewArrivals = () => {
   const [products, setProducts] = useState([]);
@@ -21,7 +15,80 @@ const NewArrivals = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ✅ Currency Context
   const { currency, convertPrice, getCurrencySymbol } = useCurrency();
+
+  // Format price with thousands separators and proper decimals
+  const formatPrice = (price) => {
+    try {
+      // Convert to number if it's not already
+      const priceNumber = typeof price === 'number' ? price : parseFloat(price);
+      
+      // Check if it's a valid number
+      if (isNaN(priceNumber)) {
+        return "0.00";
+      }
+      
+      // Format with 2 decimal places and thousands separators
+      return priceNumber.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    } catch (error) {
+      console.error("Error formatting price:", error);
+      return "0.00";
+    }
+  };
+
+  // Format price with currency symbol and proper spacing
+  const formatPriceWithCurrency = (price) => {
+    const formattedPrice = formatPrice(price);
+    const symbol = getCurrencySymbol();
+    
+    // Return formatted price with currency symbol and proper spacing
+    // Different currencies have different formatting conventions
+    switch (currency) {
+      case 'USD':
+      case 'CAD':
+      case 'AUD':
+      case 'NZD':
+      case 'SGD':
+      case 'HKD':
+        // Prefix with symbol: $1,234.00
+        return `${symbol}${formattedPrice}`;
+      
+      case 'EUR':
+      case 'GBP':
+        // Prefix with symbol: €1,234.00 or £1,234.00
+        return `${symbol}${formattedPrice}`;
+      
+      case 'JPY':
+        // No decimals, with symbol: ¥1,234
+        const jpyPrice = parseFloat(price).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        });
+        return `${symbol}${jpyPrice}`;
+      
+      case 'INR':
+        // Indian numbering system with symbol: ₹1,234.00
+        const inrPrice = parseFloat(price).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        return `${symbol}${inrPrice}`;
+      
+      case 'AED':
+      case 'SAR':
+      case 'QAR':
+        // Arabic currencies: 1,234.00 AED
+        return `${formattedPrice} ${symbol}`;
+      
+      default:
+        // Default: symbol before number
+        return `${symbol}${formattedPrice}`;
+    }
+  };
 
   // Time periods for filtering
   const timePeriods = useMemo(() => {
@@ -377,15 +444,12 @@ const NewArrivals = () => {
       const basePrice =
         product.salePrice || product.price || product.regularPrice || 0;
       const convertedPrice = convertPrice(basePrice);
-      // Ensure convertedPrice is a number before calling toFixed
-      const priceNumber =
-        typeof convertedPrice === "number"
-          ? convertedPrice
-          : parseFloat(convertedPrice);
-      return isNaN(priceNumber) ? "0.00" : priceNumber.toFixed(2);
+      
+      // Format the price with proper thousands separators and decimals
+      return formatPriceWithCurrency(convertedPrice);
     } catch (error) {
       console.error("Error converting price:", error);
-      return "0.00";
+      return formatPriceWithCurrency(0);
     }
   };
 
@@ -397,16 +461,35 @@ const NewArrivals = () => {
         product.regularPrice > product.salePrice
       ) {
         const convertedPrice = convertPrice(product.regularPrice);
-        const priceNumber =
-          typeof convertedPrice === "number"
-            ? convertedPrice
-            : parseFloat(convertedPrice);
-        return isNaN(priceNumber) ? null : priceNumber.toFixed(2);
+        return formatPriceWithCurrency(convertedPrice);
       }
       return null;
     } catch (error) {
       console.error("Error converting regular price:", error);
       return null;
+    }
+  };
+
+  // Calculate savings amount
+  const getSavingsAmount = (product) => {
+    try {
+      if (
+        product.regularPrice &&
+        product.salePrice &&
+        product.regularPrice > product.salePrice
+      ) {
+        const regularPrice = parseFloat(product.regularPrice) || 0;
+        const salePrice = parseFloat(product.salePrice) || 0;
+        const savings = regularPrice - salePrice;
+        const convertedSavings = convertPrice(savings);
+        
+        // Format savings amount properly
+        return formatPrice(convertedSavings);
+      }
+      return "0.00";
+    } catch (error) {
+      console.error("Error calculating savings:", error);
+      return "0.00";
     }
   };
 
@@ -572,12 +655,10 @@ const NewArrivals = () => {
                     <div className="mb-2 sm:mb-3">
                       <div className="flex items-baseline gap-1 sm:gap-2">
                         <p className="text-base sm:text-lg font-bold text-gray-900">
-                          {getCurrencySymbol()}
                           {getProductPrice(product)}
                         </p>
                         {getRegularPrice(product) && (
                           <p className="text-xs sm:text-sm text-gray-500 line-through">
-                            {getCurrencySymbol()}
                             {getRegularPrice(product)}
                           </p>
                         )}
@@ -586,10 +667,7 @@ const NewArrivals = () => {
                         <div className="flex items-center gap-1 sm:gap-2 mt-0.5">
                           <span className="bg-red-50 text-red-600 text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                             Save {getCurrencySymbol()}
-                            {(
-                              parseFloat(getRegularPrice(product) || 0) -
-                              parseFloat(getProductPrice(product) || 0)
-                            ).toFixed(2)}
+                            {getSavingsAmount(product)}
                           </span>
                         </div>
                       )}
