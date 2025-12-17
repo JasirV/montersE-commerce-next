@@ -424,7 +424,6 @@ const Navbar = () => {
     </div>
   );
 
-
   const onSignUpClick = () => {
     router.push("/login");
   };
