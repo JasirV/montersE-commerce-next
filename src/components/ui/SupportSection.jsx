@@ -27,9 +27,12 @@ const SupportSection = () => {
               <p className="text-xs uppercase text-gray-400 font-medium">
                 Help Center
               </p>
-              <p className="text-gray-700 font-semibold break-words">
+              <a
+                href="mailto:admin@montres.ae"
+                className="text-gray-700 font-semibold break-words hover:text-blue-600"
+              >
                 admin@montres.ae
-              </p>
+              </a>
             </div>
           </div>
 
@@ -42,9 +45,12 @@ const SupportSection = () => {
               <p className="text-xs uppercase text-gray-400 font-medium">
                 Email Support
               </p>
-              <p className="text-gray-700 font-semibold break-words">
+              <a
+                href="mailto:sales@montres.ae"
+                className="text-gray-700 font-semibold break-words hover:text-blue-600"
+              >
                 sales@montres.ae
-              </p>
+              </a>
             </div>
           </div>
         </div>
