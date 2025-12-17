@@ -215,7 +215,6 @@ const ProductCard = ({
       return {
         text: "Brand New",
         className: "bg-green-500 text-white",
-       
       };
     }
 
@@ -223,19 +222,16 @@ const ProductCard = ({
       return {
         text: "Pre-Owned",
         className: "bg-amber-500 text-white",
-        
       };
     } else if (condition.includes("like-new")) {
       return {
         text: "Like New",
         className: "bg-blue-500 text-white",
-       
       };
     } else if (condition.includes("brand") || condition.includes("new")) {
       return {
         text: "Brand New",
         className: "bg-green-500 text-white",
-       
       };
     }
 
@@ -546,7 +542,6 @@ export default function EnhancedProductSections() {
 
         const BASE_URL = process.env.NEXT_PUBLIC_BASEURL;
         const endpoints = [
-       
           `${BASE_URL}/products?sort=newest&limit=20`,
           `${BASE_URL}/products`,
         ];
@@ -758,8 +753,6 @@ export default function EnhancedProductSections() {
             subtitle="Latest Collections"
             icon={FaFire}
           />
-
-         
 
           {/* Error State */}
           {errorBrandNew && (
