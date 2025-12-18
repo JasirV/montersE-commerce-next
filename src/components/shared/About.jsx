@@ -27,6 +27,7 @@ const About = () => {
               src={watchstore}
               alt="Montres Luxury Watches"
               className="rounded-xl shadow-lg"
+              unoptimized
               width={600}       // Adjust width as needed
               height={400}      // Adjust height as needed
               quality={100}

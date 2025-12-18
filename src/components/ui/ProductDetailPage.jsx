@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useContext,
   useRef,
+  useCallback,
 } from "react";
 import {
   FaHeart,
@@ -44,6 +45,9 @@ import { Package, ChevronRight } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import newCurrency from "../../assets/newSymbole.png";
 import Image from "next/image";
+
+// ✅ Currency Context
+import { useCurrency } from "@/app/CurrencyContext";
 
 import { addToCart, fetchProduct } from "@/service/productService";
 import Toastify from "toastify-js";
@@ -95,6 +99,9 @@ const ProductDetailPage = () => {
 
   const { id } = useParams();
 
+  // ✅ Currency Context
+  const { currency, convertPrice, getCurrencySymbol } = useCurrency();
+
   // Wishlist states
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
@@ -114,6 +121,12 @@ const ProductDetailPage = () => {
   const [touchStart, setTouchStart] = useState(null);
   const imageContainerRef = useRef(null);
   const imageRef = useRef(null);
+
+  // Hover zoom states
+  const [isHovering, setIsHovering] = useState(false);
+  const [hoverZoomPosition, setHoverZoomPosition] = useState({ x: 50, y: 50 });
+  const zoomContainerRef = useRef(null);
+  const zoomOverlayRef = useRef(null);
 
   // Check if product is sold out
   const isSoldOut = product?.stockQuantity === 0;
@@ -245,7 +258,42 @@ const ProductDetailPage = () => {
     );
   };
 
-  // Add/Remove from wishlist API with login check
+  // Hover Zoom Handlers
+  const handleMouseMove = useCallback((e) => {
+    if (!zoomContainerRef.current) return;
+    
+    // Only activate on desktop (≥768px)
+    if (typeof window !== "undefined" && window.innerWidth < 768) return;
+    
+    const containerRect = zoomContainerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+    const y = ((e.clientY - containerRect.top) / containerRect.height) * 100;
+    
+    setHoverZoomPosition({ x, y });
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    // Only activate on desktop (≥768px)
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      setIsHovering(true);
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovering(false);
+    // Reset position when mouse leaves
+    setHoverZoomPosition({ x: 50, y: 50 });
+  }, []);
+
+  // // Preload image for hover zoom
+  // useEffect(() => {
+  //   if (typeof window !== "undefined" && selectedImage) {
+  //     const img = new window.Image();
+  //     img.src = selectedImage;
+  //   }
+  // }, [selectedImage]);
+
+
   const handleWishlistToggle = async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -349,14 +397,14 @@ const ProductDetailPage = () => {
   const images = useMemo(() => product?.images || [], [product]);
 
   // Thumbnail navigation - Responsive layout
-  const getVisibleThumbnails = () => {
+  const getVisibleThumbnails = useCallback(() => {
     if (typeof window !== "undefined") {
       if (window.innerWidth < 640) return 4; // Mobile
       if (window.innerWidth < 1024) return 5; // Tablet
       return 4; // Desktop
     }
     return 4;
-  };
+  }, []);
 
   const [visibleThumbnails, setVisibleThumbnails] = useState(
     getVisibleThumbnails()
@@ -369,17 +417,20 @@ const ProductDetailPage = () => {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [getVisibleThumbnails]);
 
   const maxThumbnailIndex = Math.max(0, images.length - visibleThumbnails);
 
-  const handleThumbnailNavigate = (direction) => {
-    if (direction === "prev") {
-      setThumbnailStartIndex((prev) => Math.max(0, prev - 1));
-    } else {
-      setThumbnailStartIndex((prev) => Math.min(maxThumbnailIndex, prev + 1));
-    }
-  };
+  const handleThumbnailNavigate = useCallback(
+    (direction) => {
+      if (direction === "prev") {
+        setThumbnailStartIndex((prev) => Math.max(0, prev - 1));
+      } else {
+        setThumbnailStartIndex((prev) => Math.min(maxThumbnailIndex, prev + 1));
+      }
+    },
+    [maxThumbnailIndex]
+  );
 
   const visibleImages = images.slice(
     thumbnailStartIndex,
@@ -598,6 +649,8 @@ const ProductDetailPage = () => {
   const handleImageSelect = (image) => {
     setSelectedImage(image.url || image);
     resetZoom();
+    // Reset hover zoom position when image changes
+    setHoverZoomPosition({ x: 50, y: 50 });
   };
 
   // Enhanced Restock Notification Component
@@ -685,26 +738,16 @@ const ProductDetailPage = () => {
                   </h4>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-red-500 font-bold text-sm">
-                      <Image
-                        src={newCurrency}
-                        alt="Currency"
-                        width={12}
-                        height={12}
-                        className="inline mr-1"
-                      />
-                      {formatPrice(product.salePrice || product.sellingPrice)}
+                      {/* Using Currency Context */}
+                      {getCurrencySymbol()}
+                      {convertPrice(product.salePrice || product.sellingPrice)}
                     </span>
                     {product.regularPrice >
                       (product.salePrice || product.sellingPrice) && (
                       <span className="text-gray-500 text-xs line-through">
-                        <Image
-                          src={newCurrency}
-                          alt="Currency"
-                          width={10}
-                          height={10}
-                          className="inline mr-1"
-                        />
-                        {formatPrice(product.regularPrice)}
+                        {/* Using Currency Context */}
+                        {getCurrencySymbol()}
+                        {convertPrice(product.regularPrice)}
                       </span>
                     )}
                   </div>
@@ -1420,11 +1463,11 @@ const ProductDetailPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 md:p-6">
             {/* Left Column - Images */}
             <div className="relative">
-              {/* Main Image Container with Zoom */}
+              {/* Main Image Container with Hover Zoom */}
               <div
-                ref={imageContainerRef}
-                className={`relative w-full h-64 sm:h-72 md:h-80 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden border-2 border-gray-100 cursor-${
-                  window.innerWidth >= 768
+                ref={zoomContainerRef}
+                className={`relative w-full h-64 sm:h-72 md:h-80 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden border-2 border-gray-100 group cursor-${
+                  typeof window !== "undefined" && window.innerWidth >= 768
                     ? isZoomed
                       ? "zoom-out"
                       : "zoom-in"
@@ -1432,8 +1475,31 @@ const ProductDetailPage = () => {
                 }`}
                 onClick={handleImageClick}
                 onWheel={handleWheel}
-                onMouseLeave={resetZoom}
+                onMouseLeave={(e) => {
+                  resetZoom();
+                  handleMouseLeave();
+                }}
+                onMouseEnter={handleMouseEnter}
+                onMouseMove={handleMouseMove}
               >
+                {/* Hover Zoom Overlay - Desktop Only */}
+                {typeof window !== "undefined" && window.innerWidth >= 768 && (
+                  <div
+                    ref={zoomOverlayRef}
+                    className={`absolute inset-0 bg-no-repeat pointer-events-none transition-opacity duration-300 z-10 ${
+                      isHovering ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    style={{
+                      backgroundImage: `url(${selectedImage || product.image || "/placeholder-image.jpg"})`,
+                      backgroundSize: '200%',
+                      backgroundPosition: `${hoverZoomPosition.x}% ${hoverZoomPosition.y}%`,
+                      backgroundRepeat: 'no-repeat',
+                      transform: 'translateZ(0)',
+                    }}
+                  />
+                )}
+                
+                {/* Original Image */}
                 <div
                   ref={imageRef}
                   className="absolute inset-0 flex items-center justify-center"
@@ -1451,14 +1517,18 @@ const ProductDetailPage = () => {
                     unoptimized
                     width={600}
                     height={600}
-                    className="object-contain w-full h-full p-2 select-none"
+                    className={`object-contain w-full h-full p-2 select-none ${
+                      typeof window !== "undefined" && window.innerWidth >= 768 && isHovering 
+                        ? 'opacity-0' 
+                        : 'opacity-100'
+                    } transition-opacity duration-300`}
                     priority
                     draggable="false"
                   />
                 </div>
 
                 {/* Zoom Controls for Desktop */}
-                {window.innerWidth >= 768 && (
+                {typeof window !== "undefined" && window.innerWidth >= 768 && (
                   <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-white bg-opacity-80 backdrop-blur-sm rounded-full p-2 shadow-lg">
                     <button
                       onClick={(e) => {
@@ -1500,9 +1570,16 @@ const ProductDetailPage = () => {
                 )}
 
                 {/* Mobile Zoom Hint */}
-                {window.innerWidth < 768 && (
+                {typeof window !== "undefined" && window.innerWidth < 768 && (
                   <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
                     Tap to zoom
+                  </div>
+                )}
+
+                {/* Desktop Hover Hint */}
+                {typeof window !== "undefined" && window.innerWidth >= 768 && !isZoomed && (
+                  <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
+                    Hover to zoom • Click for full zoom
                   </div>
                 )}
 
@@ -1598,6 +1675,7 @@ const ProductDetailPage = () => {
 
                     {/* View All Button for Mobile */}
                     {images.length > visibleThumbnails &&
+                      typeof window !== "undefined" &&
                       window.innerWidth < 768 && (
                         <div className="text-center mt-3">
                           <button
@@ -1637,29 +1715,18 @@ const ProductDetailPage = () => {
                         isSoldOut ? "text-gray-600" : "text-gray-900"
                       }`}
                     >
-                      <Image
-                        src={newCurrency}
-                        alt="Currency"
-                        width={24}
-                        height={24}
-                        className="mr-1 sm:mr-2 w-5 h-5 sm:w-7 sm:h-7"
-                      />
-                      {formatPrice(product.salePrice || product.sellingPrice) ||
-                        "65,000"}
+                      {/* Using Currency Context */}
+                      {getCurrencySymbol()}
+                      {convertPrice(product.salePrice || product.sellingPrice) || "0"}
                     </div>
                     {product.regularPrice &&
                       product.regularPrice >
                         (product.salePrice || product.sellingPrice) && (
                         <>
                           <div className="text-lg sm:text-xl text-gray-500 line-through flex items-center">
-                            <Image
-                              src={newCurrency}
-                              alt="Currency"
-                              width={18}
-                              height={18}
-                              className="mr-1 w-4 h-4 sm:w-5 sm:h-5"
-                            />
-                            {formatPrice(product.regularPrice)}
+                            {/* Using Currency Context */}
+                            {getCurrencySymbol()}
+                            {convertPrice(product.regularPrice)}
                           </div>
                           <span className="bg-green-500 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-semibold">
                             {calculateDiscount()}% OFF
@@ -1956,7 +2023,7 @@ const ProductDescription = ({ description, shortDescription }) => {
   );
 };
 
-// Add custom CSS for animations and responsive styles
+// Add custom CSS for animations and responsive styles with hover zoom styles
 const style = `
   @keyframes slide-up {
     from {
@@ -2034,6 +2101,10 @@ const style = `
     cursor: zoom-out;
   }
   
+  .cursor-move {
+    cursor: move;
+  }
+  
   /* Modal animations */
   @keyframes fade-in {
     from { opacity: 0; }
@@ -2059,86 +2130,32 @@ const style = `
     -webkit-overflow-scrolling: touch;
   }
   
-  /* Enhanced mobile-friendly styles */
-  @media (max-width: 640px) {
-    /* Better touch targets */
-    button, 
-    .clickable {
-      min-height: 44px;
-      min-width: 44px;
+  /* Hover Zoom Effect Styles */
+  .zoom-overlay {
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+  
+  /* Hide hover zoom on touch devices */
+  @media (hover: none) and (pointer: coarse) {
+    .zoom-overlay {
+      display: none !important;
     }
     
-    /* Improved spacing for mobile */
-    .mobile-padding {
-      padding-left: 1rem;
-      padding-right: 1rem;
-    }
-    
-    /* Better text readability */
-    .mobile-text {
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    
-    /* Modal improvements */
-    .mobile-modal {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      border-radius: 20px 20px 0 0;
-    }
-    
-    /* Input improvements */
-    input, 
-    textarea {
-      font-size: 16px !important; /* Prevents zoom on iOS */
+    .group-hover\\:opacity-0 {
+      opacity: 1 !important;
     }
   }
   
-  /* Breadcrumb improvements */
-  .breadcrumb-item {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  /* Hardware acceleration for smooth zoom */
+  .will-change-transform {
+    will-change: transform;
   }
   
-  /* Restock notification specific styles */
-  .restock-notification {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .restock-notification .expanded {
-    max-height: 500px;
-    opacity: 1;
-  }
-  
-  .restock-notification .collapsed {
-    max-height: 100px;
-    opacity: 1;
-  }
-  
-  /* Better focus states for accessibility */
-  button:focus-visible,
-  a:focus-visible,
-  input:focus-visible {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
-  
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
-  }
-  
-  /* Hide scrollbar but keep functionality */
-  .scrollbar-none {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
+  /* Prevent flickering on hover */
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
 `;
 

@@ -19,6 +19,7 @@ import {
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
 import toast from "react-hot-toast";
+import { useCurrency } from "@/app/CurrencyContext";
 
 // ⭐ Enhanced Product Card Component with Authentication Handling
 const ProductCard = ({
@@ -43,10 +44,128 @@ const ProductCard = ({
   const router = useRouter();
   const pathname = usePathname();
 
+  // ✅ Currency Context
+  const { currency, convertPrice, getCurrencySymbol } = useCurrency();
+
   // Initialize local wishlist state
   useEffect(() => {
     setLocalWishlistState(isInWishlist);
   }, [isInWishlist]);
+
+  // Format price with thousands separators and proper decimals
+  const formatPrice = (price) => {
+    try {
+      // Convert to number if it's not already
+      const priceNumber = typeof price === 'number' ? price : parseFloat(price);
+      
+      // Check if it's a valid number
+      if (isNaN(priceNumber)) {
+        return "0.00";
+      }
+      
+      // Format with 2 decimal places and thousands separators
+      return priceNumber.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    } catch (error) {
+      console.error("Error formatting price:", error);
+      return "0.00";
+    }
+  };
+
+  // Format price with currency symbol and proper spacing
+  const formatPriceWithCurrency = (price) => {
+    const formattedPrice = formatPrice(price);
+    const symbol = getCurrencySymbol();
+    
+    // Return formatted price with currency symbol and proper spacing
+    // Different currencies have different formatting conventions
+    switch (currency) {
+      case 'USD':
+      case 'CAD':
+      case 'AUD':
+      case 'NZD':
+      case 'SGD':
+      case 'HKD':
+        // Prefix with symbol: $1,234.00
+        return `${symbol}${formattedPrice}`;
+      
+      case 'EUR':
+      case 'GBP':
+        // Prefix with symbol: €1,234.00 or £1,234.00
+        return `${symbol}${formattedPrice}`;
+      
+      case 'JPY':
+        // No decimals, with symbol: ¥1,234
+        const jpyPrice = parseFloat(price).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        });
+        return `${symbol}${jpyPrice}`;
+      
+      case 'INR':
+        // Indian numbering system with symbol: ₹1,234.00
+        const inrPrice = parseFloat(price).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        return `${symbol}${inrPrice}`;
+      
+      case 'AED':
+      case 'SAR':
+      case 'QAR':
+        // Arabic currencies: 1,234.00 AED
+        return `${formattedPrice} ${symbol}`;
+      
+      default:
+        // Default: symbol before number
+        return `${symbol}${formattedPrice}`;
+    }
+  };
+
+  // Get formatted sale price
+  const getSalePrice = () => {
+    try {
+      if (!product.salePrice) return null;
+      const convertedPrice = convertPrice(product.salePrice);
+      return formatPriceWithCurrency(convertedPrice);
+    } catch (error) {
+      console.error("Error formatting sale price:", error);
+      return formatPriceWithCurrency(0);
+    }
+  };
+
+  // Get formatted regular price
+  const getRegularPrice = () => {
+    try {
+      const price = product.regularPrice || product.price || 0;
+      const convertedPrice = convertPrice(price);
+      return formatPriceWithCurrency(convertedPrice);
+    } catch (error) {
+      console.error("Error formatting regular price:", error);
+      return formatPriceWithCurrency(0);
+    }
+  };
+
+  // Calculate and format savings amount
+  const getSavingsAmount = () => {
+    try {
+      if (product.salePrice && product.regularPrice) {
+        const regularPrice = parseFloat(product.regularPrice) || 0;
+        const salePrice = parseFloat(product.salePrice) || 0;
+        if (regularPrice > salePrice) {
+          const savings = regularPrice - salePrice;
+          const convertedSavings = convertPrice(savings);
+          return formatPrice(convertedSavings);
+        }
+      }
+      return "0.00";
+    } catch (error) {
+      console.error("Error calculating savings:", error);
+      return "0.00";
+    }
+  };
 
   // Process images
   const processedImages = React.useMemo(() => {
@@ -215,7 +334,6 @@ const ProductCard = ({
       return {
         text: "Brand New",
         className: "bg-green-500 text-white",
-       
       };
     }
 
@@ -223,19 +341,16 @@ const ProductCard = ({
       return {
         text: "Pre-Owned",
         className: "bg-amber-500 text-white",
-        
       };
     } else if (condition.includes("like-new")) {
       return {
         text: "Like New",
         className: "bg-blue-500 text-white",
-       
       };
     } else if (condition.includes("brand") || condition.includes("new")) {
       return {
         text: "Brand New",
         className: "bg-green-500 text-white",
-       
       };
     }
 
@@ -443,20 +558,20 @@ const ProductCard = ({
           </div>
         )}
 
-        {/* Price Section */}
+        {/* Price Section - FIXED with proper formatting */}
         <div className="mb-1.5 sm:mb-2">
           {product.salePrice ? (
             <div className="flex items-baseline space-x-1 sm:space-x-1.5">
               <p className="text-xs sm:text-sm font-bold text-gray-900">
-                {product.salePrice} AED
+                {getSalePrice()}
               </p>
               <p className="text-[10px] sm:text-xs text-gray-500 line-through">
-                {product.regularPrice} AED
+                {getRegularPrice()}
               </p>
             </div>
           ) : (
             <p className="text-xs sm:text-sm font-bold text-gray-900">
-              {product.regularPrice} AED
+              {getRegularPrice()}
             </p>
           )}
         </div>
@@ -525,6 +640,9 @@ export default function EnhancedProductSections() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showBrandNewSection, setShowBrandNewSection] = useState(false);
 
+  // ✅ Currency Context
+  const { currency, convertPrice, getCurrencySymbol } = useCurrency();
+
   // 👉 Check authentication status
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -546,7 +664,6 @@ export default function EnhancedProductSections() {
 
         const BASE_URL = process.env.NEXT_PUBLIC_BASEURL;
         const endpoints = [
-       
           `${BASE_URL}/products?sort=newest&limit=20`,
           `${BASE_URL}/products`,
         ];
@@ -758,8 +875,6 @@ export default function EnhancedProductSections() {
             subtitle="Latest Collections"
             icon={FaFire}
           />
-
-         
 
           {/* Error State */}
           {errorBrandNew && (
