@@ -583,12 +583,7 @@ const FilterSidebar2 = ({
 
             {hasActiveFilters && (
               <div className="mt-6 pt-4 border-t border-gray-200">
-                <button
-                  className="w-full px-4 py-3 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
-                  onClick={applyFilters}
-                >
-                  Apply Filters
-                </button>
+                
               </div>
             )}
           </div>
