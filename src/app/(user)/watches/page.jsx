@@ -1,11 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import {
-  FaArrowRight,
-  FaChevronLeft,
-  FaChevronRight,
-  FaFilter,
-} from "react-icons/fa";
+import React, { useState, useEffect, useRef } from "react";;
 import { GiWatch, GiNecklace } from "react-icons/gi";
 import { TbBrandApple } from "react-icons/tb";
 import Link from "next/link";

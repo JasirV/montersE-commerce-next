@@ -1,12 +1,10 @@
 "use client";
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/shared/Navbar";
-import AuthModal from "@/features/auth/AuthModal";
 import Landing from "@/components/shared/BannerPage";
 import Home from "@/pages/Home";
 import WatchBrand from "@/layouts/WatchBrand";
 import Form from "@/components/ui/WatheForm";
-import JustforyouWatch from "@/components/ui/JustforyouWatch";
 import PremiumBrands from "@/layouts/PremiumBrands";
 import Services from "@/components/ui/Services";
 import Footer from "@/components/shared/Footer";
@@ -19,22 +17,20 @@ import CategorySectionWithImages from "@/components/CategorySection";
 export default function IndexPage() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [authAction, setAuthAction] = useState("login");
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAuthAction = (action) => {
     setAuthAction(action);
     setModalIsOpen(true);
   };
 
-  //   // Auto-open modal after 3 seconds (optional)
+  // // Auto-open modal after 3 seconds (optional)
   // useEffect(() => {
   //   const timer = setTimeout(() => {
-  //     setIsModalOpen(true)
-  //   }, 6000)
-  //   return () => clearTimeout(timer)
-  // }, [])
-
-
+  //     setIsModalOpen(true);
+  //   }, 6000);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   return (
     <div>
@@ -43,16 +39,10 @@ export default function IndexPage() {
         onLoginClick={() => handleAuthAction("login")}
       />
 
-      <AuthModal
-        isOpen={modalIsOpen}
-        onRequestClose={() => setModalIsOpen(false)}
-        defaultAction={authAction}
-      />
-
-     <NewsletterModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
+      {/* <NewsletterModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      /> */}
       <Landing />
       <div className="flex md:hidden justify-center">
         <CategorySectionWithImages/>
@@ -60,7 +50,6 @@ export default function IndexPage() {
       <Home />
       <WatchBrand />
       <Form id="watch-form" />
-      <JustforyouWatch />
       <PremiumBrands />
       <Watch />
       <Services />

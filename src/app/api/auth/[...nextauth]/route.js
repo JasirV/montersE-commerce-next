@@ -4,15 +4,19 @@ import GoogleProvider from "next-auth/providers/google";
 const handler = NextAuth({
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
   ],
+  pages: {
+    signIn: '/login',
+    error: '/login',
+  },
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account.provider === "google") {
         try {
-          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:9000";
+          const backendUrl = process.env.NEXT_PUBLIC_BASEURL || "http://localhost:9000";
           console.log(`Syncing user with backend at: ${backendUrl}/api/auth/google`);
 
           const response = await fetch(`${backendUrl}/api/auth/google`, {

@@ -1,4 +1,3 @@
-// app/layout.js
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
@@ -6,7 +5,7 @@ import Providers from "./Providers";
 import { GlobalProvider } from "@/components/shared/context/GlobalContext";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import Head from "next/head";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,107 +17,114 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// SITE-WIDE metadata (fallback defaults)
+const SITE_URL = "https://www.montres.ae";
+
 export const metadata = {
+  metadataBase: new URL(SITE_URL),
+
   title: "Montres — Luxury Watches",
-  description: "Montres — curated selection of authentic luxury watches. Worldwide shipping. Authenticity guaranteed.",
+  description:
+    "Montres — curated selection of authentic luxury watches. Worldwide shipping. Authenticity guaranteed.",
+
+  icons: {
+    icon: [
+      { url: "https://www.montres.ae/my-app/public/favicon.ico", sizes: "any" },
+      {
+        url: "https://www.montres.ae/my-app/public/favicon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
+      {
+        url: "https://www.montres.ae/my-app/public/favicon-16x16.png",
+        sizes: "16x16",
+        type: "image/png",
+      },
+    ],
+    apple: "https://www.montres.ae/my-app/public/apple-touch-icon.png",
+  },
+
+  manifest: "/site.webmanifest",
+
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    title: "Montres — Luxury Watches",
+    description:
+      "Montres — curated selection of authentic luxury watches. Worldwide shipping. Authenticity guaranteed.",
+    images: [`${SITE_URL}/og-default.jpg`],
+    siteName: "Montres",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "Montres — Luxury Watches",
+    description:
+      "Montres — curated selection of authentic luxury watches. Worldwide shipping. Authenticity guaranteed.",
+    images: [`${SITE_URL}/og-default.jpg`],
+  },
 };
 
-const SITE_URL = "https://www.montres.a"; // ← update
-const DEFAULT_LOCALE = "en-US";
-
 export default function RootLayout({ children }) {
-  const organizationJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Montres",
-    "url": SITE_URL,
-    "logo": `${SITE_URL}/logo.png`,
-    "sameAs": [
-      "https://www.facebook.com/Montres.ae",
-      "https://www.instagram.com/montres.ae",
-      "https://www.tiktok.com/@montres.ae"
-    ],
-    "contactPoint": [{
-      "@type": "ContactPoint",
-      "telephone": "+97142671124",
-      "contactType": "customer service",
-      "areaServed": "Worldwide",
-      "availableLanguage": ["English","Arabic"]
-    }]
-  };
-
-  const websiteJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "url": SITE_URL,
-    "name": "Montres",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": `${SITE_URL}/search?q={search_term_string}`,
-      "query-input": "required name=search_term_string"
-    }
-  };
-
   return (
     <html lang="en">
-      <Head>
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* Social / Open Graph */}
-        <meta property="og:site_name" content="Montres" />
-        <meta property="og:title" content={metadata.title} />
-        <meta property="og:description" content={metadata.description} />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={SITE_URL} />
-        <meta property="og:image" content={`${SITE_URL}/og-default.jpg`} />
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@yourtwitter" />
-        <meta name="twitter:creator" content="@yourtwitter" />
-        <meta name="twitter:title" content={metadata.title} />
-        <meta name="twitter:description" content={metadata.description} />
-        <meta name="twitter:image" content={`${SITE_URL}/og-default.jpg`} />
-
-        {/* Canonical - override per page if needed */}
+      <head>
+        {/* Canonical URL */}
         <link rel="canonical" href={SITE_URL} />
 
-        {/* Hreflang - example set, add/remove locales you support */}
-        <link rel="alternate" href={`${SITE_URL}/`} hrefLang="en-US" />
-        <link rel="alternate" href={`${SITE_URL}/`} hrefLang="en-GB" />
-        <link rel="alternate" href={`${SITE_URL}/fr/`} hrefLang="fr-FR" />
-        <link rel="alternate" href={`${SITE_URL}/de/`} hrefLang="de-DE" />
-        <link rel="alternate" href={`${SITE_URL}/es/`} hrefLang="es-ES" />
-        <link rel="alternate" href={`${SITE_URL}/zh/`} hrefLang="zh-CN" />
-        <link rel="alternate" href={`${SITE_URL}/ar/`} hrefLang="ar-AE" />
-        <link rel="alternate" href={`${SITE_URL}/ja/`} hrefLang="ja-JP" />
-        <link rel="alternate" href={SITE_URL} hrefLang="x-default" />
+        {/* Apple touch icon */}
+        <link
+          rel="apple-touch-icon"
+          href="https://www.montres.ae/my-app/public/apple-touch-icon.png"
+          sizes="180x180"
+        />
 
-        {/* Performance hints */}
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preload" as="image" href={`${SITE_URL}/logo.png`} />
-        <link rel="icon" href="/favicon.ico" />
+        {/* Favicon PNGs */}
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="https://www.montres.ae/my-app/public/favicon-32x32.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="https://www.montres.ae/my-app/public/favicon-16x16.png"
+        />
 
-        {/* JSON-LD for Organization & WebSite (site-wide) */}
+        {/* Manifest */}
+        <link rel="manifest" href="https://www.montres.ae/site.webmanifest" />
+
+        {/* JSON-LD */}
         <script
           type="application/ld+json"
-          // NOTE: JSON must be stringified
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Montres",
+              url: SITE_URL,
+              logo: `${SITE_URL}/logo.png`,
+              sameAs: [
+                "https://www.facebook.com/Montres.ae",
+                "https://www.instagram.com/montres.ae",
+                "https://www.tiktok.com/@montres.ae",
+              ],
+            }),
+          }}
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-        />
-      </Head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen overflow-x-hidden overflow-y-auto`}>
+      </head>
+
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen overflow-x-hidden overflow-y-auto`}
+      >
         <ToastContainer />
+
         <Providers>
-          <GlobalProvider>
-            {children}
-          </GlobalProvider>
+          <GlobalProvider>{children}</GlobalProvider>
         </Providers>
+
+        <Analytics />
       </body>
     </html>
   );

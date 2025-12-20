@@ -12,17 +12,20 @@ import {
   FaStarHalfAlt,
   FaChevronLeft,
   FaChevronRight,
-  FaTag,
   FaSpinner,
+  FaFire,
+  FaUserTag,
 } from "react-icons/fa";
 
-// ⭐ Enhanced Product Card Component
+// ⭐ Enhanced Product Card Component with Better Badge System
 const ProductCard = ({
   product,
   onAddToCart,
   onToggleWishlist,
   isInWishlist,
   onProductClick,
+  sectionType = "brand-new", // "brand-new" or "just-for-you"
+  showConditionBadge = true,
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -44,7 +47,7 @@ const ProductCard = ({
   }, [product.images]);
 
   // Minimum swipe distance
-  const minSwipeDistance = 50;
+  const minSwipeDistance = 30; // Reduced for mobile
 
   const onTouchStart = (e) => {
     setTouchEnd(null);
@@ -80,10 +83,10 @@ const ProductCard = ({
     );
   };
 
-  // Auto-rotate images on hover
+  // Auto-rotate images on hover (desktop only)
   useEffect(() => {
     let interval;
-    if (isHovered && processedImages.length > 1) {
+    if (isHovered && processedImages.length > 1 && window.innerWidth > 768) {
       interval = setInterval(() => {
         setCurrentImageIndex((prev) =>
           prev === processedImages.length - 1 ? 0 : prev + 1
@@ -110,75 +113,138 @@ const ProductCard = ({
         )
       : 0;
 
-  // Calculate average rating with fallback
-  const averageRating = product.rating || product.averageRating || 0;
-  const reviewCount = product.reviewCount || product.ratingCount || 0;
+  // Handle rating properly
+  const getRatingData = () => {
+    const rating = product.rating || product.averageRating || 0;
+    const reviewCount = product.reviewCount || product.ratingCount || 0;
 
-  // Get product ID for navigation - fixed this part
+    const numericRating = Number(rating) || 0;
+    const numericReviewCount = Number(reviewCount) || 0;
+
+    return {
+      rating: numericRating,
+      reviewCount: numericReviewCount,
+      ratingText: numericRating > 0 ? numericRating.toFixed(1) : "0.0",
+    };
+  };
+
+  const { rating, reviewCount, ratingText } = getRatingData();
+
+  // Get product ID for navigation
   const getProductId = () => {
     return product.productId || product._id;
   };
 
+  // Determine which badge to show based on section and product condition
+  const getConditionBadge = () => {
+    if (!showConditionBadge) return null;
+
+    const condition = (product.condition || "").toLowerCase();
+
+    // For Brand New section: Only show "Brand New" badge
+    if (sectionType === "brand-new") {
+      return {
+        text: "Brand New",
+        className: "bg-green-500 text-white",
+        icon: "🆕",
+      };
+    }
+
+    // For Just For You section: Show condition-based badges
+    if (condition.includes("used") || condition.includes("pre-owned")) {
+      return {
+        text: "Pre-Owned",
+        className: "bg-amber-500 text-white",
+        icon: "🔄",
+      };
+    } else if (condition.includes("like-new")) {
+      return {
+        text: "Like New",
+        className: "bg-blue-500 text-white",
+        icon: "✨",
+      };
+    } else if (condition.includes("brand") || condition.includes("new")) {
+      return {
+        text: "Brand New",
+        className: "bg-green-500 text-white",
+        icon: "🆕",
+      };
+    }
+
+    return null;
+  };
+
+  const conditionBadge = getConditionBadge();
+
   return (
     <div
       onClick={() => onProductClick(getProductId())}
-      className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl p-3 sm:p-4 transition-all duration-500 hover:-translate-y-2 border border-gray-100 cursor-pointer relative flex flex-col h-full w-full overflow-hidden"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className="group bg-white rounded-lg sm:rounded-xl shadow-sm hover:shadow-lg p-2 sm:p-3 transition-all duration-300 hover:-translate-y-1 border border-gray-100 cursor-pointer relative flex flex-col h-full w-full overflow-hidden"
+      onMouseEnter={() => window.innerWidth > 768 && setIsHovered(true)}
+      onMouseLeave={() => window.innerWidth > 768 && setIsHovered(false)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && onProductClick(getProductId())}
     >
-      {/* Discount Badge with animation */}
-      {discountPercentage > 0 && (
-        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10 flex items-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-          <FaTag className="mr-1 text-xs" />
-          {discountPercentage}% OFF
+      {/* Condition Badge */}
+      {conditionBadge && (
+        <div className="absolute top-2 left-2 z-10">
+          <span
+            className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${conditionBadge.className}`}
+          >
+            <span className="hidden sm:inline">{conditionBadge.icon} </span>
+            {conditionBadge.text}
+          </span>
         </div>
       )}
 
-      {/* Wishlist Button with enhanced animation */}
+      {/* Wishlist Button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           onToggleWishlist(getProductId());
         }}
-        className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-white rounded-full shadow-lg p-2 z-10 transform transition-all duration-300 hover:scale-110 group-hover:scale-110"
+        className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm p-1.5 sm:p-2 z-10 transform transition-all duration-200 active:scale-95"
         aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
       >
         {isInWishlist ? (
-          <FaHeart className="text-red-500 text-sm animate-pulse" />
+          <FaHeart className="text-red-500 text-xs sm:text-sm" />
         ) : (
-          <FaRegHeart className="text-gray-600 text-sm group-hover:text-red-400 transition-colors" />
+          <FaRegHeart className="text-gray-600 text-xs sm:text-sm group-hover:text-red-400 transition-colors" />
         )}
       </button>
 
       {/* Product Image with Enhanced Carousel */}
       <div
         ref={imageContainerRef}
-        className="relative mb-3 sm:mb-4 rounded-xl overflow-hidden w-full bg-gray-50"
+        className="relative mb-1.5 sm:mb-3 rounded-lg overflow-hidden w-full bg-gray-50 aspect-square"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
         {!loaded && (
-          <div className="w-full aspect-square bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse rounded-xl flex items-center justify-center">
-            <FaSpinner className="text-gray-400 animate-spin" />
+          <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse rounded-lg flex items-center justify-center">
+            <FaSpinner className="text-gray-400 animate-spin text-xs sm:text-sm" />
           </div>
         )}
 
         {/* Image Carousel */}
-        <div className="relative w-full aspect-square">
+        <div className="relative w-full h-full">
           <Image
             src={processedImages[currentImageIndex]?.url || "/placeholder.png"}
             alt={processedImages[currentImageIndex]?.alt || product.name}
             width={400}
+            unoptimized
             height={400}
-            className={`w-full h-full object-cover transition-all duration-500 ${
+            className={`w-full h-full object-cover transition-all duration-300 ${
               loaded ? "opacity-100 group-hover:scale-105" : "opacity-0"
             }`}
             onLoad={() => setLoaded(true)}
             priority={currentImageIndex === 0}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
 
-          {/* Enhanced Carousel Navigation Arrows - Show on hover only */}
+          {/* Enhanced Carousel Navigation Arrows */}
           {processedImages.length > 1 && (
             <>
               <button
@@ -186,24 +252,28 @@ const ProductCard = ({
                   e.stopPropagation();
                   handlePrevImage();
                 }}
-                className={`absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all duration-300 ${
-                  isHovered ? "opacity-100 scale-100" : "opacity-0 scale-90"
-                } hover:scale-110 backdrop-blur-sm z-20`}
+                className={`absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-1.5 sm:p-2 shadow transition-all duration-200 ${
+                  isHovered || window.innerWidth <= 768
+                    ? "opacity-100 scale-100"
+                    : "opacity-0 scale-90"
+                } active:scale-95 backdrop-blur-sm z-20`}
                 aria-label="Previous image"
               >
-                <FaChevronLeft size={14} className="sm:w-4" />
+                <FaChevronLeft size={10} className="sm:w-3 sm:h-3" />
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleNextImage();
                 }}
-                className={`absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all duration-300 ${
-                  isHovered ? "opacity-100 scale-100" : "opacity-0 scale-90"
-                } hover:scale-110 backdrop-blur-sm z-20`}
+                className={`absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-1.5 sm:p-2 shadow transition-all duration-200 ${
+                  isHovered || window.innerWidth <= 768
+                    ? "opacity-100 scale-100"
+                    : "opacity-0 scale-90"
+                } active:scale-95 backdrop-blur-sm z-20`}
                 aria-label="Next image"
               >
-                <FaChevronRight size={14} className="sm:w-4" />
+                <FaChevronRight size={10} className="sm:w-3 sm:h-3" />
               </button>
             </>
           )}
@@ -211,8 +281,8 @@ const ProductCard = ({
           {/* Enhanced Image Indicators (dots) */}
           {processedImages.length > 1 && (
             <div
-              className={`absolute bottom-3 left-0 right-0 flex justify-center space-x-1 transition-all duration-300 z-10 ${
-                isHovered
+              className={`absolute bottom-1.5 sm:bottom-2 left-0 right-0 flex justify-center space-x-1 transition-all duration-200 z-10 ${
+                isHovered || window.innerWidth <= 768
                   ? "opacity-100 translate-y-0"
                   : "opacity-70 -translate-y-1"
               }`}
@@ -224,7 +294,7 @@ const ProductCard = ({
                     e.stopPropagation();
                     setCurrentImageIndex(index);
                   }}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-200 ${
                     index === currentImageIndex
                       ? "bg-white scale-125 shadow-sm"
                       : "bg-white/60 hover:bg-white/80"
@@ -234,122 +304,134 @@ const ProductCard = ({
               ))}
             </div>
           )}
-
-          {/* Quick View Overlay */}
-          <div
-            className={`absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300 rounded-xl flex items-center justify-center ${
-              isHovered ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <span className="text-white bg-black/70 px-3 py-1 rounded-full text-xs font-medium transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-              Quick View
-            </span>
-          </div>
         </div>
       </div>
 
       {/* Product Details */}
-      <div className="flex flex-col flex-grow px-0 sm:px-1 w-full">
-        {/* Name with better typography */}
-        <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2 line-clamp-2 flex-grow leading-tight min-h-[2.5rem] sm:min-h-[3rem] group-hover:text-blue-600 transition-colors duration-300">
+      <div className="flex flex-col flex-grow px-1 w-full">
+        {/* Product Name */}
+        <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-1.5 line-clamp-2 flex-grow leading-tight min-h-[2.2rem] sm:min-h-[2.5rem] group-hover:text-blue-600 transition-colors duration-200">
           {product.name}
         </h3>
 
-        {/* Enhanced Rating with review count */}
-        {(averageRating > 0 || reviewCount > 0) && (
-          <div className="flex items-center mb-3 sm:mb-4">
-            <div className="flex text-yellow-400 mr-2">
+        {/* Rating */}
+        {(rating > 0 || reviewCount > 0) && (
+          <div className="flex items-center mb-1.5 sm:mb-2">
+            <div className="flex text-yellow-400 mr-1 sm:mr-1.5">
               {[...Array(5)].map((_, i) => {
                 const ratingValue = i + 1;
-                if (ratingValue <= Math.floor(averageRating)) {
+                if (ratingValue <= Math.floor(rating)) {
                   return (
-                    <FaStar key={i} className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    <FaStar key={i} className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   );
-                } else if (ratingValue - 0.5 <= averageRating) {
+                } else if (ratingValue - 0.5 <= rating) {
                   return (
                     <FaStarHalfAlt
                       key={i}
-                      className="w-3 h-3 sm:w-3.5 sm:h-3.5"
+                      className="w-2.5 h-2.5 sm:w-3 sm:h-3"
                     />
                   );
                 } else {
                   return (
                     <FaStar
                       key={i}
-                      className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-300"
+                      className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-300"
                     />
                   );
                 }
               })}
             </div>
-            <span className="text-xs text-gray-600 font-medium">
-              {averageRating.toFixed(1)}
+            <span className="text-[10px] sm:text-xs text-gray-600 font-medium">
+              {ratingText}
               {reviewCount > 0 && ` (${reviewCount})`}
             </span>
           </div>
         )}
 
-        {/* Enhanced Price Section */}
-        <div className="mb-3 sm:mb-4">
+        {/* Price Section */}
+        <div className="mb-1.5 sm:mb-2">
           {product.salePrice ? (
-            <div className="flex items-baseline space-x-2">
-              <p className="text-lg sm:text-xl font-bold text-gray-900">
+            <div className="flex items-baseline space-x-1 sm:space-x-1.5">
+              <p className="text-xs sm:text-sm font-bold text-gray-900">
                 {product.salePrice} AED
               </p>
-              <p className="text-sm text-gray-500 line-through">
+              <p className="text-[10px] sm:text-xs text-gray-500 line-through">
                 {product.regularPrice} AED
               </p>
             </div>
           ) : (
-            <p className="text-lg sm:text-xl font-bold text-gray-900">
+            <p className="text-xs sm:text-sm font-bold text-gray-900">
               {product.regularPrice} AED
             </p>
           )}
         </div>
 
-        {/* Enhanced Add To Cart Button */}
+        {/* Add To Cart Button */}
         <button
           onClick={(e) => handleAddToCartClick(e, product)}
           disabled={isAddingToCart}
-          className={`w-full bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold mt-auto transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 min-h-[2.5rem] sm:min-h-[3rem] group/cart ${
+          className={`w-full bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white py-1.5 sm:py-2 rounded-lg sm:rounded-lg text-[10px] sm:text-xs font-semibold mt-auto transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow active:scale-95 min-h-[1.75rem] sm:min-h-[2rem] group/cart ${
             isAddingToCart
               ? "from-green-600 to-green-700 cursor-not-allowed"
-              : "hover:shadow-xl"
+              : ""
           }`}
         >
           {isAddingToCart ? (
             <>
-              <FaSpinner className="animate-spin mr-2" />
+              <FaSpinner className="animate-spin mr-1 text-xs sm:text-xs" />
               Adding...
             </>
           ) : (
             <>
-              <FaShoppingCart className="inline-block mr-2 transition-transform group-hover/cart:scale-110" />
+              <FaShoppingCart className="inline-block mr-1 text-[10px] sm:text-xs transition-transform group-hover/cart:scale-110" />
               Add to Cart
             </>
           )}
         </button>
       </div>
-
-      {/* Hover Border Effect */}
-      <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-blue-200 transition-all duration-300 pointer-events-none" />
     </div>
   );
 };
 
-// ⭐ Enhanced Main Component
-export default function JustForYou() {
+// ⭐ Section Header Component with BLACK text
+const SectionHeader = ({ title, subtitle, icon: Icon }) => {
+  return (
+    <div className="text-center mb-4 sm:mb-8 w-full px-2">
+      {/* Subtitle */}
+      <div className="inline-flex items-center justify-center mb-2 sm:mb-3">
+        <div className="w-6 sm:w-10 h-0.5 bg-gray-300 mr-2 sm:mr-3"></div>
+        <span className="text-gray-600 font-medium text-[10px] sm:text-xs uppercase tracking-wider flex items-center">
+          {Icon && <Icon className="mr-1 sm:mr-1.5 text-gray-600" />}
+          {subtitle}
+        </span>
+        <div className="w-6 sm:w-10 h-0.5 bg-gray-300 ml-2 sm:ml-3"></div>
+      </div>
+
+      {/* Main Title - BLACK COLOR */}
+      <h2 className="text-base sm:text-2xl font-bold text-black mb-1.5 sm:mb-3">
+        {title}
+      </h2>
+    </div>
+  );
+};
+
+// ⭐ Main Component with Both Sections
+export default function EnhancedProductSections() {
   const router = useRouter();
-  const [products, setProducts] = useState([]);
+  const [justForYouProducts, setJustForYouProducts] = useState([]);
+  const [brandNewProducts, setBrandNewProducts] = useState([]);
   const [wishlist, setWishlist] = useState(new Set());
   const [cart, setCart] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [visibleProducts, setVisibleProducts] = useState(10);
-
+  const [loadingJustForYou, setLoadingJustForYou] = useState(true);
+  const [loadingBrandNew, setLoadingBrandNew] = useState(true);
+  const [errorJustForYou, setErrorJustForYou] = useState(null);
+  const [errorBrandNew, setErrorBrandNew] = useState(null);
   const [userId, setUserId] = useState(null);
 
-  // 👉 Fix: Safe localStorage access
+  // Track if brand new section should be shown
+  const [showBrandNewSection, setShowBrandNewSection] = useState(false);
+
+  // 👉 Safe localStorage access
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUserId = localStorage.getItem("userId");
@@ -357,42 +439,154 @@ export default function JustForYou() {
     }
   }, []);
 
-  // 👉 Fetch API
+  // 👉 Fetch Brand New Products - Only brand-new condition
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchBrandNewProducts = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        setLoadingBrandNew(true);
+        setErrorBrandNew(null);
 
-        const url = userId
-          ? `http://localhost:9000/api/recommend/just-for-you/${userId}`
-          : `http://localhost:9000/api/recommend/just-for-you`;
+        const BASE_URL = process.env.NEXT_PUBLIC_BASEURL;
 
-        const res = await axios.get(url);
+        const endpoints = [
+          `${BASE_URL}/products/new-arrivals`,
+          `${BASE_URL}/products/latest`,
+          `${BASE_URL}/products?sort=newest&limit=20`,
+          `${BASE_URL}/products`,
+        ];
 
-        // Process products to ensure images are properly formatted
-        const processedProducts = (res.data || []).map((product) => ({
-          ...product,
-          // Ensure images array exists and is properly formatted
-          images: Array.isArray(product.images) ? product.images : [],
-          // Ensure productId exists
-          productId: product._id, // <-- FIXED
-        }));
-        console.log(processedProducts, "processedProducts");
+        let apiData = [];
 
-        setProducts(processedProducts);
-        setLoading(false);
+        // Try each endpoint until one succeeds
+        for (const endpoint of endpoints) {
+          try {
+            const res = await axios.get(endpoint);
+
+            // Extract data based on response structure
+            let extractedData = [];
+
+            if (Array.isArray(res.data)) {
+              extractedData = res.data;
+            } else if (res.data && Array.isArray(res.data.products)) {
+              extractedData = res.data.products;
+            } else if (res.data && Array.isArray(res.data.data)) {
+              extractedData = res.data.data;
+            } else if (res.data && typeof res.data === "object") {
+              const values = Object.values(res.data);
+              for (const value of values) {
+                if (Array.isArray(value)) {
+                  extractedData = value;
+                  break;
+                }
+              }
+            }
+
+            if (extractedData.length > 0) {
+              apiData = extractedData;
+              break;
+            }
+          } catch (err) {
+            console.warn("Failed to fetch from:", endpoint, err.message);
+          }
+        }
+
+        // Process ONLY brand-new products
+        const processedProducts = (apiData || [])
+          .filter((product) => {
+            // Only include products with brand-new condition
+            const condition = (product.condition || "").toLowerCase();
+            return condition.includes("brand") || condition.includes("new");
+          })
+          .map((product, index) => ({
+            ...product,
+            images: Array.isArray(product.images) ? product.images : [],
+            productId: product._id || product.id || `new-${index}`,
+            rating: Number(product.rating || product.averageRating || 0),
+            reviewCount: Number(
+              product.reviewCount || product.ratingCount || 0
+            ),
+            condition: "brand-new", // Force brand-new for this section
+          }));
+
+        // Check if we have any brand-new products
+        if (processedProducts.length > 0) {
+          setBrandNewProducts(processedProducts);
+          setShowBrandNewSection(true);
+        } else {
+          setBrandNewProducts([]);
+          setShowBrandNewSection(false);
+        }
+
+        setLoadingBrandNew(false);
       } catch (error) {
-        console.error("API Error:", error);
-        setError("Failed to load products. Please try again later.");
-        setLoading(false);
+        console.error("Brand New Products Error:", error);
+        setErrorBrandNew("Failed to load brand new items.");
+        setLoadingBrandNew(false);
+        setShowBrandNewSection(false);
       }
     };
 
-    fetchProducts();
+    fetchBrandNewProducts();
+  }, []);
+
+  // 👉 Fetch Just For You Products (Mixed conditions)
+  useEffect(() => {
+    const fetchJustForYouProducts = async () => {
+      try {
+        setLoadingJustForYou(true);
+        setErrorJustForYou(null);
+
+        const BASE_URL = process.env.NEXT_PUBLIC_BASEURL;
+
+        const url = userId
+          ? `${BASE_URL}/recommend/just-for-you/${userId}`
+          : `${BASE_URL}/recommend/just-for-you`;
+
+        const res = await axios.get(url);
+
+        // Process products
+        let productsData = [];
+
+        // Handle different response structures
+        if (Array.isArray(res.data)) {
+          productsData = res.data;
+        } else if (res.data && Array.isArray(res.data.products)) {
+          productsData = res.data.products;
+        } else if (res.data && Array.isArray(res.data.data)) {
+          productsData = res.data.data;
+        } else if (res.data && typeof res.data === "object") {
+          const values = Object.values(res.data);
+          for (const value of values) {
+            if (Array.isArray(value)) {
+              productsData = value;
+              break;
+            }
+          }
+        }
+
+        const processedProducts = (productsData || []).map((product) => ({
+          ...product,
+          images: Array.isArray(product.images) ? product.images : [],
+          productId: product._id || product.id,
+          rating: Number(product.rating || product.averageRating || 0),
+          reviewCount: Number(product.reviewCount || product.ratingCount || 0),
+          // Preserve original condition for badge display
+          condition: product.condition || "brand-new",
+        }));
+
+        setJustForYouProducts(processedProducts);
+        setLoadingJustForYou(false);
+      } catch (error) {
+        console.error("Just For You API Error:", error);
+        setErrorJustForYou("Failed to load personalized recommendations.");
+        setLoadingJustForYou(false);
+      }
+    };
+
+    fetchJustForYouProducts();
   }, [userId]);
 
-  // 👉 Enhanced Add to cart with animation
+  // 👉 Enhanced Add to cart
   const handleAddToCart = async (product) => {
     return new Promise((resolve) => {
       setCart((prev) => {
@@ -418,7 +612,7 @@ export default function JustForYou() {
     });
   };
 
-  // 👉 Wishlist toggle with feedback
+  // 👉 Wishlist toggle
   const handleToggleWishlist = (productId) => {
     setWishlist((prev) => {
       const copy = new Set(prev);
@@ -435,122 +629,190 @@ export default function JustForYou() {
     router.push(`/ProductDetailPage/${_id}`);
   };
 
-  // 👉 Load more products
-  const loadMoreProducts = () => {
-    setVisibleProducts((prev) => prev + 10);
-  };
-
   const cartCount = cart.reduce((a, b) => a + b.qty, 0);
-  const displayedProducts = products.slice(0, visibleProducts);
-  const hasMoreProducts = visibleProducts < products.length;
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-white py-8 sm:py-16 px-4 sm:px-6 w-full">
-      {/* Enhanced Header Section */}
-      <div className="text-center mb-12 sm:mb-16 w-full max-w-6xl mx-auto">
-        <div className="inline-flex items-center justify-center mb-4">
-          <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent mr-4"></div>
-          <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">
-            Personalized Selection
-          </span>
-          <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent ml-4"></div>
-        </div>
+    <div className="bg-gradient-to-b from-gray-50 to-white py-3 sm:py-8 px-2 sm:px-4 w-full min-h-screen">
+      {/* BRAND NEW ITEMS SECTION - Only Brand New badges */}
+      {showBrandNewSection && brandNewProducts.length > 0 && (
+        <div className="max-w-7xl mx-auto w-full mb-6 sm:mb-12">
+          <SectionHeader
+            title="Brand New Arrivals"
+            subtitle="Latest Collections"
+            icon={FaFire}
+          />
 
-        <h2 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">
-          Curated Just For You
-        </h2>
-
-        <p className="text-gray-600 text-base sm:text-xl max-w-3xl mx-auto leading-relaxed px-2 font-light">
-          Discover watches that match your unique style and preferences,
-          carefully selected based on your browsing history and tastes.
-        </p>
-      </div>
-
-      {/* Error State */}
-      {error && (
-        <div className="max-w-7xl mx-auto mb-8 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-center">
-          <div className="flex items-center justify-center mb-2">
-            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-2">
-              <span className="text-white text-sm">!</span>
+          {/* Section Info Badge */}
+          <div className="text-center mb-3 sm:mb-5">
+            <div className="inline-flex items-center bg-green-50 border border-green-200 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 mb-2">
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-1 sm:mr-1.5"></div>
+              <span className="text-[10px] sm:text-xs text-green-700 font-medium">
+                Showing only <strong className="font-bold">Brand New</strong>{" "}
+                items
+              </span>
             </div>
-            <span className="font-semibold">Unable to Load Products</span>
           </div>
-          <p className="text-sm">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-3 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm transition-colors"
-          >
-            Try Again
-          </button>
+
+          {/* Error State */}
+          {errorBrandNew && (
+            <div className="mb-4 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg sm:rounded-xl text-red-700 text-center">
+              <div className="flex items-center justify-center mb-1 sm:mb-1.5">
+                <div className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 rounded-full flex items-center justify-center mr-1 sm:mr-1.5">
+                  <span className="text-white text-[10px] sm:text-xs">!</span>
+                </div>
+                <span className="font-semibold text-xs sm:text-sm">
+                  Unable to Load
+                </span>
+              </div>
+              <p className="text-[10px] sm:text-xs">{errorBrandNew}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-1.5 sm:mt-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] sm:text-xs transition-colors active:scale-95"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {/* Brand New Products Grid */}
+          {loadingBrandNew ? (
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-lg shadow-sm p-1.5 sm:p-2 animate-pulse"
+                >
+                  <div className="w-full aspect-square bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg mb-1.5 sm:mb-2"></div>
+                  <div className="h-2.5 bg-gray-200 rounded mb-1.5"></div>
+                  <div className="h-2 bg-gray-200 rounded w-3/4 mb-1.5"></div>
+                  <div className="h-7 sm:h-8 bg-gray-200 rounded-lg"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              {brandNewProducts.length > 0 && (
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
+                  {brandNewProducts.map((product) => (
+                    <ProductCard
+                      key={product._id || product.productId}
+                      product={product}
+                      onAddToCart={handleAddToCart}
+                      onToggleWishlist={handleToggleWishlist}
+                      isInWishlist={wishlist.has(
+                        product._id || product.productId
+                      )}
+                      onProductClick={handleProductClick}
+                      sectionType="brand-new"
+                      showConditionBadge={true}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
-      {/* Products Section */}
+      {/* JUST FOR YOU SECTION - Mixed condition badges */}
       <div className="max-w-7xl mx-auto w-full">
-        {loading ? (
-          // Enhanced Loading Skeleton
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 md:gap-8">
+        <SectionHeader
+          title="Curated Just For You"
+          subtitle="Personalized Selection"
+          icon={FaUserTag}
+        />
+
+        {/* Section Info - Mixed Conditions */}
+        <div className="text-center mb-3 sm:mb-5">
+          <div className="inline-flex flex-wrap justify-center gap-1 sm:gap-2 mb-2">
+            <span className="px-2 py-0.5 sm:py-1 bg-blue-50 border border-blue-200 rounded-full text-[10px] sm:text-xs text-blue-700 font-medium">
+              <span className="hidden sm:inline"></span>Like New
+            </span>
+            <span className="px-2 py-0.5 sm:py-1 bg-amber-50 border border-amber-200 rounded-full text-[10px] sm:text-xs text-amber-700 font-medium">
+              <span className="hidden sm:inline">🔄 </span>Pre-Owned
+            </span>
+            <span className="px-2 py-0.5 sm:py-1 bg-green-50 border border-green-200 rounded-full text-[10px] sm:text-xs text-green-700 font-medium">
+              <span className="hidden sm:inline">🆕 </span>Brand New
+            </span>
+          </div>
+          <p className="text-[10px] sm:text-xs text-gray-500 px-2">
+            Personalized recommendations based on your preferences
+          </p>
+        </div>
+
+        {/* Error State */}
+        {errorJustForYou && (
+          <div className="mb-4 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg sm:rounded-xl text-red-700 text-center">
+            <div className="flex items-center justify-center mb-1 sm:mb-1.5">
+              <div className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 rounded-full flex items-center justify-center mr-1 sm:mr-1.5">
+                <span className="text-white text-[10px] sm:text-xs">!</span>
+              </div>
+              <span className="font-semibold text-xs sm:text-sm">
+                Unable to Load
+              </span>
+            </div>
+            <p className="text-[10px] sm:text-xs">{errorJustForYou}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-1.5 sm:mt-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] sm:text-xs transition-colors active:scale-95"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {/* Just For You Products Grid */}
+        {loadingJustForYou ? (
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {[...Array(10)].map((_, i) => (
               <div
                 key={i}
-                className="bg-white rounded-2xl shadow p-4 animate-pulse"
+                className="bg-white rounded-lg shadow-sm p-1.5 sm:p-2 animate-pulse"
               >
-                <div className="w-full aspect-square bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl mb-4 flex items-center justify-center">
-                  <FaSpinner className="text-gray-400 animate-spin" />
+                <div className="w-full aspect-square bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg mb-1.5 sm:mb-2 flex items-center justify-center">
+                  <FaSpinner className="text-gray-400 animate-spin text-xs" />
                 </div>
-                <div className="h-4 bg-gray-200 rounded mb-3"></div>
-                <div className="h-3 bg-gray-200 rounded w-3/4 mb-4"></div>
-                <div className="h-12 bg-gray-200 rounded-xl"></div>
+                <div className="h-2.5 bg-gray-200 rounded mb-1.5"></div>
+                <div className="h-2 bg-gray-200 rounded w-3/4 mb-1.5"></div>
+                <div className="h-7 sm:h-8 bg-gray-200 rounded-lg"></div>
               </div>
             ))}
           </div>
         ) : (
           <>
-            {/* Products Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 md:gap-8">
-              {displayedProducts.map((product) => (
-                <ProductCard
-                  key={product._id || product.productId}
-                  product={product}
-                  onAddToCart={handleAddToCart}
-                  onToggleWishlist={handleToggleWishlist}
-                  isInWishlist={wishlist.has(product._id || product.productId)}
-                  onProductClick={handleProductClick}
-                />
-              ))}
-            </div>
-
-            {/* Load More Button */}
-            {hasMoreProducts && (
-              <div className="flex justify-center mt-12">
-                <button
-                  onClick={loadMoreProducts}
-                  className="bg-white border border-gray-300 hover:border-blue-500 text-gray-700 hover:text-blue-600 px-8 py-3 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1 flex items-center group"
-                >
-                  Load More Products
-                  <FaChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-                </button>
+            {justForYouProducts.length > 0 ? (
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {justForYouProducts.map((product) => (
+                  <ProductCard
+                    key={product._id || product.productId}
+                    product={product}
+                    onAddToCart={handleAddToCart}
+                    onToggleWishlist={handleToggleWishlist}
+                    isInWishlist={wishlist.has(
+                      product._id || product.productId
+                    )}
+                    onProductClick={handleProductClick}
+                    sectionType="just-for-you"
+                    showConditionBadge={true}
+                  />
+                ))}
               </div>
-            )}
-
-            {/* Enhanced Empty State */}
-            {products.length === 0 && !loading && (
-              <div className="text-center py-16 sm:py-24 w-full">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-4xl">🕒</span>
+            ) : (
+              <div className="text-center py-6 sm:py-8 w-full">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <FaUserTag className="text-lg sm:text-2xl text-blue-500" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">
-                  No Personalized Recommendations Yet
+                <h3 className="text-sm sm:text-lg font-semibold text-gray-800 mb-1.5 sm:mb-2">
+                  No Recommendations Yet
                 </h3>
-                <p className="text-gray-500 text-base max-w-md mx-auto mb-6">
-                  Continue browsing our collection to help us understand your
-                  preferences better.
+                <p className="text-gray-500 text-xs sm:text-sm max-w-xs mx-auto mb-3 sm:mb-4 px-2">
+                  Browse more products to get personalized recommendations.
                 </p>
                 <button
                   onClick={() => router.push("/products")}
-                  className="bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg"
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-lg font-semibold transition-all duration-200 hover:shadow active:scale-95 text-xs sm:text-sm"
                 >
-                  Browse All Products
+                  Browse Products
                 </button>
               </div>
             )}
@@ -562,18 +824,18 @@ export default function JustForYou() {
       {cartCount > 0 && (
         <button
           onClick={() => router.push("/cart")}
-          className="fixed bottom-6 right-6 bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white px-5 py-4 rounded-full shadow-2xl flex items-center transition-all duration-300 z-50 transform hover:scale-105 group"
+          className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white p-2 sm:p-3 rounded-full shadow-lg flex items-center transition-all duration-200 z-50 active:scale-95"
+          aria-label={`View cart with ${cartCount} items`}
         >
-          <div className="relative mr-3">
-            <FaShoppingCart className="text-xl" />
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+          <div className="relative">
+            <FaShoppingCart className="text-sm sm:text-lg" />
+            <span className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 bg-red-500 text-white text-[8px] sm:text-[10px] rounded-full w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center animate-pulse">
               {cartCount}
             </span>
           </div>
-          <span className="font-semibold">View Cart</span>
-          <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <FaChevronRight className="text-sm" />
-          </div>
+          <span className="ml-1 font-semibold text-[10px] sm:text-xs hidden sm:inline">
+            Cart
+          </span>
         </button>
       )}
     </div>

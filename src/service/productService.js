@@ -165,7 +165,49 @@ export async function WatchBycategory(style, params = {}) {
   }
 }
 
+export async function getAllAccessories({
+  page = 1,
+  limit = 15,
+  subcategory,
+  brand,
+  gender,
+  material,
+  color,
+  condition,
+  minPrice,
+  maxPrice,
+  search,
+  sortBy,
+  sortOrder,
+  published = true,
+} = {}) {
+  try {
+    const params = new URLSearchParams();
 
+    params.append("page", page);
+    params.append("limit", limit);
+    params.append("published", published);
+
+    if (subcategory) params.append("subcategory", subcategory);
+    if (brand) params.append("brand", brand);
+    if (gender) params.append("gender", gender);
+    if (material) params.append("material", material);
+    if (color) params.append("color", color);
+    if (condition) params.append("condition", condition);
+    if (minPrice) params.append("minPrice", minPrice);
+    if (maxPrice) params.append("maxPrice", maxPrice);
+    if (search) params.append("search", search);
+    if (sortBy) params.append("sortBy", sortBy);
+    if (sortOrder) params.append("sortOrder", sortOrder);
+
+    const res = await api.get(`/accessories/?${params.toString()}`);
+
+    return res.data;
+  } catch (error) {
+    console.error("getAllAccessories Error:", error);
+    return null;
+  }
+}
 
 
 // service/productService.js
@@ -404,6 +446,8 @@ export async function getHandBags(params = {}) {
   }
 }
 
+
+
 export async function AccessoriesBycategory(
   category,
   { page = 1, limit = 15 } = {}
@@ -416,6 +460,8 @@ export async function AccessoriesBycategory(
     return { data: null, error, isLoading: false };
   }
 }
+
+
 
 export const addToCart = async (token, productId, quantity = 1) => {
   console.log(productId);
@@ -447,6 +493,9 @@ export const getCart = async (token) => {
     throw error.response?.data || { message: "Something went wrong" };
   }
 };
+
+
+
 
 // Remove product from cart
 export const removeFromCart = async (token, productId) => {
@@ -484,6 +533,7 @@ export const updateCart = async (token, items) => {
   }
 };
 
+
 export const Recommendations = async (token) => {
   try {
     const res = await api.get("/cart/recommendations", {
@@ -511,11 +561,14 @@ export async function fetchProductAll({ search = "" } = {}) {
 }
 
 
+
 export async function getHomeProductGrid() {
   try {
     let endpoint = `home`;
     // ✅ Add search if provided
     const response = await api.get(endpoint);
+    console.log(response,"acthuly response");
+    
 
     return { data: response.data, error: null, isLoading: false };
   } catch (error) {

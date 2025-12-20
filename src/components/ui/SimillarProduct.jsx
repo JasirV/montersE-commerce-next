@@ -1,9 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import React, { useContext, useEffect, useState, useRef } from "react";
+import React, { useContext, useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { FaHeart, FaShoppingCart, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import {
+  FaHeart,
+  FaShoppingCart,
+  FaChevronLeft,
+  FaChevronRight,
+} from "react-icons/fa";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
 import axios from "axios";
@@ -11,27 +16,45 @@ import { GlobalContext } from "../shared/context/GlobalContext";
 import Dummy1 from "../../assets/Accessory Deals.jpg";
 import newCurrency from "../../assets/newSymbole.png";
 
-// Single product card component
-const ProductCard = ({ product }) => {
+// Optimized ProductCard component with memoization
+const ProductCard = React.memo(({ product }) => {
   const router = useRouter();
-  const { decrementWishlist, incrementWishlist, incrementCart } = useContext(GlobalContext);
+  const { decrementWishlist, incrementWishlist, incrementCart } =
+    useContext(GlobalContext);
   const [isWishlisted, setIsWishlisted] = useState([]);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check if product is in wishlist
-  const checkIsWishlisted = (productId) => {
-    return isWishlisted.includes(productId);
-  };
+  const productId = useMemo(() => product._id || product.productId?._id, [product]);
+  const isProductWishlisted = useMemo(() => isWishlisted.includes(productId), [isWishlisted, productId]);
 
-  // Fetch user's wishlists and check wishlist status
-  const fetchWishlists = async () => {
+  // Memoized product category checks
+  const isBagCategory = useMemo(() => {
+    const p = product;
+    if (p.leatherMainCategory?.toLowerCase().includes("bag")) return true;
+    if (p.subCategory?.toLowerCase().includes("bag")) return true;
+    if (p.category?.toLowerCase().includes("bag")) return true;
+    if (p.material?.toLowerCase().includes("leather")) return true;
+    if (p.name?.toLowerCase().includes("bag")) return true;
+    return false;
+  }, [product]);
+
+  const isAccessoriesCategory = useMemo(() => {
+    const category = product.category?.toLowerCase();
+    const subCategory = product.subCategory?.toLowerCase();
+    const main = product.leatherMainCategory?.toLowerCase();
+
+    if (category === "accessories") return true;
+    if (subCategory === "accessories") return true;
+    if (main === "accessories") return true;
+    return false;
+  }, [product]);
+
+  // Memoized functions
+  const fetchWishlists = useCallback(async () => {
     try {
       const token = localStorage.getItem("accessToken");
-      if (!token) {
-        console.log("No token found");
-        return;
-      }
+      if (!token) return;
 
       setIsLoading(true);
       const res = await axios.get(
@@ -41,7 +64,7 @@ const ProductCard = ({ product }) => {
         }
       );
 
-      if (res.data && res.data.wishlists?.length > 0) {
+      if (res.data?.wishlists?.length > 0) {
         const defaultWishlist =
           res.data.wishlists.find((w) => w.isDefault) || res.data.wishlists[0];
         setDefaultWishlistId(defaultWishlist._id || defaultWishlist.id);
@@ -50,22 +73,41 @@ const ProductCard = ({ product }) => {
           (wishlist) =>
             wishlist.products?.map((product) => product._id || product) || []
         );
-
         setIsWishlisted(allWishlistProductIds);
-      } else {
-        console.log("No wishlists found or empty response");
-        setDefaultWishlistId(null);
       }
     } catch (error) {
       console.error("Error fetching wishlists:", error);
-      setDefaultWishlistId(null);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Add/Remove from wishlist
-  const toggleWishlist = async (product) => {
+  const handleProductClick = useCallback(() => {
+    if (!productId) {
+      Toastify({
+        text: "Product information is incomplete",
+        duration: 3000,
+        gravity: "bottom",
+        position: "center",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
+      return;
+    }
+
+    // Priority routing based on category
+    if (isBagCategory) {
+      router.push(`/LeatherBagsDetails/${productId}`);
+    } else if (isAccessoriesCategory) {
+      router.push(`/AccessoriesDeatils/${productId}`);
+    } else {
+      router.push(`/ProductDetailPage/${productId}`);
+    }
+  }, [productId, isBagCategory, isAccessoriesCategory, router]);
+
+  const toggleWishlist = useCallback(async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
@@ -82,172 +124,109 @@ const ProductCard = ({ product }) => {
         return;
       }
 
-      const productId = product._id || product.productId?._id;
-      if (!productId) {
-        return;
-      }
+      if (!productId) return;
 
-      const alreadyWishlisted = checkIsWishlisted(productId);
+      if (isProductWishlisted) {
+        // Remove from wishlist
+        try {
+          const response = await axios.delete(
+            `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              data: {
+                wishlistId: defaultWishlistId,
+                productId: productId,
+              },
+            }
+          );
 
-      if (alreadyWishlisted) {
-        await removeFromWishlist(productId);
+          if (response.status === 200) {
+            decrementWishlist();
+            setIsWishlisted((prev) => prev.filter((id) => id !== productId));
+            Toastify({
+              text: "Removed from wishlist",
+              duration: 3000,
+              gravity: "top",
+              position: "right",
+              close: true,
+              style: {
+                background: "linear-gradient(to right, #00b09b, #96c93d)",
+              },
+            }).showToast();
+          }
+        } catch (error) {
+          Toastify({
+            text: "Failed to remove from wishlist",
+            duration: 4000,
+            gravity: "top",
+            position: "right",
+            close: true,
+            style: {
+              background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+            },
+          }).showToast();
+        }
       } else {
-        await addToWishlist(product);
-      }
-    } catch (error) {
-      Toastify({
-        text: "Failed to update wishlist. Please try again.",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
-    }
-  };
-
-  const addToWishlist = async (product) => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        Toastify({
-          text: "Please log in first to add to wishlist",
-          duration: 4000,
-          gravity: "top",
-          position: "right",
-          close: true,
-          style: {
-            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-          },
-        }).showToast();
-        return;
-      }
-
-      if (!defaultWishlistId) {
-        Toastify({
-          text: "No wishlist found. Please create a wishlist first.",
-          duration: 4000,
-          gravity: "top",
-          position: "right",
-          close: true,
-          style: {
-            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-          },
-        }).showToast();
-        return;
-      }
-
-      const productId = product._id || product.productId?._id;
-
-      if (!productId) {
-        console.error("Product ID not found");
-        return;
-      }
-
-      if (checkIsWishlisted(productId)) {
-        Toastify({
-          text: "Product is already in your wishlist.",
-          duration: 3000,
-          gravity: "top",
-          position: "right",
-          close: true,
-          style: {
-            background: "linear-gradient(to right, #2193b0, #6dd5ed)",
-          },
-        }).showToast();
-        return;
-      }
-
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/add`,
-        {
-          wishlistId: defaultWishlistId,
-          productId: productId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        // Add to wishlist
+        if (!defaultWishlistId) {
+          Toastify({
+            text: "No wishlist found. Please create a wishlist first.",
+            duration: 4000,
+            gravity: "top",
+            position: "right",
+            close: true,
+            style: {
+              background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+            },
+          }).showToast();
+          return;
         }
-      );
 
-      incrementWishlist();
-      if (response.status === 200) {
-        setIsWishlisted((prev) => [...prev, productId]);
-        Toastify({
-          text: "added to wishlist",
-          duration: 3000,
-          gravity: "top",
-          position: "right",
-          close: true,
-          style: {
-            background: "linear-gradient(to right, #00b09b, #96c93d)",
-          },
-        }).showToast();
-      }
-    } catch (error) {
-      Toastify({
-        text: "Failed to add to wishlist. Please try again.",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
-    }
-  };
+        try {
+          const response = await axios.post(
+            `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/add`,
+            {
+              wishlistId: defaultWishlistId,
+              productId: productId,
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
 
-  const removeFromWishlist = async (productId) => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) return;
-
-      const response = await axios.delete(
-        `${process.env.NEXT_PUBLIC_BASEURL}/products/wishlist/remove`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          data: {
-            wishlistId: defaultWishlistId,
-            productId: productId,
-          },
+          if (response.status === 200) {
+            incrementWishlist();
+            setIsWishlisted((prev) => [...prev, productId]);
+            Toastify({
+              text: "Added to wishlist",
+              duration: 3000,
+              gravity: "top",
+              position: "right",
+              close: true,
+              style: {
+                background: "linear-gradient(to right, #00b09b, #96c93d)",
+              },
+            }).showToast();
+          }
+        } catch (error) {
+          Toastify({
+            text: "Failed to add to wishlist",
+            duration: 4000,
+            gravity: "top",
+            position: "right",
+            close: true,
+            style: {
+              background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+            },
+          }).showToast();
         }
-      );
-
-      decrementWishlist();
-      if (response.status === 200) {
-        setIsWishlisted((prev) => prev.filter((id) => id !== productId));
-        Toastify({
-          text: "Removed from wishlist",
-          duration: 3000,
-          gravity: "top",
-          position: "right",
-          close: true,
-          style: {
-            background: "linear-gradient(to right, #00b09b, #96c93d)",
-          },
-        }).showToast();
       }
     } catch (error) {
-      Toastify({
-        text: "Failed to remove from wishlist. Please try again.",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        close: true,
-        style: {
-          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-        },
-      }).showToast();
+      console.error("Error toggling wishlist:", error);
     }
-  };
+  }, [productId, isProductWishlisted, defaultWishlistId, decrementWishlist, incrementWishlist]);
 
-  const addToCart = async (product) => {
+  const addToCart = useCallback(async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
@@ -264,7 +243,6 @@ const ProductCard = ({ product }) => {
         return;
       }
 
-      const productId = product._id || product.productId?._id;
       if (!productId) {
         Toastify({
           text: "Invalid product data",
@@ -286,17 +264,14 @@ const ProductCard = ({ product }) => {
           quantity: 1,
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      incrementCart();
-
       if (response.status === 200) {
+        incrementCart();
         Toastify({
-          text: " added to cart",
+          text: "Added to cart",
           duration: 3000,
           gravity: "top",
           position: "right",
@@ -305,136 +280,70 @@ const ProductCard = ({ product }) => {
             background: "linear-gradient(to right, #00b09b, #96c93d)",
           },
         }).showToast();
-      } else {
-        Toastify({
-          text: "Failed to add to cart. Try again!",
-          duration: 4000,
-          gravity: "top",
-          position: "right",
-          close: true,
-          style: {
-            background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-          },
-        }).showToast();
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
+      Toastify({
+        text: "Failed to add to cart",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        close: true,
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+        },
+      }).showToast();
     }
-  };
+  }, [productId, incrementCart]);
 
-  const isBagCategory = (product) => {
-    // Check multiple ways a product might be categorized as a bag
-    const searchTerms = ['bag', 'handbag', 'backpack', 'purse', 'tote', 'satchel', 'clutch', 'duffel', 'messenger', 'briefcase', 'wallet', 'pouch'];
-    
-    // Convert all relevant fields to lowercase for comparison
-    const leatherMainCategory = product.leatherMainCategory?.toLowerCase() || '';
-    const subCategory = product.subCategory?.toLowerCase() || '';
-    const category = product.category?.toLowerCase() || '';
-    const material = product.material?.toLowerCase() || '';
-    const name = product.name?.toLowerCase() || '';
-    const description = product.description?.toLowerCase() || '';
-    const tags = Array.isArray(product.tags) 
-      ? product.tags.map(tag => tag.toLowerCase()) 
-      : [];
-    
-    // Check if any search term appears in any relevant field
-    for (const term of searchTerms) {
-      if (
-        leatherMainCategory.includes(term) ||
-        subCategory.includes(term) ||
-        category.includes(term) ||
-        name.includes(term) ||
-        description.includes(term) ||
-        tags.some(tag => tag.includes(term))
-      ) {
-        return true;
-      }
-    }
-    
-    // Check for leather specifically
-    if (
-      leatherMainCategory.includes('leather') ||
-      material.includes('leather') ||
-      category.includes('leather') ||
-      tags.some(tag => tag.includes('leather'))
-    ) {
-      // Additional check to ensure it's actually a bag, not just leather product
-      // Check if name or description contains any bag-related terms
-      const bagRelatedTerms = ['bag', 'handbag', 'backpack', 'purse', 'tote', 'satchel', 'clutch'];
-      for (const term of bagRelatedTerms) {
-        if (name.includes(term) || description.includes(term)) {
-          return true;
-        }
-      }
-    }
-    
-    return false;
-  };
-
-  const handleProductClick = (product) => {
-    // Get the product ID from all possible locations
-    const productId = product._id || product.productId?._id || product.id;
-    
-    if (!productId) {
-      console.warn('No product ID found: ', product);
-      return;
-    }
-    
-    // Check if it's a bag category
-    if (isBagCategory(product)) {
-      // Route to LeatherBagsDetails for bags
-      router.push(`/LeatherBagsDetails/${productId}`);
-    } else {
-      // Route to ProductDetailPage for other products
-      router.push(`/ProductDetailPage/${productId}`);
-    }
-  };
-
-  useEffect(() => {
-    fetchWishlists();
-  }, []);
-
-  const productId = product._id || product.productId?._id;
-  const isProductWishlisted = checkIsWishlisted(productId);
-
-  const formatPrice = (price) => {
+  const formatPrice = useCallback((price) => {
     return (
       <div className="flex items-center">
-        <Image
-          src={newCurrency}
-          alt="Currency"
+        <Image 
+          src={newCurrency} 
+          alt="Currency" 
           className="w-4 h-4 mr-1.5"
+          width={16}
+          height={16}
+          loading="lazy"
         />
         <span className="text-xl font-bold text-gray-900">
           {price?.toLocaleString() || "0"}
         </span>
       </div>
     );
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchWishlists();
+  }, [fetchWishlists]);
 
   return (
-    <div className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 mx-2 my-2 flex-shrink-0 w-full max-w-[280px] sm:w-[280px]">
+    <div className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 mx-1 my-1 flex-shrink-0 w-[calc(50%-8px)] sm:w-[280px] sm:mx-2 sm:my-2">
       {/* Product Image Container */}
-      <div className="relative h-52 bg-gray-50 cursor-pointer">
-        <div onClick={() => handleProductClick(product)} className="w-full h-full">
+      <div className="relative h-40 sm:h-52 bg-gray-50 cursor-pointer">
+        <div
+          onClick={handleProductClick}
+          className="w-full h-full"
+        >
           <Image
             src={product.images?.[0]?.url || Dummy1}
-            alt={product.name}
-            unoptimized
+            alt={product.name || "Product image"}
             fill
+            sizes="(max-width: 640px) 50vw, 280px"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
             onError={(e) => {
-              e.target.src = Dummy1;
+              e.target.src = Dummy1.src;
             }}
           />
         </div>
 
         {/* Wishlist Button */}
         <button
-          onClick={() => toggleWishlist(product)}
+          onClick={toggleWishlist}
           disabled={isLoading}
-          className={`absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 group/wishlist ${
+          className={`absolute top-2 right-2 sm:top-3 sm:right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 group/wishlist ${
             isLoading ? "opacity-50 cursor-not-allowed" : ""
           }`}
           aria-label={
@@ -442,7 +351,7 @@ const ProductCard = ({ product }) => {
           }
         >
           <FaHeart
-            className={`text-sm transition-colors ${
+            className={`text-xs sm:text-sm transition-colors ${
               isProductWishlisted
                 ? "text-red-500 fill-red-500"
                 : "text-gray-600 group-hover/wishlist:text-red-500"
@@ -452,19 +361,19 @@ const ProductCard = ({ product }) => {
       </div>
 
       {/* Product Details */}
-      <div className="p-4 sm:p-5">
-        <h3 
-          onClick={() => handleProductClick(product)}
-          className="text-gray-800 font-semibold text-[15px] mb-3 line-clamp-2 leading-tight min-h-[2.8rem] cursor-pointer hover:text-blue-600 transition-colors"
+      <div className="p-3 sm:p-5">
+        <h3
+          onClick={handleProductClick}
+          className="text-gray-800 font-semibold text-sm sm:text-[15px] mb-2 sm:mb-3 line-clamp-2 leading-tight min-h-[2.8rem] cursor-pointer hover:text-blue-600 transition-colors"
         >
           {product.name}
         </h3>
 
         {/* Price Section */}
-        <div className="flex items-baseline gap-2 mb-4">
+        <div className="flex items-baseline gap-1 sm:gap-2 mb-3 sm:mb-4">
           {formatPrice(product.salePrice)}
           {product.regularPrice && product.regularPrice > product.salePrice && (
-            <span className="text-sm text-gray-500 line-through ml-1">
+            <span className="text-xs sm:text-sm text-gray-500 line-through ml-1">
               {formatPrice(product.regularPrice)}
             </span>
           )}
@@ -472,79 +381,101 @@ const ProductCard = ({ product }) => {
 
         {/* Add to Cart Button */}
         <button
-          onClick={() => addToCart(product)}
-          className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#0061b0ee] hover:to-[#1e518e] text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-300 hover:shadow-lg active:scale-95 group/cart"
+          onClick={addToCart}
+          className="w-full flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-[#1e518e] to-[#0061b0ee] hover:from-[#0061b0ee] hover:to-[#1e518e] text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 hover:shadow-lg active:scale-95 group/cart"
         >
-          <FaShoppingCart className="text-sm group-hover/cart:scale-110 transition-transform" />
+          <FaShoppingCart className="text-xs sm:text-sm group-hover/cart:scale-110 transition-transform" />
           <span>Add to Cart</span>
         </button>
       </div>
     </div>
   );
-};
+});
+
+ProductCard.displayName = 'ProductCard';
 
 // Scrollable Products Container Component
-const ScrollableProductsContainer = ({ 
-  title, 
-  description, 
-  products, 
-  loading, 
-  error
+const ScrollableProductsContainer = React.memo(({
+  title,
+  description,
+  products,
+  loading,
+  error,
 }) => {
   const scrollContainerRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
 
-  const checkScrollButtons = () => {
+  const checkScrollButtons = useCallback(() => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
       setShowLeftArrow(scrollLeft > 0);
       setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
     }
-  };
+  }, []);
 
-  const scrollLeft = () => {
+  const scrollLeft = useCallback(() => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+      const scrollAmount = window.innerWidth < 640 ? 200 : 300;
+      scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: "smooth" });
     }
-  };
+  }, []);
 
-  const scrollRight = () => {
+  const scrollRight = useCallback(() => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+      const scrollAmount = window.innerWidth < 640 ? 200 : 300;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkScrollButtons();
     const container = scrollContainerRef.current;
+    
+    const handleScroll = () => {
+      checkScrollButtons();
+      // Throttle scroll events for performance
+      if (container) {
+        container.requestAnimationFrame = container.requestAnimationFrame || setTimeout;
+        container.requestAnimationFrame(checkScrollButtons);
+      }
+    };
+
     if (container) {
-      container.addEventListener('scroll', checkScrollButtons);
-      return () => container.removeEventListener('scroll', checkScrollButtons);
+      container.addEventListener("scroll", handleScroll, { passive: true });
+      // Check on resize
+      window.addEventListener("resize", checkScrollButtons, { passive: true });
+      
+      return () => {
+        container.removeEventListener("scroll", handleScroll);
+        window.removeEventListener("resize", checkScrollButtons);
+      };
     }
-  }, [products]);
+  }, [checkScrollButtons, products]);
 
   // Show loading state
   if (loading) {
     return (
-      <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
+      <div className="bg-gray-50/80 py-6 sm:py-12 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
-            <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+          <div className="text-center mb-6 sm:mb-8">
+            <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">
+              {title}
+            </h2>
+            <p className="text-gray-600 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed">
               Loading {title.toLowerCase()}...
             </p>
           </div>
-          <div className="flex gap-4 sm:gap-6 overflow-hidden justify-center sm:justify-start">
+          <div className="flex gap-2 sm:gap-6 overflow-x-auto pb-4 scrollbar-hide px-2 sm:px-0">
             {[...Array(4)].map((_, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl shadow-sm p-4 sm:p-5 animate-pulse flex-shrink-0 w-[45%] sm:w-[280px]"
+                className="bg-white rounded-xl shadow-sm p-3 sm:p-5 animate-pulse flex-shrink-0 w-[calc(50%-4px)] sm:w-[280px]"
               >
-                <div className="h-40 sm:h-52 bg-gray-200 rounded-lg mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-                <div className="h-8 bg-gray-200 rounded"></div>
+                <div className="h-32 sm:h-52 bg-gray-200 rounded-lg mb-3 sm:mb-4"></div>
+                <div className="h-3 sm:h-4 bg-gray-200 rounded mb-1.5 sm:mb-2"></div>
+                <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4 mb-2 sm:mb-3"></div>
+                <div className="h-7 sm:h-8 bg-gray-200 rounded"></div>
               </div>
             ))}
           </div>
@@ -556,13 +487,15 @@ const ScrollableProductsContainer = ({
   // Show error state
   if (error) {
     return (
-      <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
+      <div className="bg-gray-50/80 py-6 sm:py-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
-          <p className="text-gray-600 text-base sm:text-lg mb-6">{error}</p>
+          <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">
+            {title}
+          </h2>
+          <p className="text-gray-600 text-sm sm:text-lg mb-4 sm:mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
           >
             Try Again
           </button>
@@ -574,10 +507,12 @@ const ScrollableProductsContainer = ({
   // Show empty state if no products
   if (!products || products.length === 0) {
     return (
-      <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
+      <div className="bg-gray-50/80 py-6 sm:py-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
-          <p className="text-gray-600 text-base sm:text-lg">
+          <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">
+            {title}
+          </h2>
+          <p className="text-gray-600 text-sm sm:text-lg">
             No {title.toLowerCase()} found at the moment.
           </p>
         </div>
@@ -586,55 +521,63 @@ const ScrollableProductsContainer = ({
   }
 
   return (
-    <div className="bg-gray-50/80 py-8 sm:py-12 px-4">
+    <div className="bg-gray-50/80 py-6 sm:py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{title}</h2>
-          <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-4">
+        <div className="text-center mb-6 sm:mb-8 px-2 sm:px-0">
+          <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">
+            {title}
+          </h2>
+          <p className="text-gray-600 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed">
             {description}
           </p>
         </div>
 
         {/* Products Container with Scroll Arrows */}
         <div className="relative">
-          {/* Left Arrow */}
+          {/* Left Arrow - Mobile optimized */}
           {showLeftArrow && (
             <button
               onClick={scrollLeft}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white border border-gray-200 rounded-full p-2 sm:p-3 shadow-lg hover:shadow-xl transition-all duration-200 -translate-x-1/2 hover:scale-110 hidden sm:block"
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white border border-gray-200 rounded-full p-2 shadow-lg hover:shadow-xl transition-all duration-200 -translate-x-1/2 hover:scale-110 sm:block"
               aria-label="Scroll left"
             >
-              <FaChevronLeft className="text-gray-700 text-base sm:text-lg" />
+              <FaChevronLeft className="text-gray-700 text-sm sm:text-base" />
             </button>
           )}
 
           {/* Scrollable Products */}
           <div
             ref={scrollContainerRef}
-            className="flex overflow-x-auto gap-4 sm:gap-6 pb-4 sm:pb-6 scrollbar-hide scroll-smooth px-2 sm:px-0"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="flex overflow-x-auto gap-2 sm:gap-6 pb-4 sm:pb-6 scrollbar-hide scroll-smooth px-1 sm:px-0"
+            style={{ 
+              scrollbarWidth: "none", 
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch"
+            }}
           >
-            {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
+            {products.map((product, index) => (
+              <ProductCard key={product._id ?? index} product={product} />
             ))}
           </div>
 
-          {/* Right Arrow */}
+          {/* Right Arrow - Mobile optimized */}
           {showRightArrow && (
             <button
               onClick={scrollRight}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white border border-gray-200 rounded-full p-2 sm:p-3 shadow-lg hover:shadow-xl transition-all duration-200 translate-x-1/2 hover:scale-110 hidden sm:block"
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white border border-gray-200 rounded-full p-2 shadow-lg hover:shadow-xl transition-all duration-200 translate-x-1/2 hover:scale-110 sm:block"
               aria-label="Scroll right"
             >
-              <FaChevronRight className="text-gray-700 text-base sm:text-lg" />
+              <FaChevronRight className="text-gray-700 text-sm sm:text-base" />
             </button>
           )}
         </div>
       </div>
     </div>
   );
-};
+});
+
+ScrollableProductsContainer.displayName = 'ScrollableProductsContainer';
 
 // Main Similar Products Component
 const SimilarProduct = ({ productId }) => {
@@ -649,7 +592,6 @@ const SimilarProduct = ({ productId }) => {
   useEffect(() => {
     const fetchSimilarProducts = async () => {
       if (!productId) {
-        console.log("No product ID provided for similar products");
         setSimilarLoading(false);
         return;
       }
@@ -667,15 +609,15 @@ const SimilarProduct = ({ productId }) => {
               Authorization: token ? `Bearer ${token}` : "",
               "Content-Type": "application/json",
             },
+            timeout: 10000, // 10 second timeout
           }
         );
 
-        if (response.data.success) {
-          const products = response.data.products || response.data.similarProducts || [];
-          console.log("Similar products found:", products.length);
+        if (response.data?.success) {
+          const products =
+            response.data.products || response.data.similarProducts || [];
           setSimilarProducts(products);
         } else {
-          console.log("Similar products API returned success: false");
           setSimilarProducts([]);
         }
       } catch (err) {
@@ -694,7 +636,6 @@ const SimilarProduct = ({ productId }) => {
   useEffect(() => {
     const fetchYouMayAlsoLikeProducts = async () => {
       if (!productId) {
-        console.log("No product ID provided for you may also like products");
         setYouMayAlsoLikeLoading(false);
         return;
       }
@@ -712,15 +653,15 @@ const SimilarProduct = ({ productId }) => {
               Authorization: token ? `Bearer ${token}` : "",
               "Content-Type": "application/json",
             },
+            timeout: 10000, // 10 second timeout
           }
         );
 
-        if (response.data.success) {
-          const products = response.data.products || response.data.youMayAlsoLike || [];
-          console.log("You May Also Like products found:", products.length);
+        if (response.data?.success) {
+          const products =
+            response.data.products || response.data.youMayAlsoLike || [];
           setYouMayAlsoLikeProducts(products);
         } else {
-          console.log("You May Also Like API returned success: false");
           setYouMayAlsoLikeProducts([]);
         }
       } catch (err) {
@@ -740,7 +681,7 @@ const SimilarProduct = ({ productId }) => {
       {/* Similar Products Section */}
       <ScrollableProductsContainer
         title="Similar Products"
-        description="Discover more premium products that match your exquisite style and preferences"
+        description="Discover more premium products that match your style"
         products={similarProducts}
         loading={similarLoading}
         error={similarError}
@@ -758,4 +699,4 @@ const SimilarProduct = ({ productId }) => {
   );
 };
 
-export default SimilarProduct;
+export default React.memo(SimilarProduct);
