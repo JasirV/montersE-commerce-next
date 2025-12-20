@@ -27,18 +27,12 @@ import JewelryMegaMenu from "./JewelryMegaMenu";
 import AccessoriesMegaMenu from "./AccessoriesMegaMenu";
 
 const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
-  const { currency, setCurrency, setRate } = useCurrency();
+  const { currency, setCurrency, getCurrencySymbol } = useCurrency();
   const [dropdown, setDropdown] = useState(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState({
-    code: "AED",
-    symbol: "د.إ",
-    name: "UAE Dirham",
-    flag: "🇦🇪",
-  });
   const [isLoading, setIsLoading] = useState(false);
 
   // Menu Items with mega menu data
@@ -48,7 +42,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       path: "/shop",
       hasMegaMenu: true,
       megaMenuType: "brands",
-      megaMenuData: {}, // Add your actual data here
+      megaMenuData: {},
     },
     {
       name: "EXCLUSIVE COLLECTION",
@@ -59,36 +53,27 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       path: "/watches/Watches",
       hasMegaMenu: true,
       megaMenuType: "watches",
-      megaMenuData: {}, // Add your actual data here
+      megaMenuData: {},
     },
     {
       name: "HANDBAGS",
       path: "/leathers/bags",
       hasMegaMenu: true,
       megaMenuType: "handbags",
-      megaMenuData: {}, // Add your actual data here
+      megaMenuData: {},
     },
-      {
+    {
       name: "LEATHER GOODS",
       path: "/leathers/LeatherGoodsAll",
-      // hasMegaMenu: true,
-      // megaMenuType: "handbags",
-      megaMenuData: {}, // Add your actual data here
+      megaMenuData: {},
     },
     {
       name: "ACCESSORIES",
       path: "/accessories/Accessories",
       hasMegaMenu: true,
       megaMenuType: "accessories",
-      megaMenuData: {}, // Add your actual data here
+      megaMenuData: {},
     },
-    // {
-    //   name: "JEWELRY",
-    //   path: "/jewelry",
-    //   hasMegaMenu: true,
-    //   megaMenuType: "jewelry",
-    //   megaMenuData: {}, // Add your actual data here
-    // },
     {
       name: "BRAND NEW",
       path: "/BrandNew",
@@ -103,55 +88,39 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     { code: "GBP", symbol: "£", name: "British Pound", flag: "🇬🇧" },
     { code: "INR", symbol: "₹", name: "Indian Rupee", flag: "🇮🇳" },
     { code: "SAR", symbol: "﷼", name: "Saudi Riyal", flag: "🇸🇦" },
+    { code: "EGP", symbol: "E£", name: "Egyptian Pound", flag: "🇪🇬" },
+    { code: "ERN", symbol: "Nfk", name: "Eritrean Nakfa", flag: "🇪🇷" },
+    { code: "ETB", symbol: "Br", name: "Ethiopian Birr", flag: "🇪🇹" },
+    { code: "FJD", symbol: "FJ$", name: "Fijian Dollar", flag: "🇫🇯" },
+    { code: "FKP", symbol: "FK£", name: "Falkland Islands Pound", flag: "🇫🇰" },
   ];
 
   // Handle currency change
-  const handleCurrencyChange = async (currency) => {
+  const handleCurrencyChange = async (currencyCode) => {
     setIsLoading(true);
-    setSelectedCurrency(currency);
-    setCurrency(currency.code);
-
     try {
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASEURL}/Auth/convert-price`,
-        {
-          params: {
-            amount: 1,
-            from: "AED",
-            to: currency.code,
-          },
-        }
-      );
-
-      if (res.data && res.data.converted !== undefined) {
-        setRate(res.data.converted);
-      } else {
-        throw new Error("Invalid response from server");
-      }
+      // Set currency directly - the context will handle rate fetching automatically
+      setCurrency(currencyCode);
+      
+      // Optional: You can store the selected currency in localStorage for persistence
+      localStorage.setItem('preferredCurrency', currencyCode);
     } catch (err) {
-      console.error("Conversion failed", err.response?.data || err.message);
-      const fallbackRates = {
-        USD: 0.27,
-        EUR: 0.25,
-        GBP: 0.21,
-        INR: 22.5,
-        SAR: 1.02,
-        AED: 1,
-      };
-      setRate(fallbackRates[currency.code] || 1);
+      console.error("Currency change failed", err);
     } finally {
       setIsLoading(false);
+      setIsCurrencyOpen(false);
     }
   };
 
-  // Initialize currency from context on component mount
+  // Initialize currency from localStorage on component mount
   useEffect(() => {
-    const initialCurrency =
-      currencyOptions.find((opt) => opt.code === currency) ||
-      currencyOptions[0];
-    setSelectedCurrency(initialCurrency);
-  }, [currency]);
+    const savedCurrency = localStorage.getItem('preferredCurrency');
+    if (savedCurrency && currencyOptions.some(opt => opt.code === savedCurrency)) {
+      setCurrency(savedCurrency);
+    }
+  }, []);
 
+  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
@@ -186,38 +155,27 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     closeMobileMenu();
   }, [closeMobileMenu]);
 
-  const handleCurrencySelect = useCallback((currency) => {
-    handleCurrencyChange(currency);
-    setIsCurrencyOpen(false);
-  }, []);
-
   const getCurrencyIcon = (code) => {
-    switch (code) {
-      case "USD":
-        return <FaDollarSign className="text-green-600" />;
-      case "EUR":
-        return <FaEuroSign className="text-blue-600" />;
-      case "GBP":
-        return <FaPoundSign className="text-red-600" />;
-      case "INR":
-        return <FaRupeeSign className="text-orange-600" />;
-      case "AED":
-        return (
-          <Image
-            src={newCurrency}
-            alt="AED"
-            width={16}
-            height={16}
-            className="inline-block"
-          />
-        );
-      default:
-        return (
-          <span className="text-amber-600 font-bold">
-            {selectedCurrency.symbol}
-          </span>
-        );
+    const symbol = getCurrencySymbol(code);
+    
+    if (code === "AED") {
+      return (
+        <Image
+          src={newCurrency}
+          alt="AED"
+          width={16}
+          height={16}
+          className="inline-block"
+        />
+      );
     }
+    
+    // Return text symbol for other currencies
+    return (
+      <span className="text-gray-700 font-semibold text-sm">
+        {symbol}
+      </span>
+    );
   };
 
   // Function to render the appropriate mega menu for desktop
@@ -250,7 +208,6 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const renderMobileMenuItem = (item) => (
     <div key={item.name} className="border-b border-gray-200">
       {!item.hasMegaMenu ? (
-        // Simple menu item with direct link
         <Link
           href={item.path}
           className="w-full flex justify-between items-center px-6 py-4 text-left text-gray-800 hover:bg-gray-50 transition-colors bg-white"
@@ -261,7 +218,6 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           </span>
         </Link>
       ) : (
-        // Menu item with mega menu
         <>
           <button
             onClick={() => toggleDropdown(item.name)}
@@ -279,7 +235,6 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
             </span>
           </button>
 
-          {/* Mega Menu Content */}
           {dropdown === item.name && item.hasMegaMenu && (
             <div className="bg-gray-50 border-t border-gray-200">
               <div className="px-6 py-3">
@@ -290,8 +245,6 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 >
                   View All {item.name}
                 </Link>
-
-                {/* Render appropriate mega menu component */}
                 {renderMobileMegaMenuContent(item)}
               </div>
             </div>
@@ -332,113 +285,124 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   };
 
   // Function to render currency selector for desktop
-  const renderDesktopCurrencySelector = () => (
-    <div className="relative">
-      <button
-        onClick={toggleCurrency}
-        disabled={isLoading}
-        className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-100 text-sm transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? (
-          <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-        ) : (
-          getCurrencyIcon(selectedCurrency.code)
-        )}
-        <span className="font-medium">{selectedCurrency.code}</span>
-        <FaChevronDown
-          className={`transition-transform duration-200 ${
-            isCurrencyOpen ? "rotate-180" : ""
-          }`}
-          size={12}
-        />
-      </button>
-
-      {isCurrencyOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-lg py-2 z-50 border border-gray-200">
-          <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
-            SELECT CURRENCY
-          </div>
-          {currencyOptions.map((currency) => (
-            <button
-              key={currency.code}
-              onClick={() => handleCurrencySelect(currency)}
-              disabled={isLoading}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors ${
-                selectedCurrency.code === currency.code
-                  ? "bg-amber-50 text-amber-700"
-                  : "hover:bg-gray-50 text-gray-700"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              <span className="text-base">{currency.flag}</span>
-              <span className="flex-1 text-left">{currency.name}</span>
-              <span
-                className={`font-medium ${
-                  selectedCurrency.code === currency.code
-                    ? "text-amber-600"
-                    : "text-gray-500"
-                }`}
-              >
-                {currency.code}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  // Function to render currency selector for mobile
-  const renderMobileCurrencySelector = () => (
-    <div className="border-b border-gray-200">
-      <button
-        onClick={toggleCurrency}
-        disabled={isLoading}
-        className="w-full flex justify-between items-center px-6 py-4 text-left text-gray-800 hover:bg-gray-50 transition-colors disabled:opacity-50"
-      >
-        <div className="flex items-center gap-3">
+  const renderDesktopCurrencySelector = () => {
+    const currentCurrency = currencyOptions.find(opt => opt.code === currency) || currencyOptions[0];
+    
+    return (
+      <div className="relative">
+        <button
+          onClick={toggleCurrency}
+          disabled={isLoading}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 text-sm transition-colors duration-200 border border-gray-200 min-w-[120px] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {isLoading ? (
             <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
           ) : (
-            getCurrencyIcon(selectedCurrency.code)
+            <>
+              <span className="text-base">{getCurrencyIcon(currency)}</span>
+              <span className="font-semibold text-gray-700">{currentCurrency.code}</span>
+            </>
           )}
-          <span className="font-medium text-base">Currency</span>
-        </div>
-        <FaChevronDown
-          className={`text-gray-400 transition-transform duration-200 ${
-            isCurrencyOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
+          <FaChevronDown
+            className={`transition-transform duration-200 ml-auto text-gray-500 ${
+              isCurrencyOpen ? "rotate-180" : ""
+            }`}
+            size={12}
+          />
+        </button>
 
-      {isCurrencyOpen && (
-        <div className="bg-gray-50 border-t border-gray-200">
-          <div className="px-6 py-2 text-xs font-semibold text-gray-500">
-            SELECT CURRENCY
+        {isCurrencyOpen && (
+          <div className="absolute right-0 mt-2 w-56 bg-white shadow-xl rounded-lg py-2 z-50 border border-gray-200">
+            <div className="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100 bg-gray-50">
+              SELECT CURRENCY
+            </div>
+            <div className="max-h-60 overflow-y-auto">
+              {currencyOptions.map((curr) => (
+                <button
+                  key={curr.code}
+                  onClick={() => handleCurrencyChange(curr.code)}
+                  disabled={isLoading}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+                    currency === curr.code
+                      ? "bg-amber-50 text-amber-700"
+                      : "hover:bg-gray-50 text-gray-700"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <span className="text-lg">{curr.flag}</span>
+                  <div className="flex-1 text-left">
+                    <div className="font-medium">{curr.name}</div>
+                    <div className="text-xs text-gray-500">{curr.code}</div>
+                  </div>
+                  <span className="text-gray-600">{curr.symbol}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          {currencyOptions.map((currency) => (
-            <button
-              key={currency.code}
-              onClick={() => handleCurrencySelect(currency)}
-              disabled={isLoading}
-              className={`w-full flex items-center gap-3 px-6 py-3 text-sm transition-colors ${
-                selectedCurrency.code === currency.code
-                  ? "bg-amber-50 text-amber-700"
-                  : "text-gray-600 hover:bg-gray-100"
-              } disabled:opacity-50`}
-            >
-              <span className="text-base">{currency.flag}</span>
-              <span className="flex-1 text-left">
-                {currency.name} ({currency.code})
-              </span>
-              {selectedCurrency.code === currency.code && (
-                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    );
+  };
+
+  // Function to render currency selector for mobile
+  const renderMobileCurrencySelector = () => {
+    const currentCurrency = currencyOptions.find(opt => opt.code === currency) || currencyOptions[0];
+    
+    return (
+      <div className="border-b border-gray-200">
+        <button
+          onClick={toggleCurrency}
+          disabled={isLoading}
+          className="w-full flex justify-between items-center px-6 py-4 text-left text-gray-800 hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          <div className="flex items-center gap-3">
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              getCurrencyIcon(currency)
+            )}
+            <span className="font-medium text-base">Currency ({currentCurrency.code})</span>
+          </div>
+          <FaChevronDown
+            className={`text-gray-400 transition-transform duration-200 ${
+              isCurrencyOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {isCurrencyOpen && (
+          <div className="bg-gray-50 border-t border-gray-200">
+            <div className="px-6 py-2 text-xs font-semibold text-gray-500">
+              SELECT CURRENCY
+            </div>
+            <div className="max-h-80 overflow-y-auto">
+              {currencyOptions.map((curr) => (
+                <button
+                  key={curr.code}
+                  onClick={() => handleCurrencyChange(curr.code)}
+                  disabled={isLoading}
+                  className={`w-full flex items-center gap-3 px-6 py-3 text-sm transition-colors ${
+                    currency === curr.code
+                      ? "bg-amber-50 text-amber-700"
+                      : "text-gray-600 hover:bg-gray-100"
+                  } disabled:opacity-50`}
+                >
+                  <span className="text-lg">{curr.flag}</span>
+                  <div className="flex-1 text-left">
+                    <div className="font-medium">{curr.name}</div>
+                    <div className="text-xs text-gray-500">{curr.code}</div>
+                  </div>
+                  <span className="text-gray-600">{curr.symbol}</span>
+                  {currency === curr.code && (
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Function to render mobile help section
   const renderMobileHelpSection = () => (
@@ -584,7 +548,6 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                       {item.name}
                     </Link>
 
-                    {/* Mega Menu for specific items */}
                     {item.hasMegaMenu &&
                       dropdown === item.name &&
                       renderMegaMenu(item)}
@@ -695,7 +658,7 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         </div>
       </header>
 
-      {/* Mobile Menu - Fixed for better responsiveness */}
+      {/* Mobile Menu */}
       <div
         className={`fixed inset-y-0 left-0 w-full max-w-sm bg-white z-50 transform transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
@@ -715,21 +678,14 @@ const SubNavbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
         {/* Mobile Menu Content */}
         <div className="h-full overflow-y-auto pb-20">
-          {/* Main Menu Items */}
           {menuItems.map(renderMobileMenuItem)}
-
-          {/* Currency Selector for Mobile */}
           {renderMobileCurrencySelector()}
-
-          {/* Help Section */}
           {renderMobileHelpSection()}
-
-          {/* Language Section */}
           {renderMobileLanguageSection()}
         </div>
       </div>
 
-      {/* Overlay for mobile menu - Fixed background */}
+      {/* Overlay for mobile menu */}
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"

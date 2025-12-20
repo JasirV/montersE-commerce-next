@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useContext,
   useRef,
+  useCallback,
 } from "react";
 import {
   FaHeart,
@@ -41,7 +42,7 @@ import { Package } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import newCurrency from "../../../../assets/newSymbole.png";
 import Image from "next/image";
-
+import { useCurrency } from "@/app/CurrencyContext";
 import { addToCart, fetchProduct } from "@/service/productService";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
@@ -91,6 +92,9 @@ const LeatherBagsDetails = () => {
 
   const { id } = useParams();
 
+  // ✅ Currency Context
+  const { currency, convertPrice, getCurrencySymbol } = useCurrency();
+
   // Wishlist states
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
@@ -110,6 +114,12 @@ const LeatherBagsDetails = () => {
   const [touchStart, setTouchStart] = useState(null);
   const imageContainerRef = useRef(null);
   const imageRef = useRef(null);
+
+  // Hover zoom states
+  const [isHovering, setIsHovering] = useState(false);
+  const [hoverZoomPosition, setHoverZoomPosition] = useState({ x: 50, y: 50 });
+  const zoomContainerRef = useRef(null);
+  const zoomOverlayRef = useRef(null);
 
   // Check if product is sold out
   const isSoldOut = product?.stockQuantity === 0;
@@ -151,14 +161,14 @@ const LeatherBagsDetails = () => {
   const images = useMemo(() => product?.images || [], [product]);
 
   // Responsive thumbnail count
-  const getVisibleThumbnails = () => {
+  const getVisibleThumbnails = useCallback(() => {
     if (typeof window !== "undefined") {
       if (window.innerWidth < 640) return 4; // Mobile
       if (window.innerWidth < 1024) return 5; // Tablet
       return 4; // Desktop
     }
     return 4;
-  };
+  }, []);
 
   const [visibleThumbnails, setVisibleThumbnails] = useState(
     getVisibleThumbnails()
@@ -171,22 +181,60 @@ const LeatherBagsDetails = () => {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [getVisibleThumbnails]);
 
   const maxThumbnailIndex = Math.max(0, images.length - visibleThumbnails);
 
-  const handleThumbnailNavigate = (direction) => {
-    if (direction === "prev") {
-      setThumbnailStartIndex((prev) => Math.max(0, prev - 1));
-    } else {
-      setThumbnailStartIndex((prev) => Math.min(maxThumbnailIndex, prev + 1));
-    }
-  };
+  const handleThumbnailNavigate = useCallback(
+    (direction) => {
+      if (direction === "prev") {
+        setThumbnailStartIndex((prev) => Math.max(0, prev - 1));
+      } else {
+        setThumbnailStartIndex((prev) => Math.min(maxThumbnailIndex, prev + 1));
+      }
+    },
+    [maxThumbnailIndex]
+  );
 
   const visibleImages = images.slice(
     thumbnailStartIndex,
     thumbnailStartIndex + visibleThumbnails
   );
+
+  // Hover Zoom Handlers
+  const handleMouseMove = useCallback((e) => {
+    if (!zoomContainerRef.current) return;
+    
+    // Only activate on desktop (≥768px)
+    if (typeof window !== "undefined" && window.innerWidth < 768) return;
+    
+    const containerRect = zoomContainerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+    const y = ((e.clientY - containerRect.top) / containerRect.height) * 100;
+    
+    setHoverZoomPosition({ x, y });
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    // Only activate on desktop (≥768px)
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      setIsHovering(true);
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovering(false);
+    // Reset position when mouse leaves
+    setHoverZoomPosition({ x: 50, y: 50 });
+  }, []);
+
+  // Preload image for hover zoom
+  useEffect(() => {
+    if (typeof window !== "undefined" && selectedImage) {
+      const img = new window.Image();
+      img.src = selectedImage;
+    }
+  }, [selectedImage]);
 
   // Image Zoom Functions
   const handleImageClick = (e) => {
@@ -500,6 +548,8 @@ const LeatherBagsDetails = () => {
   const handleImageSelect = (image) => {
     setSelectedImage(image.url || image);
     resetZoom();
+    // Reset hover zoom position when image changes
+    setHoverZoomPosition({ x: 50, y: 50 });
   };
 
   // Subscribe to restock notifications
@@ -1395,11 +1445,11 @@ const LeatherBagsDetails = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 md:p-6">
             {/* Left Column - Images */}
             <div className="relative">
-              {/* Main Image Container with Zoom */}
+              {/* Main Image Container with Hover Zoom */}
               <div
-                ref={imageContainerRef}
-                className={`relative w-full h-64 xs:h-72 sm:h-80 md:h-96 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden border-2 border-gray-100 cursor-${
-                  window.innerWidth >= 768
+                ref={zoomContainerRef}
+                className={`relative w-full h-64 xs:h-72 sm:h-80 md:h-96 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden border-2 border-gray-100 group cursor-${
+                  typeof window !== "undefined" && window.innerWidth >= 768
                     ? isZoomed
                       ? "zoom-out"
                       : "zoom-in"
@@ -1407,8 +1457,31 @@ const LeatherBagsDetails = () => {
                 }`}
                 onClick={handleImageClick}
                 onWheel={handleWheel}
-                onMouseLeave={resetZoom}
+                onMouseLeave={(e) => {
+                  resetZoom();
+                  handleMouseLeave();
+                }}
+                onMouseEnter={handleMouseEnter}
+                onMouseMove={handleMouseMove}
               >
+                {/* Hover Zoom Overlay - Desktop Only */}
+                {typeof window !== "undefined" && window.innerWidth >= 768 && (
+                  <div
+                    ref={zoomOverlayRef}
+                    className={`absolute inset-0 bg-no-repeat pointer-events-none transition-opacity duration-300 z-10 ${
+                      isHovering ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    style={{
+                      backgroundImage: `url(${selectedImage || product.image || "/placeholder-image.jpg"})`,
+                      backgroundSize: '200%',
+                      backgroundPosition: `${hoverZoomPosition.x}% ${hoverZoomPosition.y}%`,
+                      backgroundRepeat: 'no-repeat',
+                      transform: 'translateZ(0)',
+                    }}
+                  />
+                )}
+                
+                {/* Original Image */}
                 <div
                   ref={imageRef}
                   className="absolute inset-0 flex items-center justify-center"
@@ -1426,14 +1499,18 @@ const LeatherBagsDetails = () => {
                     unoptimized
                     width={600}
                     height={600}
-                    className="object-contain w-full h-full p-2 select-none"
+                    className={`object-contain w-full h-full p-2 select-none ${
+                      typeof window !== "undefined" && window.innerWidth >= 768 && isHovering 
+                        ? 'opacity-0' 
+                        : 'opacity-100'
+                    } transition-opacity duration-300`}
                     priority
                     draggable="false"
                   />
                 </div>
 
                 {/* Zoom Controls for Desktop */}
-                {window.innerWidth >= 768 && (
+                {typeof window !== "undefined" && window.innerWidth >= 768 && (
                   <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-white bg-opacity-80 backdrop-blur-sm rounded-full p-2 shadow-lg">
                     <button
                       onClick={(e) => {
@@ -1475,9 +1552,16 @@ const LeatherBagsDetails = () => {
                 )}
 
                 {/* Mobile Zoom Hint */}
-                {window.innerWidth < 768 && (
+                {typeof window !== "undefined" && window.innerWidth < 768 && (
                   <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
                     Tap to zoom
+                  </div>
+                )}
+
+                {/* Desktop Hover Hint */}
+                {typeof window !== "undefined" && window.innerWidth >= 768 && !isZoomed && (
+                  <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
+                    Hover to zoom • Click for full zoom
                   </div>
                 )}
 
@@ -1573,6 +1657,7 @@ const LeatherBagsDetails = () => {
 
                     {/* View All Button for Mobile */}
                     {images.length > visibleThumbnails &&
+                      typeof window !== "undefined" &&
                       window.innerWidth < 768 && (
                         <div className="text-center mt-3">
                           <button
@@ -1612,29 +1697,18 @@ const LeatherBagsDetails = () => {
                         isSoldOut ? "text-gray-600" : "text-gray-900"
                       }`}
                     >
-                      <Image
-                        src={newCurrency}
-                        alt="Currency"
-                        width={24}
-                        height={24}
-                        className="mr-1 sm:mr-2 w-5 h-5 sm:w-7 sm:h-7"
-                      />
-                      {formatPrice(product.salePrice || product.sellingPrice) ||
-                        "65,000"}
+                      {/* Using Currency Context */}
+                      {getCurrencySymbol()}
+                      {convertPrice(product.salePrice || product.sellingPrice) || "0"}
                     </div>
                     {product.regularPrice &&
                       product.regularPrice >
                         (product.salePrice || product.sellingPrice) && (
                         <>
                           <div className="text-lg sm:text-xl text-gray-500 line-through flex items-center">
-                            <Image
-                              src={newCurrency}
-                              alt="Currency"
-                              width={18}
-                              height={18}
-                              className="mr-1 w-4 h-4 sm:w-5 sm:h-5"
-                            />
-                            {formatPrice(product.regularPrice)}
+                            {/* Using Currency Context */}
+                            {getCurrencySymbol()}
+                            {convertPrice(product.regularPrice)}
                           </div>
                           <span className="bg-green-500 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-semibold">
                             {calculateDiscount()}% OFF
@@ -2067,7 +2141,7 @@ const ProductDescription = ({
   );
 };
 
-// Add custom CSS for slide-up animation and zoom
+// Add custom CSS for slide-up animation and zoom with hover zoom styles
 const style = `
   @keyframes slide-up {
     from {
@@ -2137,6 +2211,10 @@ const style = `
     cursor: zoom-out;
   }
   
+  .cursor-move {
+    cursor: move;
+  }
+  
   /* Modal animations */
   @keyframes fade-in {
     from { opacity: 0; }
@@ -2160,6 +2238,34 @@ const style = `
   /* Touch-friendly scroll */
   .touch-scroll {
     -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Hover Zoom Effect Styles */
+  .zoom-overlay {
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+  
+  /* Hide hover zoom on touch devices */
+  @media (hover: none) and (pointer: coarse) {
+    .zoom-overlay {
+      display: none !important;
+    }
+    
+    .group-hover\\:opacity-0 {
+      opacity: 1 !important;
+    }
+  }
+  
+  /* Hardware acceleration for smooth zoom */
+  .will-change-transform {
+    will-change: transform;
+  }
+  
+  /* Prevent flickering on hover */
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
 `;
 

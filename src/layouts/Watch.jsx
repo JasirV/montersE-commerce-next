@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import {
   FaShoppingCart,
@@ -16,16 +16,21 @@ import {
   FaFire,
   FaUserTag,
 } from "react-icons/fa";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
+import toast from "react-hot-toast";
+import { useCurrency } from "@/app/CurrencyContext";
 
-// ⭐ Enhanced Product Card Component with Better Badge System
+// ⭐ Enhanced Product Card Component with Authentication Handling
 const ProductCard = ({
   product,
   onAddToCart,
   onToggleWishlist,
   isInWishlist,
   onProductClick,
-  sectionType = "brand-new", // "brand-new" or "just-for-you"
+  sectionType = "brand-new",
   showConditionBadge = true,
+  isAuthenticated = false,
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -33,21 +38,144 @@ const ProductCard = ({
   const [touchEnd, setTouchEnd] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [localWishlistState, setLocalWishlistState] = useState(false);
   const imageContainerRef = useRef(null);
+  const router = useRouter();
+  const pathname = usePathname();
 
-  // Process images - main image first, then cover images
+  // ✅ Currency Context
+  const { currency, convertPrice, getCurrencySymbol } = useCurrency();
+
+  // Initialize local wishlist state
+  useEffect(() => {
+    setLocalWishlistState(isInWishlist);
+  }, [isInWishlist]);
+
+  // Format price with thousands separators and proper decimals
+  const formatPrice = (price) => {
+    try {
+      // Convert to number if it's not already
+      const priceNumber = typeof price === 'number' ? price : parseFloat(price);
+      
+      // Check if it's a valid number
+      if (isNaN(priceNumber)) {
+        return "0.00";
+      }
+      
+      // Format with 2 decimal places and thousands separators
+      return priceNumber.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    } catch (error) {
+      console.error("Error formatting price:", error);
+      return "0.00";
+    }
+  };
+
+  // Format price with currency symbol and proper spacing
+  const formatPriceWithCurrency = (price) => {
+    const formattedPrice = formatPrice(price);
+    const symbol = getCurrencySymbol();
+    
+    // Return formatted price with currency symbol and proper spacing
+    // Different currencies have different formatting conventions
+    switch (currency) {
+      case 'USD':
+      case 'CAD':
+      case 'AUD':
+      case 'NZD':
+      case 'SGD':
+      case 'HKD':
+        // Prefix with symbol: $1,234.00
+        return `${symbol}${formattedPrice}`;
+      
+      case 'EUR':
+      case 'GBP':
+        // Prefix with symbol: €1,234.00 or £1,234.00
+        return `${symbol}${formattedPrice}`;
+      
+      case 'JPY':
+        // No decimals, with symbol: ¥1,234
+        const jpyPrice = parseFloat(price).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        });
+        return `${symbol}${jpyPrice}`;
+      
+      case 'INR':
+        // Indian numbering system with symbol: ₹1,234.00
+        const inrPrice = parseFloat(price).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        return `${symbol}${inrPrice}`;
+      
+      case 'AED':
+      case 'SAR':
+      case 'QAR':
+        // Arabic currencies: 1,234.00 AED
+        return `${formattedPrice} ${symbol}`;
+      
+      default:
+        // Default: symbol before number
+        return `${symbol}${formattedPrice}`;
+    }
+  };
+
+  // Get formatted sale price
+  const getSalePrice = () => {
+    try {
+      if (!product.salePrice) return null;
+      const convertedPrice = convertPrice(product.salePrice);
+      return formatPriceWithCurrency(convertedPrice);
+    } catch (error) {
+      console.error("Error formatting sale price:", error);
+      return formatPriceWithCurrency(0);
+    }
+  };
+
+  // Get formatted regular price
+  const getRegularPrice = () => {
+    try {
+      const price = product.regularPrice || product.price || 0;
+      const convertedPrice = convertPrice(price);
+      return formatPriceWithCurrency(convertedPrice);
+    } catch (error) {
+      console.error("Error formatting regular price:", error);
+      return formatPriceWithCurrency(0);
+    }
+  };
+
+  // Calculate and format savings amount
+  const getSavingsAmount = () => {
+    try {
+      if (product.salePrice && product.regularPrice) {
+        const regularPrice = parseFloat(product.regularPrice) || 0;
+        const salePrice = parseFloat(product.salePrice) || 0;
+        if (regularPrice > salePrice) {
+          const savings = regularPrice - salePrice;
+          const convertedSavings = convertPrice(savings);
+          return formatPrice(convertedSavings);
+        }
+      }
+      return "0.00";
+    } catch (error) {
+      console.error("Error calculating savings:", error);
+      return "0.00";
+    }
+  };
+
+  // Process images
   const processedImages = React.useMemo(() => {
     if (!product.images || !Array.isArray(product.images)) return [];
-
     const mainImage = product.images.find((img) => img.type === "main");
     const coverImages = product.images.filter((img) => img.type === "cover");
-
-    // Return main image first, then cover images
     return mainImage ? [mainImage, ...coverImages] : product.images;
   }, [product.images]);
 
-  // Minimum swipe distance
-  const minSwipeDistance = 30; // Reduced for mobile
+  const minSwipeDistance = 30;
 
   const onTouchStart = (e) => {
     setTouchEnd(null);
@@ -83,7 +211,7 @@ const ProductCard = ({
     );
   };
 
-  // Auto-rotate images on hover (desktop only)
+  // Auto-rotate images on hover
   useEffect(() => {
     let interval;
     if (isHovered && processedImages.length > 1 && window.innerWidth > 768) {
@@ -96,12 +224,75 @@ const ProductCard = ({
     return () => clearInterval(interval);
   }, [isHovered, processedImages.length]);
 
-  // Handle add to cart with loading state
+  // Handle add to cart
   const handleAddToCartClick = async (e, product) => {
     e.stopPropagation();
     setIsAddingToCart(true);
     await onAddToCart(product);
     setTimeout(() => setIsAddingToCart(false), 600);
+  };
+
+  // Handle wishlist toggle with proper authentication check - FIXED
+  const handleWishlistClick = async (e) => {
+    e.stopPropagation();
+
+    // Check authentication FIRST
+    const token =
+      localStorage.getItem("accessToken") || localStorage.getItem("token");
+
+    if (!token) {
+      // Show warning toast for guest users
+      Toastify({
+        text: "Please log in to add to favorites",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        style: {
+          background: "linear-gradient(to right, #ff5f6d, #ff7a5c)",
+          borderRadius: "8px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        },
+        close: true,
+        stopOnFocus: true,
+      }).showToast();
+
+      // Redirect to login page with current path as redirect URL
+      router.push(`/login?redirect=${encodeURIComponent(pathname || "/")}`);
+      return; // Stop execution here for guest users
+    }
+
+    // If authenticated, proceed with toggling wishlist
+    setIsWishlistLoading(true);
+
+    // Optimistic UI update - only for authenticated users
+    const newWishlistState = !localWishlistState;
+    setLocalWishlistState(newWishlistState);
+
+    try {
+      await onToggleWishlist(product.productId || product._id);
+      toast.success(
+        newWishlistState ? "Added to favorites!" : "Removed from favorites",
+        {
+          duration: 2000,
+          position: "bottom-center",
+          style: {
+            background: newWishlistState ? "#10b981" : "#ef4444",
+            color: "white",
+            borderRadius: "8px",
+          },
+        }
+      );
+    } catch (error) {
+      // Revert on error
+      setLocalWishlistState(!newWishlistState);
+      toast.error("Failed to update favorites", {
+        duration: 3000,
+        position: "bottom-center",
+      });
+      console.error("Wishlist toggle failed:", error);
+    } finally {
+      setIsWishlistLoading(false);
+    }
   };
 
   // Calculate discount percentage
@@ -113,11 +304,10 @@ const ProductCard = ({
         )
       : 0;
 
-  // Handle rating properly
+  // Handle rating
   const getRatingData = () => {
     const rating = product.rating || product.averageRating || 0;
     const reviewCount = product.reviewCount || product.ratingCount || 0;
-
     const numericRating = Number(rating) || 0;
     const numericReviewCount = Number(reviewCount) || 0;
 
@@ -135,39 +325,32 @@ const ProductCard = ({
     return product.productId || product._id;
   };
 
-  // Determine which badge to show based on section and product condition
+  // Determine which badge to show
   const getConditionBadge = () => {
     if (!showConditionBadge) return null;
-
     const condition = (product.condition || "").toLowerCase();
 
-    // For Brand New section: Only show "Brand New" badge
     if (sectionType === "brand-new") {
       return {
         text: "Brand New",
         className: "bg-green-500 text-white",
-        icon: "🆕",
       };
     }
 
-    // For Just For You section: Show condition-based badges
     if (condition.includes("used") || condition.includes("pre-owned")) {
       return {
         text: "Pre-Owned",
         className: "bg-amber-500 text-white",
-        icon: "🔄",
       };
     } else if (condition.includes("like-new")) {
       return {
         text: "Like New",
         className: "bg-blue-500 text-white",
-        icon: "✨",
       };
     } else if (condition.includes("brand") || condition.includes("new")) {
       return {
         text: "Brand New",
         className: "bg-green-500 text-white",
-        icon: "🆕",
       };
     }
 
@@ -198,22 +381,49 @@ const ProductCard = ({
         </div>
       )}
 
-      {/* Wishlist Button */}
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleWishlist(getProductId());
-        }}
-        className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm p-1.5 sm:p-2 z-10 transform transition-all duration-200 active:scale-95"
-        aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+        onClick={handleWishlistClick}
+        disabled={isWishlistLoading}
+        aria-label={
+          isAuthenticated
+            ? localWishlistState
+              ? "Remove from wishlist"
+              : "Add to wishlist"
+            : "Login to add to wishlist"
+        }
+        title={
+          !isAuthenticated
+            ? "Please login to add to favorites"
+            : localWishlistState
+            ? "Remove from favorites"
+            : "Add to favorites"
+        }
+        className="
+          absolute top-2 right-2 z-10
+          rounded-full p-2
+          bg-white/90 backdrop-blur-sm
+          shadow-sm
+          transform transition-all duration-200
+          hover:bg-white hover:shadow-md
+          active:scale-95
+          cursor-pointer hover:cursor-pointer
+          disabled:opacity-70 disabled:cursor-not-allowed
+        "
       >
-        {isInWishlist ? (
-          <FaHeart className="text-red-500 text-xs sm:text-sm" />
+        {isWishlistLoading ? (
+          <FaSpinner className="text-gray-600 text-sm animate-spin pointer-events-none" />
+        ) : isAuthenticated && localWishlistState ? (
+          <FaHeart className="text-red-500 text-sm pointer-events-none" />
         ) : (
-          <FaRegHeart className="text-gray-600 text-xs sm:text-sm group-hover:text-red-400 transition-colors" />
+          <FaRegHeart
+            className={`text-sm transition-colors pointer-events-none ${
+              isAuthenticated
+                ? "text-gray-600 group-hover:text-red-400"
+                : "text-gray-400 group-hover:text-gray-500"
+            }`}
+          />
         )}
       </button>
-
       {/* Product Image with Enhanced Carousel */}
       <div
         ref={imageContainerRef}
@@ -252,11 +462,11 @@ const ProductCard = ({
                   e.stopPropagation();
                   handlePrevImage();
                 }}
-                className={`absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-1.5 sm:p-2 shadow transition-all duration-200 ${
+                className={`absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-1.5 sm:p-2 shadow transition-all duration-200 cursor-pointer ${
                   isHovered || window.innerWidth <= 768
                     ? "opacity-100 scale-100"
                     : "opacity-0 scale-90"
-                } active:scale-95 backdrop-blur-sm z-20`}
+                } active:scale-95 backdrop-blur-sm z-20 hover:shadow-md`}
                 aria-label="Previous image"
               >
                 <FaChevronLeft size={10} className="sm:w-3 sm:h-3" />
@@ -266,11 +476,11 @@ const ProductCard = ({
                   e.stopPropagation();
                   handleNextImage();
                 }}
-                className={`absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-1.5 sm:p-2 shadow transition-all duration-200 ${
+                className={`absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-1.5 sm:p-2 shadow transition-all duration-200 cursor-pointer ${
                   isHovered || window.innerWidth <= 768
                     ? "opacity-100 scale-100"
                     : "opacity-0 scale-90"
-                } active:scale-95 backdrop-blur-sm z-20`}
+                } active:scale-95 backdrop-blur-sm z-20 hover:shadow-md`}
                 aria-label="Next image"
               >
                 <FaChevronRight size={10} className="sm:w-3 sm:h-3" />
@@ -278,7 +488,7 @@ const ProductCard = ({
             </>
           )}
 
-          {/* Enhanced Image Indicators (dots) */}
+          {/* Enhanced Image Indicators */}
           {processedImages.length > 1 && (
             <div
               className={`absolute bottom-1.5 sm:bottom-2 left-0 right-0 flex justify-center space-x-1 transition-all duration-200 z-10 ${
@@ -294,7 +504,7 @@ const ProductCard = ({
                     e.stopPropagation();
                     setCurrentImageIndex(index);
                   }}
-                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-200 ${
+                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-200 cursor-pointer ${
                     index === currentImageIndex
                       ? "bg-white scale-125 shadow-sm"
                       : "bg-white/60 hover:bg-white/80"
@@ -348,20 +558,20 @@ const ProductCard = ({
           </div>
         )}
 
-        {/* Price Section */}
+        {/* Price Section - FIXED with proper formatting */}
         <div className="mb-1.5 sm:mb-2">
           {product.salePrice ? (
             <div className="flex items-baseline space-x-1 sm:space-x-1.5">
               <p className="text-xs sm:text-sm font-bold text-gray-900">
-                {product.salePrice} AED
+                {getSalePrice()}
               </p>
               <p className="text-[10px] sm:text-xs text-gray-500 line-through">
-                {product.regularPrice} AED
+                {getRegularPrice()}
               </p>
             </div>
           ) : (
             <p className="text-xs sm:text-sm font-bold text-gray-900">
-              {product.regularPrice} AED
+              {getRegularPrice()}
             </p>
           )}
         </div>
@@ -370,7 +580,7 @@ const ProductCard = ({
         <button
           onClick={(e) => handleAddToCartClick(e, product)}
           disabled={isAddingToCart}
-          className={`w-full bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white py-1.5 sm:py-2 rounded-lg sm:rounded-lg text-[10px] sm:text-xs font-semibold mt-auto transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow active:scale-95 min-h-[1.75rem] sm:min-h-[2rem] group/cart ${
+          className={`w-full bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white py-1.5 sm:py-2 rounded-lg sm:rounded-lg text-[10px] sm:text-xs font-semibold mt-auto transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow active:scale-95 min-h-[1.75rem] sm:min-h-[2rem] group/cart cursor-pointer ${
             isAddingToCart
               ? "from-green-600 to-green-700 cursor-not-allowed"
               : ""
@@ -393,7 +603,7 @@ const ProductCard = ({
   );
 };
 
-// ⭐ Section Header Component with BLACK text
+// ⭐ Section Header Component
 const SectionHeader = ({ title, subtitle, icon: Icon }) => {
   return (
     <div className="text-center mb-4 sm:mb-8 w-full px-2">
@@ -427,19 +637,25 @@ export default function EnhancedProductSections() {
   const [errorJustForYou, setErrorJustForYou] = useState(null);
   const [errorBrandNew, setErrorBrandNew] = useState(null);
   const [userId, setUserId] = useState(null);
-
-  // Track if brand new section should be shown
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showBrandNewSection, setShowBrandNewSection] = useState(false);
 
-  // 👉 Safe localStorage access
+  // ✅ Currency Context
+  const { currency, convertPrice, getCurrencySymbol } = useCurrency();
+
+  // 👉 Check authentication status
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUserId = localStorage.getItem("userId");
+      const token =
+        localStorage.getItem("accessToken") || localStorage.getItem("token");
+
       setUserId(storedUserId);
+      setIsAuthenticated(!!storedUserId && !!token);
     }
   }, []);
 
-  // 👉 Fetch Brand New Products - Only brand-new condition
+  // 👉 Fetch Brand New Products
   useEffect(() => {
     const fetchBrandNewProducts = async () => {
       try {
@@ -447,22 +663,16 @@ export default function EnhancedProductSections() {
         setErrorBrandNew(null);
 
         const BASE_URL = process.env.NEXT_PUBLIC_BASEURL;
-
         const endpoints = [
-          `${BASE_URL}/products/new-arrivals`,
-          `${BASE_URL}/products/latest`,
           `${BASE_URL}/products?sort=newest&limit=20`,
           `${BASE_URL}/products`,
         ];
 
         let apiData = [];
 
-        // Try each endpoint until one succeeds
         for (const endpoint of endpoints) {
           try {
             const res = await axios.get(endpoint);
-
-            // Extract data based on response structure
             let extractedData = [];
 
             if (Array.isArray(res.data)) {
@@ -490,10 +700,8 @@ export default function EnhancedProductSections() {
           }
         }
 
-        // Process ONLY brand-new products
         const processedProducts = (apiData || [])
           .filter((product) => {
-            // Only include products with brand-new condition
             const condition = (product.condition || "").toLowerCase();
             return condition.includes("brand") || condition.includes("new");
           })
@@ -505,10 +713,9 @@ export default function EnhancedProductSections() {
             reviewCount: Number(
               product.reviewCount || product.ratingCount || 0
             ),
-            condition: "brand-new", // Force brand-new for this section
+            condition: "brand-new",
           }));
 
-        // Check if we have any brand-new products
         if (processedProducts.length > 0) {
           setBrandNewProducts(processedProducts);
           setShowBrandNewSection(true);
@@ -529,7 +736,7 @@ export default function EnhancedProductSections() {
     fetchBrandNewProducts();
   }, []);
 
-  // 👉 Fetch Just For You Products (Mixed conditions)
+  // 👉 Fetch Just For You Products
   useEffect(() => {
     const fetchJustForYouProducts = async () => {
       try {
@@ -537,17 +744,13 @@ export default function EnhancedProductSections() {
         setErrorJustForYou(null);
 
         const BASE_URL = process.env.NEXT_PUBLIC_BASEURL;
-
         const url = userId
           ? `${BASE_URL}/recommend/just-for-you/${userId}`
           : `${BASE_URL}/recommend/just-for-you`;
 
         const res = await axios.get(url);
-
-        // Process products
         let productsData = [];
 
-        // Handle different response structures
         if (Array.isArray(res.data)) {
           productsData = res.data;
         } else if (res.data && Array.isArray(res.data.products)) {
@@ -570,7 +773,6 @@ export default function EnhancedProductSections() {
           productId: product._id || product.id,
           rating: Number(product.rating || product.averageRating || 0),
           reviewCount: Number(product.reviewCount || product.ratingCount || 0),
-          // Preserve original condition for badge display
           condition: product.condition || "brand-new",
         }));
 
@@ -599,7 +801,6 @@ export default function EnhancedProductSections() {
         return [...prev, { ...product, qty: 1 }];
       });
 
-      // Create floating cart animation
       const button = document.activeElement;
       if (button) {
         button.classList.add("animate-pulse");
@@ -608,21 +809,54 @@ export default function EnhancedProductSections() {
         }, 600);
       }
 
+      toast.success("Added to cart!", {
+        duration: 2000,
+        position: "bottom-center",
+      });
       resolve();
     });
   };
 
-  // 👉 Wishlist toggle
-  const handleToggleWishlist = (productId) => {
-    setWishlist((prev) => {
-      const copy = new Set(prev);
-      if (copy.has(productId)) {
-        copy.delete(productId);
-      } else {
-        copy.add(productId);
-      }
-      return copy;
-    });
+  // 👉 Wishlist toggle (only for authenticated users)
+  const handleToggleWishlist = async (productId) => {
+    // This function should only be called for authenticated users
+    // Guest users are handled in the ProductCard component
+
+    try {
+      // API call to toggle wishlist
+      const BASE_URL = process.env.NEXT_PUBLIC_BASEURL;
+      const response = await axios.post(
+        `${BASE_URL}/wishlist/toggle`,
+        {
+          userId,
+          productId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${
+              localStorage.getItem("accessToken") ||
+              localStorage.getItem("token")
+            }`,
+          },
+        }
+      );
+
+      // Update local state based on API response
+      setWishlist((prev) => {
+        const copy = new Set(prev);
+        if (response.data.isInWishlist) {
+          copy.add(productId);
+        } else {
+          copy.delete(productId);
+        }
+        return copy;
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("Wishlist toggle error:", error);
+      throw error;
+    }
   };
 
   const handleProductClick = (_id) => {
@@ -633,7 +867,7 @@ export default function EnhancedProductSections() {
 
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white py-3 sm:py-8 px-2 sm:px-4 w-full min-h-screen">
-      {/* BRAND NEW ITEMS SECTION - Only Brand New badges */}
+      {/* BRAND NEW ITEMS SECTION */}
       {showBrandNewSection && brandNewProducts.length > 0 && (
         <div className="max-w-7xl mx-auto w-full mb-6 sm:mb-12">
           <SectionHeader
@@ -641,17 +875,6 @@ export default function EnhancedProductSections() {
             subtitle="Latest Collections"
             icon={FaFire}
           />
-
-          {/* Section Info Badge */}
-          <div className="text-center mb-3 sm:mb-5">
-            <div className="inline-flex items-center bg-green-50 border border-green-200 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 mb-2">
-              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-1 sm:mr-1.5"></div>
-              <span className="text-[10px] sm:text-xs text-green-700 font-medium">
-                Showing only <strong className="font-bold">Brand New</strong>{" "}
-                items
-              </span>
-            </div>
-          </div>
 
           {/* Error State */}
           {errorBrandNew && (
@@ -667,7 +890,7 @@ export default function EnhancedProductSections() {
               <p className="text-[10px] sm:text-xs">{errorBrandNew}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="mt-1.5 sm:mt-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] sm:text-xs transition-colors active:scale-95"
+                className="mt-1.5 sm:mt-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] sm:text-xs transition-colors active:scale-95 cursor-pointer"
               >
                 Try Again
               </button>
@@ -705,6 +928,7 @@ export default function EnhancedProductSections() {
                       onProductClick={handleProductClick}
                       sectionType="brand-new"
                       showConditionBadge={true}
+                      isAuthenticated={isAuthenticated}
                     />
                   ))}
                 </div>
@@ -714,7 +938,7 @@ export default function EnhancedProductSections() {
         </div>
       )}
 
-      {/* JUST FOR YOU SECTION - Mixed condition badges */}
+      {/* JUST FOR YOU SECTION */}
       <div className="max-w-7xl mx-auto w-full">
         <SectionHeader
           title="Curated Just For You"
@@ -729,13 +953,18 @@ export default function EnhancedProductSections() {
               <span className="hidden sm:inline"></span>Like New
             </span>
             <span className="px-2 py-0.5 sm:py-1 bg-amber-50 border border-amber-200 rounded-full text-[10px] sm:text-xs text-amber-700 font-medium">
-              <span className="hidden sm:inline">🔄 </span>Pre-Owned
+              <span className="hidden sm:inline"></span>Pre-Owned
             </span>
             <span className="px-2 py-0.5 sm:py-1 bg-green-50 border border-green-200 rounded-full text-[10px] sm:text-xs text-green-700 font-medium">
-              <span className="hidden sm:inline">🆕 </span>Brand New
+              <span className="hidden sm:inline"></span>Brand New
             </span>
           </div>
           <p className="text-[10px] sm:text-xs text-gray-500 px-2">
+            {!isAuthenticated && (
+              <span className="text-amber-600 font-medium">
+                ⓘ Login to save favorites •
+              </span>
+            )}{" "}
             Personalized recommendations based on your preferences
           </p>
         </div>
@@ -754,7 +983,7 @@ export default function EnhancedProductSections() {
             <p className="text-[10px] sm:text-xs">{errorJustForYou}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-1.5 sm:mt-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] sm:text-xs transition-colors active:scale-95"
+              className="mt-1.5 sm:mt-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] sm:text-xs transition-colors active:scale-95 cursor-pointer"
             >
               Try Again
             </button>
@@ -794,6 +1023,7 @@ export default function EnhancedProductSections() {
                     onProductClick={handleProductClick}
                     sectionType="just-for-you"
                     showConditionBadge={true}
+                    isAuthenticated={isAuthenticated}
                   />
                 ))}
               </div>
@@ -807,10 +1037,15 @@ export default function EnhancedProductSections() {
                 </h3>
                 <p className="text-gray-500 text-xs sm:text-sm max-w-xs mx-auto mb-3 sm:mb-4 px-2">
                   Browse more products to get personalized recommendations.
+                  {!isAuthenticated && (
+                    <span className="block mt-1 text-amber-600 font-medium">
+                      Login to save your favorites!
+                    </span>
+                  )}
                 </p>
                 <button
                   onClick={() => router.push("/products")}
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-lg font-semibold transition-all duration-200 hover:shadow active:scale-95 text-xs sm:text-sm"
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-lg font-semibold transition-all duration-200 hover:shadow active:scale-95 text-xs sm:text-sm cursor-pointer"
                 >
                   Browse Products
                 </button>
@@ -824,7 +1059,7 @@ export default function EnhancedProductSections() {
       {cartCount > 0 && (
         <button
           onClick={() => router.push("/cart")}
-          className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white p-2 sm:p-3 rounded-full shadow-lg flex items-center transition-all duration-200 z-50 active:scale-95"
+          className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 bg-gradient-to-r from-[#1e518e] to-[#0061b0] hover:from-[#16467c] hover:to-[#005099] text-white p-2 sm:p-3 rounded-full shadow-lg flex items-center transition-all duration-200 z-50 active:scale-95 cursor-pointer"
           aria-label={`View cart with ${cartCount} items`}
         >
           <div className="relative">

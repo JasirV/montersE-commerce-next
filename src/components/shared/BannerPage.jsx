@@ -2,12 +2,13 @@
 import React from "react";
 import Slider from "react-slick";
 import LuxuryWatchCollection from "../../assets/Banners/Luxury.png";
+import LuxuryWatchCollection from "../../assets/Banners/Luxurysm.png";
 import NewArrivals2025 from "../../assets/Banners/repair.png";
 import ExclusiveLimited from "../../assets/Banners/Join the World of Montres.png";
 import WorldWideShipping from "../../assets/Banners/World.png";
 import BestDeal from "../../assets/Banners/Warannty.png";
 import Link from "next/link";
-import luxuryWatchCollectionSm from "../../assets/Banners/Luxurysm.png"; 
+import luxuryWatchCollectionSm from "../../assets/Banners/Luxury.png"; 
 import NewArrivals2025sm from "../../assets/Banners/repairsm.png"; 
 import ExclusiveLimitedsm from "../../assets/Banners/subsm.png"; 
 import WorldWideShippingsm from "../../assets/Banners/shipingsm.png"; 

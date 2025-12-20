@@ -567,7 +567,7 @@ export async function getHomeProductGrid() {
     let endpoint = `home`;
     // ✅ Add search if provided
     const response = await api.get(endpoint);
-    console.log(response,"acthuly response");
+  
     
 
     return { data: response.data, error: null, isLoading: false };

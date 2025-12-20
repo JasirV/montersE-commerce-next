@@ -38,7 +38,7 @@ import { Package } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import newCurrency from "../../../../assets/newSymbole.png";
 import Image from "next/image";
-
+import { useCurrency } from "@/app/CurrencyContext";
 import { addToCart, fetchProduct } from "@/service/productService";
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
@@ -878,6 +878,9 @@ const AccessoriesDetails = () => {
   const router = useRouter();
   const { id } = useParams();
 
+  // ✅ Currency Context
+  const { currency, convertPrice, getCurrencySymbol } = useCurrency();
+
   const [product, setProducts] = useState(null);
   const [isLoading, setLoading] = useState(true);
   const [isInCart, setIsInCart] = useState(false);
@@ -902,6 +905,12 @@ const AccessoriesDetails = () => {
   const [touchStart, setTouchStart] = useState(null);
   const imageContainerRef = useRef(null);
   const imageRef = useRef(null);
+
+  // Hover zoom states
+  const [isHovering, setIsHovering] = useState(false);
+  const [hoverZoomPosition, setHoverZoomPosition] = useState({ x: 50, y: 50 });
+  const zoomContainerRef = useRef(null);
+  const zoomOverlayRef = useRef(null);
 
   // Tab state for specifications/description
   const [activeTab, setActiveTab] = useState("specifications");
@@ -1047,6 +1056,41 @@ const AccessoriesDetails = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [getVisibleThumbnails]);
+
+  // Preload image for hover zoom
+  useEffect(() => {
+    if (typeof window !== "undefined" && selectedImage) {
+      const img = new window.Image();
+      img.src = selectedImage;
+    }
+  }, [selectedImage]);
+
+  // Hover Zoom Handlers
+  const handleMouseMove = useCallback((e) => {
+    if (!zoomContainerRef.current) return;
+    
+    // Only activate on desktop (≥768px)
+    if (typeof window !== "undefined" && window.innerWidth < 768) return;
+    
+    const containerRect = zoomContainerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+    const y = ((e.clientY - containerRect.top) / containerRect.height) * 100;
+    
+    setHoverZoomPosition({ x, y });
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    // Only activate on desktop (≥768px)
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      setIsHovering(true);
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovering(false);
+    // Reset position when mouse leaves
+    setHoverZoomPosition({ x: 50, y: 50 });
+  }, []);
 
   // Add/Remove from wishlist API with login check
   const handleWishlistToggle = async () => {
@@ -1268,6 +1312,8 @@ const AccessoriesDetails = () => {
   const handleImageSelect = (image) => {
     setSelectedImage(image.url || image);
     resetZoom();
+    // Reset hover zoom position when image changes
+    setHoverZoomPosition({ x: 50, y: 50 });
   };
 
   // Subscribe to restock notifications
@@ -1442,16 +1488,10 @@ const AccessoriesDetails = () => {
 
   // Calculate discount percentage
   const calculateDiscount = () => {
-    if (!product?.salePrice || !product?.regularPrice) return 0;
+    if (!product?.regularPrice || !product?.salePrice) return 0;
     return Math.round(
       ((product.regularPrice - product.salePrice) / product.regularPrice) * 100
     );
-  };
-
-  // Format price with commas
-  const formatPrice = (price) => {
-    if (!price) return "0";
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
   // Loading State
@@ -1715,10 +1755,10 @@ const AccessoriesDetails = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 md:p-6">
             {/* Left Column - Images */}
             <div className="relative">
-              {/* Main Image Container with Zoom */}
+              {/* Main Image Container with Hover Zoom */}
               <div
-                ref={imageContainerRef}
-                className={`relative w-full h-64 sm:h-72 md:h-80 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden border-2 border-gray-100 cursor-${
+                ref={zoomContainerRef}
+                className={`relative w-full h-64 sm:h-72 md:h-80 lg:h-[400px] xl:h-[500px] bg-gray-50 rounded-lg sm:rounded-xl overflow-hidden border-2 border-gray-100 group cursor-${
                   typeof window !== "undefined" && window.innerWidth >= 768
                     ? isZoomed
                       ? "zoom-out"
@@ -1727,7 +1767,12 @@ const AccessoriesDetails = () => {
                 }`}
                 onClick={handleImageClick}
                 onWheel={handleWheel}
-                onMouseLeave={resetZoom}
+                onMouseLeave={(e) => {
+                  resetZoom();
+                  handleMouseLeave();
+                }}
+                onMouseEnter={handleMouseEnter}
+                onMouseMove={handleMouseMove}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
@@ -1735,8 +1780,26 @@ const AccessoriesDetails = () => {
                     handleImageClick(e);
                   }
                 }}
-                aria-label="Product image, click to zoom"
+                aria-label="Product image, hover to zoom, click for full zoom"
               >
+                {/* Hover Zoom Overlay - Desktop Only */}
+                {typeof window !== "undefined" && window.innerWidth >= 768 && (
+                  <div
+                    ref={zoomOverlayRef}
+                    className={`absolute inset-0 bg-no-repeat pointer-events-none transition-opacity duration-300 z-10 ${
+                      isHovering ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    style={{
+                      backgroundImage: `url(${selectedImage || product.image || "/placeholder-image.jpg"})`,
+                      backgroundSize: '200%',
+                      backgroundPosition: `${hoverZoomPosition.x}% ${hoverZoomPosition.y}%`,
+                      backgroundRepeat: 'no-repeat',
+                      transform: 'translateZ(0)',
+                    }}
+                  />
+                )}
+                
+                {/* Original Image */}
                 <div
                   ref={imageRef}
                   className="absolute inset-0 flex items-center justify-center"
@@ -1754,7 +1817,11 @@ const AccessoriesDetails = () => {
                     width={600}
                     height={600}
                     unoptimized
-                    className="object-contain w-full h-full p-2 select-none"
+                    className={`object-contain w-full h-full p-2 select-none ${
+                      typeof window !== "undefined" && window.innerWidth >= 768 && isHovering 
+                        ? 'opacity-0' 
+                        : 'opacity-100'
+                    } transition-opacity duration-300`}
                     priority
                     draggable="false"
                   />
@@ -1809,6 +1876,13 @@ const AccessoriesDetails = () => {
                 {typeof window !== "undefined" && window.innerWidth < 768 && (
                   <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
                     Tap to zoom
+                  </div>
+                )}
+
+                {/* Desktop Hover Hint */}
+                {typeof window !== "undefined" && window.innerWidth >= 768 && !isZoomed && (
+                  <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
+                    Hover to zoom • Click for full zoom
                   </div>
                 )}
 
@@ -1906,7 +1980,6 @@ const AccessoriesDetails = () => {
                             height={100}
                             className="object-cover w-full h-full hover:scale-110 transition-transform duration-200"
                           />
-                       
                           {selectedImage === (image.url || image) && (
                             <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></div>
                           )}
@@ -1956,31 +2029,17 @@ const AccessoriesDetails = () => {
                         isSoldOut ? "text-gray-600" : "text-gray-900"
                       }`}
                     >
-                      <Image
-                        src={newCurrency}
-                        alt="Currency"
-                        width={24}
-                        unoptimized
-                        height={24}
-                        className="mr-1 sm:mr-2 w-5 h-5 sm:w-7 sm:h-7"
-                      />
-                      {formatPrice(product.salePrice || product.sellingPrice) ||
-                        "65,000"}
+                      {/* Using Currency Context */}
+                      {getCurrencySymbol()}
+                      {convertPrice(product.salePrice || product.sellingPrice) || "0"}
                     </div>
                     {product.regularPrice &&
                       product.regularPrice >
                         (product.salePrice || product.sellingPrice) && (
                         <>
                           <div className="text-lg sm:text-xl text-gray-500 line-through flex items-center">
-                            <Image
-                              src={newCurrency}
-                              alt="Currency"
-                              unoptimized
-                              width={18}
-                              height={18}
-                              className="mr-1 w-4 h-4 sm:w-5 sm:h-5"
-                            />
-                            {formatPrice(product.regularPrice)}
+                            {getCurrencySymbol()}
+                            {convertPrice(product.regularPrice)}
                           </div>
                           <span className="bg-green-500 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-semibold">
                             {calculateDiscount()}% OFF
@@ -2269,6 +2328,10 @@ const Styles = () => {
         cursor: zoom-out;
       }
       
+      .cursor-move {
+        cursor: move;
+      }
+      
       /* Modal animations */
       @keyframes fade-in {
         from { opacity: 0; }
@@ -2292,6 +2355,23 @@ const Styles = () => {
       /* Touch-friendly scroll */
       .touch-scroll {
         -webkit-overflow-scrolling: touch;
+      }
+      
+      /* Hover Zoom Effect Styles */
+      .zoom-overlay {
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+      }
+      
+      /* Hide hover zoom on touch devices */
+      @media (hover: none) and (pointer: coarse) {
+        .zoom-overlay {
+          display: none !important;
+        }
+        
+        .group-hover\\:opacity-0 {
+          opacity: 1 !important;
+        }
       }
       
       /* Enhanced mobile-friendly styles */
@@ -2327,7 +2407,7 @@ const Styles = () => {
         /* Input improvements */
         input, 
         textarea {
-          font-size: 16px !important; /* Prevents zoom on iOS */
+          font-size: 16px !important;
         }
         
         /* Tab improvements for mobile */
@@ -2410,6 +2490,17 @@ const Styles = () => {
         .responsive-table-row span:first-child {
           margin-bottom: 0.25rem;
         }
+      }
+      
+      /* Hardware acceleration for smooth zoom */
+      .will-change-transform {
+        will-change: transform;
+      }
+      
+      /* Prevent flickering on hover */
+      .backface-hidden {
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
       }
     `;
 

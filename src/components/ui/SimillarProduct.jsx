@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useContext, useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, { useContext, useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   FaHeart,
@@ -14,10 +14,10 @@ import "toastify-js/src/toastify.css";
 import axios from "axios";
 import { GlobalContext } from "../shared/context/GlobalContext";
 import Dummy1 from "../../assets/Accessory Deals.jpg";
-import newCurrency from "../../assets/newSymbole.png";
+import { useCurrency } from "@/app/CurrencyContext";
 
-// Optimized ProductCard component with memoization
-const ProductCard = React.memo(({ product }) => {
+// Optimized ProductCard component without memoization
+const ProductCard = ({ product }) => {
   const router = useRouter();
   const { decrementWishlist, incrementWishlist, incrementCart } =
     useContext(GlobalContext);
@@ -25,11 +25,110 @@ const ProductCard = React.memo(({ product }) => {
   const [defaultWishlistId, setDefaultWishlistId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const productId = useMemo(() => product._id || product.productId?._id, [product]);
-  const isProductWishlisted = useMemo(() => isWishlisted.includes(productId), [isWishlisted, productId]);
+  // ✅ Currency Context
+  const { currency, convertPrice, getCurrencySymbol } = useCurrency();
 
-  // Memoized product category checks
-  const isBagCategory = useMemo(() => {
+  const productId = product._id || product.productId?._id;
+  const isProductWishlisted = isWishlisted.includes(productId);
+
+  // Format price with thousands separators and proper decimals
+  const formatPrice = (price) => {
+    try {
+      // Convert to number if it's not already
+      const priceNumber = typeof price === 'number' ? price : parseFloat(price);
+      
+      // Check if it's a valid number
+      if (isNaN(priceNumber)) {
+        return "0.00";
+      }
+      
+      // Format with 2 decimal places and thousands separators
+      return priceNumber.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    } catch (error) {
+      console.error("Error formatting price:", error);
+      return "0.00";
+    }
+  };
+
+  // Format price with currency symbol and proper spacing
+  const formatPriceWithCurrency = (price) => {
+    const formattedPrice = formatPrice(price);
+    const symbol = getCurrencySymbol();
+    
+    // Return formatted price with currency symbol and proper spacing
+    // Different currencies have different formatting conventions
+    switch (currency) {
+      case 'USD':
+      case 'CAD':
+      case 'AUD':
+      case 'NZD':
+      case 'SGD':
+      case 'HKD':
+        // Prefix with symbol: $1,234.00
+        return `${symbol}${formattedPrice}`;
+      
+      case 'EUR':
+      case 'GBP':
+        // Prefix with symbol: €1,234.00 or £1,234.00
+        return `${symbol}${formattedPrice}`;
+      
+      case 'JPY':
+        // No decimals, with symbol: ¥1,234
+        const jpyPrice = parseFloat(price).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        });
+        return `${symbol}${jpyPrice}`;
+      
+      case 'INR':
+        // Indian numbering system with symbol: ₹1,234.00
+        const inrPrice = parseFloat(price).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        return `${symbol}${inrPrice}`;
+      
+      case 'AED':
+      case 'SAR':
+      case 'QAR':
+        // Arabic currencies: 1,234.00 AED
+        return `${formattedPrice} ${symbol}`;
+      
+      default:
+        // Default: symbol before number
+        return `${symbol}${formattedPrice}`;
+    }
+  };
+
+  // Get formatted sale price
+  const getSalePrice = () => {
+    try {
+      if (!product.salePrice) return null;
+      const convertedPrice = convertPrice(product.salePrice);
+      return formatPriceWithCurrency(convertedPrice);
+    } catch (error) {
+      console.error("Error formatting sale price:", error);
+      return formatPriceWithCurrency(0);
+    }
+  };
+
+  // Get formatted regular price
+  const getRegularPrice = () => {
+    try {
+      const price = product.regularPrice || product.price || 0;
+      const convertedPrice = convertPrice(price);
+      return formatPriceWithCurrency(convertedPrice);
+    } catch (error) {
+      console.error("Error formatting regular price:", error);
+      return formatPriceWithCurrency(0);
+    }
+  };
+
+  // Product category checks
+  const isBagCategory = () => {
     const p = product;
     if (p.leatherMainCategory?.toLowerCase().includes("bag")) return true;
     if (p.subCategory?.toLowerCase().includes("bag")) return true;
@@ -37,9 +136,9 @@ const ProductCard = React.memo(({ product }) => {
     if (p.material?.toLowerCase().includes("leather")) return true;
     if (p.name?.toLowerCase().includes("bag")) return true;
     return false;
-  }, [product]);
+  };
 
-  const isAccessoriesCategory = useMemo(() => {
+  const isAccessoriesCategory = () => {
     const category = product.category?.toLowerCase();
     const subCategory = product.subCategory?.toLowerCase();
     const main = product.leatherMainCategory?.toLowerCase();
@@ -48,10 +147,9 @@ const ProductCard = React.memo(({ product }) => {
     if (subCategory === "accessories") return true;
     if (main === "accessories") return true;
     return false;
-  }, [product]);
+  };
 
-  // Memoized functions
-  const fetchWishlists = useCallback(async () => {
+  const fetchWishlists = async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) return;
@@ -80,9 +178,9 @@ const ProductCard = React.memo(({ product }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
-  const handleProductClick = useCallback(() => {
+  const handleProductClick = () => {
     if (!productId) {
       Toastify({
         text: "Product information is incomplete",
@@ -98,16 +196,16 @@ const ProductCard = React.memo(({ product }) => {
     }
 
     // Priority routing based on category
-    if (isBagCategory) {
+    if (isBagCategory()) {
       router.push(`/LeatherBagsDetails/${productId}`);
-    } else if (isAccessoriesCategory) {
+    } else if (isAccessoriesCategory()) {
       router.push(`/AccessoriesDeatils/${productId}`);
     } else {
       router.push(`/ProductDetailPage/${productId}`);
     }
-  }, [productId, isBagCategory, isAccessoriesCategory, router]);
+  };
 
-  const toggleWishlist = useCallback(async () => {
+  const toggleWishlist = async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
@@ -224,9 +322,9 @@ const ProductCard = React.memo(({ product }) => {
     } catch (error) {
       console.error("Error toggling wishlist:", error);
     }
-  }, [productId, isProductWishlisted, defaultWishlistId, decrementWishlist, incrementWishlist]);
+  };
 
-  const addToCart = useCallback(async () => {
+  const addToCart = async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
@@ -294,29 +392,11 @@ const ProductCard = React.memo(({ product }) => {
         },
       }).showToast();
     }
-  }, [productId, incrementCart]);
-
-  const formatPrice = useCallback((price) => {
-    return (
-      <div className="flex items-center">
-        <Image 
-          src={newCurrency} 
-          alt="Currency" 
-          className="w-4 h-4 mr-1.5"
-          width={16}
-          height={16}
-          loading="lazy"
-        />
-        <span className="text-xl font-bold text-gray-900">
-          {price?.toLocaleString() || "0"}
-        </span>
-      </div>
-    );
-  }, []);
+  };
 
   useEffect(() => {
     fetchWishlists();
-  }, [fetchWishlists]);
+  }, []);
 
   return (
     <div className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 mx-1 my-1 flex-shrink-0 w-[calc(50%-8px)] sm:w-[280px] sm:mx-2 sm:my-2">
@@ -333,6 +413,7 @@ const ProductCard = React.memo(({ product }) => {
             sizes="(max-width: 640px) 50vw, 280px"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
+            unoptimized
             onError={(e) => {
               e.target.src = Dummy1.src;
             }}
@@ -369,13 +450,23 @@ const ProductCard = React.memo(({ product }) => {
           {product.name}
         </h3>
 
-        {/* Price Section */}
+        {/* Price Section - FIXED with proper formatting */}
         <div className="flex items-baseline gap-1 sm:gap-2 mb-3 sm:mb-4">
-          {formatPrice(product.salePrice)}
-          {product.regularPrice && product.regularPrice > product.salePrice && (
-            <span className="text-xs sm:text-sm text-gray-500 line-through ml-1">
-              {formatPrice(product.regularPrice)}
-            </span>
+          {product.salePrice ? (
+            <>
+              <p className="text-base sm:text-lg font-bold text-gray-900">
+                {getSalePrice()}
+              </p>
+              {product.regularPrice && product.regularPrice > product.salePrice && (
+                <p className="text-xs sm:text-sm text-gray-500 line-through">
+                  {getRegularPrice()}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-base sm:text-lg font-bold text-gray-900">
+              {getRegularPrice()}
+            </p>
           )}
         </div>
 
@@ -390,12 +481,10 @@ const ProductCard = React.memo(({ product }) => {
       </div>
     </div>
   );
-});
-
-ProductCard.displayName = 'ProductCard';
+};
 
 // Scrollable Products Container Component
-const ScrollableProductsContainer = React.memo(({
+const ScrollableProductsContainer = ({
   title,
   description,
   products,
@@ -406,27 +495,27 @@ const ScrollableProductsContainer = React.memo(({
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
 
-  const checkScrollButtons = useCallback(() => {
+  const checkScrollButtons = () => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
       setShowLeftArrow(scrollLeft > 0);
       setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
     }
-  }, []);
+  };
 
-  const scrollLeft = useCallback(() => {
+  const scrollLeft = () => {
     if (scrollContainerRef.current) {
       const scrollAmount = window.innerWidth < 640 ? 200 : 300;
       scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: "smooth" });
     }
-  }, []);
+  };
 
-  const scrollRight = useCallback(() => {
+  const scrollRight = () => {
     if (scrollContainerRef.current) {
       const scrollAmount = window.innerWidth < 640 ? 200 : 300;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
-  }, []);
+  };
 
   useEffect(() => {
     checkScrollButtons();
@@ -451,7 +540,7 @@ const ScrollableProductsContainer = React.memo(({
         window.removeEventListener("resize", checkScrollButtons);
       };
     }
-  }, [checkScrollButtons, products]);
+  }, [products]);
 
   // Show loading state
   if (loading) {
@@ -530,7 +619,7 @@ const ScrollableProductsContainer = React.memo(({
           </h2>
           <p className="text-gray-600 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed">
             {description}
-          </p>
+        </p>
         </div>
 
         {/* Products Container with Scroll Arrows */}
@@ -575,9 +664,7 @@ const ScrollableProductsContainer = React.memo(({
       </div>
     </div>
   );
-});
-
-ScrollableProductsContainer.displayName = 'ScrollableProductsContainer';
+};
 
 // Main Similar Products Component
 const SimilarProduct = ({ productId }) => {
@@ -699,4 +786,4 @@ const SimilarProduct = ({ productId }) => {
   );
 };
 
-export default React.memo(SimilarProduct);
+export default SimilarProduct;

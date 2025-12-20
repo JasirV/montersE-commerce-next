@@ -19,6 +19,9 @@ const geistMono = Geist_Mono({
 
 const SITE_URL = "https://www.montres.ae";
 
+/* =========================
+   METADATA (SEO + FAVICON)
+   ========================= */
 export const metadata = {
   metadataBase: new URL(SITE_URL),
 
@@ -43,15 +46,13 @@ export const metadata = {
     apple: "https://www.montres.ae/my-app/public/apple-touch-icon.png",
   },
 
-  manifest: "/site.webmanifest",
-
   openGraph: {
     type: "website",
     url: SITE_URL,
     title: "Montres — Luxury Watches",
     description:
       "Montres — curated selection of authentic luxury watches. Worldwide shipping. Authenticity guaranteed.",
-    images: [`${SITE_URL}/og-default.jpg`],
+    images: ["/og-default.jpg"],
     siteName: "Montres",
   },
 
@@ -60,7 +61,7 @@ export const metadata = {
     title: "Montres — Luxury Watches",
     description:
       "Montres — curated selection of authentic luxury watches. Worldwide shipping. Authenticity guaranteed.",
-    images: [`${SITE_URL}/og-default.jpg`],
+    images: ["/og-default.jpg"],
   },
 };
 
@@ -116,7 +117,7 @@ export default function RootLayout({ children }) {
       </head>
 
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen overflow-x-hidden overflow-y-auto`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen overflow-x-hidden`}
       >
         <ToastContainer />
 
